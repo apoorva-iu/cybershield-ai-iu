@@ -1,0 +1,213 @@
+{
+  "warningNote": "A UPI PIN is only needed to send money, never to receive it.",
+  "rules": [
+    {
+      "id": "upi_enter_pin_to_receive",
+      "severity": "high",
+      "score": 90,
+      "reason": "Requesting to enter a UPI PIN or password to receive money or cashback",
+      "patterns": [
+        "(?:enter|put|type|insert|share|provide|dial|submit)\\s+(?:your\\s+)?(?:upi\\s+)?p[i1!|][n\\u00F1]\\b.*?(?:receive|accept|claim|credit|get|collect|pane|lene)",
+        "(?:receive|claim|accept|credit|get|pane|lene|lena).*?(?:enter|put|type|share|dial|lagao|dale[n\\u00F1]?)\\s+(?:your\\s+)?(?:upi\\s+)?p[i1!|][n\\u00F1]\\b",
+        "(?:paise|money|cash|cashback|amount)\\s+(?:pane|lene|credit|account\\s+me|mangwane)\\s+ke\\s+liye\\s+.*p[i1!|][n\\u00F1]",
+        "p[i1!|][n\\u00F1]\\s+(?:dale[n\\u00F1]?|enter\\s+karo|lagaye[n\\u00F1]?|bhare[n\\u00F1]?).*(?:paise|amount|cashback|rupaye|rs|inr)",
+        "p[\\s._-]*[i1!|][\\s._-]*[n\\u00F1]\\b.*(?:receive|get|claim|collect)",
+        "pay\\s+to\\s+receive\\s+money"
+      ]
+    },
+    {
+      "id": "upi_scan_qr_to_receive",
+      "severity": "high",
+      "score": 85,
+      "reason": "Asking to scan a QR code to receive money or get credited",
+      "patterns": [
+        "scan\\s+(?:this\\s+|the\\s+)?(?:qr|q\\.r\\.|code|barcode).*?(?:receive|get|claim|credit|pane|lene|accept)",
+        "(?:receive|get|claim|credit|pane|lene|accept).*?scan\\s+(?:this\\s+|the\\s+)?(?:qr|code|barcode)",
+        "qr\\s+code\\s+scan\\s+karo.*(?:paise|rupaye|amount|cashback)",
+        "scan\\s+qr\\s+and\\s+enter\\s+pin",
+        "scan\\s+(?:this\\s+)?qr\\s+(?:code\\s+)?to\\s+receive\\s+money",
+        "scan\\s+qr\\s+to\\s+get\\s+paid"
+      ]
+    },
+    {
+      "id": "upi_collect_request_prompt",
+      "severity": "high",
+      "score": 85,
+      "reason": "Prompting to approve or accept a UPI collect/request-money prompt to receive funds",
+      "patterns": [
+        "(?:approve|accept|click|confirm|open|authorize)\\s+(?:the\\s+)?(?:collect|payment|money)\\s+request.*?(?:receive|get|claim|credit)",
+        "collect\\s+request.*?(?:accept|approve|pane|credit)",
+        "request\\s+money\\s+from\\s+you",
+        "accept\\s+request\\s+to\\s+get\\s+paid",
+        "approve\\s+collect\\s+request"
+      ]
+    },
+    {
+      "id": "upi_sent_by_mistake",
+      "severity": "high",
+      "score": 80,
+      "reason": "Claiming money was sent by mistake or wrong transfer and requesting to send money back",
+      "patterns": [
+        "(?:sent|transferred|credited)\\s+(?:by\\s+mistake|accidentally|wrongly|by\\s+fault)",
+        "(?:accidentally|wrongly|by\\s+mistake|galti\\s+se)\\s+(?:sent|transferred|credited|bhej|send)",
+        "galti\\s+se\\s+(?:bhej|send|transfer|chala\\s+gaya|dal\\s+diya)",
+        "(?:please|kindly|turant|jaldi)\\s+(?:return|refund|send\\s+back|wapas).*?(?:upi|account|gpay|phonepe|paytm)",
+        "wrongly\\s+transferred\\s+(?:rs|inr|money|amount)",
+        "wrong\\s+transfer.*?(?:please\\s+)?(?:return|refund|send\\s+back|wapas)",
+        "(?:payment|money|amount|rs\\.?|inr)?\\s*(?:received|credited|transferred)\\s+(?:in|to)?\\s*(?:your\\s+account|by\\s+mistake).*?(?:send\\s+back|return|transfer\\s+back|wapas)"
+      ]
+    },
+    {
+      "id": "upi_fake_screenshot_claim",
+      "severity": "high",
+      "score": 75,
+      "reason": "Claiming payment is completed with fake screenshot or receipt reference to release goods/services",
+      "patterns": [
+        "(?:payment|money|amount).*?(?:done|sent|transferred|successful).*?(?:check\\s+screenshot|see\\s+receipt|attached\\s+screenshot|screen\\s*shot)",
+        "(?:payment|money|amount)\\s+(?:done|sent|transferred|successful).*?(?:check\\s+screenshot|see\\s+receipt|attached\\s+screenshot|screen\\s*shot)",
+        "paid\\s+successfully\\s+(?:see|check)\\s+receipt",
+        "(?:already|maine)\\s+transfer\\s+kar\\s+diya\\s+(?:hai|screenshot)",
+        "payment\\s+transfer\\s+successful\\s+screenshot",
+        "attached\\s+(?:payment\\s+)?screenshot.*?dispatch",
+        "payment\\s+screenshot\\s+attached"
+      ]
+    },
+    {
+      "id": "upi_cashback_reward_link",
+      "severity": "high",
+      "score": 85,
+      "reason": "Suspicious cashback or refund through a link claiming immediate UPI credit",
+      "patterns": [
+        "(?:claim|won|win|credited|unlock)\\s+(?:cashback|scratch\\s+card|reward|bonus|prize|refund).*?(?:https?://|www\\.|link|click)",
+        "(?:cashback|reward|scratch\\s+card|refund)\\s+(?:of\\s+)?(?:rs\\.?|inr)?\\s*\\d+.*?(?:claim|credit|click|link)",
+        "gpay\\s+reward\\s+claim",
+        "phonepe\\s+cashback\\s+claim",
+        "paytm\\s+cashback\\s+offer.*?click",
+        "(?:refund|cashback)\\s+(?:or\\s+cashback\\s+)?(?:through|via|at|on)?\\s*(?:a\\s+)?link",
+        "refund\\s+or\\s+cashback\\s+through\\s+a\\s+link"
+      ]
+    },
+    {
+      "id": "upi_fake_customer_care",
+      "severity": "high",
+      "score": 75,
+      "reason": "Fake payment app customer care number provided to divert dispute handling",
+      "patterns": [
+        "(?:gpay|phonepe|paytm|bhim|upi)\\s+(?:customer\\s+care|support|helpline|service)\\s+(?:number|call|at|on)?\\s*[:=]?\\s*(?:\\+?91)?[6-9]\\d{9}",
+        "(?:customer\\s+care|toll\\s*free|helpline)\\s+(?:for\\s+)?(?:upi|gpay|phonepe|paytm).*?(?:\\+?91)?[6-9]\\d{9}"
+      ]
+    },
+    {
+      "id": "upi_kyc_threat",
+      "severity": "high",
+      "score": 85,
+      "reason": "Threat of UPI or payment app account suspension due to pending KYC update",
+      "patterns": [
+        "(?:upi|gpay|phonepe|paytm|vpa|wallet)\\s+(?:kyc|services?)\\s+(?:is\\s+)?(?:expired|suspended|pending|blocked|deactivated)",
+        "(?:update|complete|verify)\\s+(?:your\\s+)?(?:upi|wallet)\\s+kyc.*?(?:immediately|today|or\\s+account\\s+blocked|suspended)",
+        "kyc\\s+(?:update|pending).*?(?:block|suspend|deactivate).*?(?:upi|payment|account)"
+      ]
+    },
+    {
+      "id": "upi_round_amounts_urgency",
+      "severity": "medium",
+      "score": 70,
+      "reason": "Urgent demand to transfer an unusually round amount immediately",
+      "patterns": [
+        "(?:transfer|send|pay)\\s+(?:rs\\.?|inr)?\\s*(?:[1-9]\\d*000|25[,.]?000|50[,.]?000|1[,.]?00[,.]?000).*?(?:immediately|urgently|turant|jaldi|within\\s+\\d+)",
+        "(?:urgently|immediately|turant|jaldi).*?(?:transfer|send|pay)\\s+(?:rs\\.?|inr)?\\s*(?:[1-9]\\d*000)"
+      ]
+    },
+    {
+      "id": "upi_urgent_pressure",
+      "severity": "medium",
+      "score": 60,
+      "reason": "High pressure or urgent deadline to complete payment transfer immediately",
+      "patterns": [
+        "(?:pay|transfer|send)\\s+(?:within|in)\\s+\\d+\\s*(?:min|minutes|hours|sec)",
+        "(?:urgent|immediately|turant|jaldi|right\\s+now|last\\s+chance).*?(?:pay|transfer|send\\s+money)",
+        "(?:offer|request)\\s+expires\\s+(?:in|within)\\s+\\d+",
+        "legal\\s+action\\s+(?:if\\s+not\\s+paid|within\\s+\\d+)"
+      ]
+    },
+    {
+      "id": "upi_unusual_round_claims",
+      "severity": "medium",
+      "score": 60,
+      "reason": "Unsolicited notification claiming a round sum lottery or prize won",
+      "patterns": [
+        "(?:congratulations|badhai|winner).*?(?:won|credit).*?(?:rs\\.?|inr)?\\s*(?:[1-9]\\d{3,6}|25[,.]?000|50[,.]?000|1[,.]?00[,.]?000)",
+        "lucky\\s+draw\\s+winner.*?(?:rs|inr|cash)"
+      ]
+    }
+  ],
+  "benignRules": [
+    {
+      "id": "upi_benign_paid_thanks",
+      "reduction": 80,
+      "reason": "Casual confirmation of completed payment without links or demands",
+      "patterns": [
+        "^(?:i\\s+have\\s+)?paid[\\s,]+thanks\\b",
+        "^(?:payment|paise)\\s+(?:done|sent|ho\\s+gaya)[\\s,]+(?:thanks|thank\\s+you|bhai|yaar)\\b",
+        "paid,?\\s*thanks"
+      ]
+    },
+    {
+      "id": "upi_benign_plain_sms_notification",
+      "reduction": 80,
+      "reason": "Plain automated bank debit or credit SMS notification without links or action requests",
+      "patterns": [
+        "(?:a\\/c|account)\\s+[x\\*\\d]+\\s+(?:debited|credited)\\s+(?:by|for|with)\\s+(?:rs\\.?|inr)",
+        "(?:rs\\.?|inr)\\s*\\d+(?:,\\d+)*(?:\\.\\d+)?\\s+(?:credited|debited)\\s+(?:to|from)\\s+(?:your\\s+)?(?:a\\/c|account)",
+        "upi\\s+ref(?:\\s+no|erence)?\\s*[:=]?\\s*\\d+"
+      ]
+    },
+    {
+      "id": "upi_benign_split_reminder",
+      "reduction": 40,
+      "reason": "Ordinary personal bill splitting or casual shared expense reminder",
+      "patterns": [
+        "(?:split|share|dinner|lunch|cab|movie|chai|coffee|food|rent|maintenance|grocery|bill)\\s+share",
+        "your\\s+share\\s+(?:for|is)\\s+(?:rs\\.?|inr)?\\s*\\d+",
+        "whenever\\s+(?:you\\s+are\\s+)?free",
+        "no\\s+rush",
+        "send\\s+to\\s+[a-zA-Z0-9._-]+@[a-zA-Z]+"
+      ]
+    },
+    {
+      "id": "upi_benign_no_action_refund",
+      "reduction": 50,
+      "reason": "Genuine transactional refund statement requiring no user action or PIN",
+      "patterns": [
+        "(?:refund|reversal)\\s+(?:of\\s+)?(?:rs\\.?|inr)?\\s*\\d+.*?(?:processed|credited|initiated)",
+        "no\\s+action\\s+(?:is\\s+)?required",
+        "will\\s+reflect\\s+in\\s+(?:your\\s+)?(?:bank\\s+account|statement|3-5\\s+business\\s+days)"
+      ]
+    }
+  ],
+  "knownHandles": [
+    "okhdfcbank",
+    "okaxis",
+    "oksbi",
+    "okicici",
+    "paytm",
+    "ybl",
+    "ibl",
+    "axl",
+    "apl",
+    "upi",
+    "barodampay",
+    "pnb",
+    "cnrb",
+    "aubank",
+    "idfcbank",
+    "federal",
+    "kotak",
+    "indus",
+    "postbank",
+    "airtel",
+    "icici",
+    "sbi",
+    "hdfcbank"
+  ]
+}

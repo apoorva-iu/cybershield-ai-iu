@@ -1,0 +1,14 @@
+{
+  "legit": {
+    "url": "https://careers.google.com/jobs/results/",
+    "company": "Google",
+    "email": "recruiter@google.com",
+    "desc": "Hi,\n\nI came across your profile and think you would be a great fit for a Software Engineer role at Google. Let me know if you are open to a quick chat next week to discuss this further."
+  },
+  "scam": {
+    "url": "http://urgent-verify-careers-google-update.xyz",
+    "company": "Google",
+    "email": "recruiter-google@gmail.com",
+    "desc": "URGENT: You have been selected for the Data Entry position at Google. \n\nPlease pay the $500 equipment fee to our approved vendor to receive your laptop. Kindly provide your SSN and bank details to proceed."
+  }
+}

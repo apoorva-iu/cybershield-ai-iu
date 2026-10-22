@@ -1,0 +1,46 @@
+{
+  "name": "cyber-shield",
+  "version": "1.0.0",
+  "description": "Fake job detection using live public APIs (no machine learning) with a blockchain audit trail",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "eval": "node tests/evaluate.js",
+    "eval:tune": "node tests/evaluate.js tune",
+    "eval:hidden": "node tests/evaluate.js hidden",
+    "test:proof": "node tests/proof.test.js",
+    "test:checks": "node tests/checks.test.js",
+    "test:boot": "node tests/boot.test.js",
+    "test:detectors": "node tests/detectors.test.js",
+    "db:purge": "node scripts/purge-expired.js",
+    "web:dev": "npm run dev --prefix web",
+    "web:build": "npm run build --prefix web",
+    "db:check": "node scripts/db-check.js",
+    "ledger:migrate": "node scripts/migrate-ledger.js",
+    "test:save": "node tests/save.test.js",
+    "test:ledger": "node tests/ledger-storage.test.js",
+    "test:auth": "node tests/auth.test.js",
+    "test:upi": "node tests/upi.test.js",
+    "test:message": "node tests/message.test.js",
+    "extension:build": "node scripts/build-extension.js",
+    "extension:zip": "node scripts/zip-extension.js",
+    "build:all": "npm run extension:zip && npm run web:build && node -e \"const fs=require('fs'); fs.mkdirSync('public/downloads', {recursive:true}); fs.copyFileSync('web/public/downloads/cyber-shield-extension.zip', 'public/downloads/cyber-shield-extension.zip'); fs.copyFileSync('web/public/downloads/extension-info.json', 'public/downloads/extension-info.json');\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0"
+  },
+  "devDependencies": {
+    "archiver": "^8.0.0",
+    "esbuild": "^0.28.2",
+    "sharp": "^0.35.5"
+  }
+}

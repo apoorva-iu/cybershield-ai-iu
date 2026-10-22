@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cyber Shield</title>
+<style>
+/* Base Theme */
+html { scroll-behavior: smooth; }
+:root {
+  --bg: #F3F6FB;
+  --surface: #FFFFFF;
+  --surface2: #E8EEF5;
+  --ink: #0B1F3A;
+  --muted: #5B6B82;
+  --line: #E3E8EF;
+  --accent: #0A66C2;
+  --accent-ink: #FFFFFF;
+  --good: #12805C;
+  --warn: #B7791F;
+  --bad: #C62828;
+  --unk: #5B6B82;
+  --good-bg: #E6F4EF;
+  --warn-bg: #FEF3DC;
+  --bad-bg: #FDEAEA;
+  --unk-bg: #EDF1F5;
+  --r-card: 12px;
+  --r-btn: 8px;
+  --r-input: 6px;
+  --shadow: 0 2px 8px rgba(11,31,58,.04), 0 8px 24px rgba(11,31,58,.04);
+  --body: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --mono: ui-monospace, Menlo, 'Roboto Mono', Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Header & Tabs */
+header { background: var(--surface); border-bottom: 1px solid var(--line); padding: 0 24px; display: flex; align-items: center; position: sticky; top: 0; z-index: 10; height: 64px; }
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+.logo-text { display: flex; flex-direction: column; line-height: 1.15; }
+.logo-text strong { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+.logo-text span { font-size: 12px; color: var(--muted); }
+
+.tabs { display: flex; gap: 24px; margin-left: 48px; align-self: stretch; }
+.tab { background: none; border: none; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; padding: 0 16px; position: relative; display: flex; align-items: center; transition: color 0.2s; }
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--accent); }
+.tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+
+/* Layouts */
+.layout-container {
+  display: grid;
+  gap: 24px;
+  margin: 40px auto;
+  align-items: start;
+  transition: all 300ms ease;
+  padding: 0 24px;
+}
+.layout-centered {
+  max-width: 808px; /* 760 + 48 padding */
+  grid-template-columns: 1fr;
+}
+.layout-split {
+  max-width: 1248px; /* 1200 + 48 padding */
+  grid-template-columns: 380px 1fr;
+}
+
+.col-form { transition: all 300ms ease; }
+.layout-split .col-form { position: sticky; top: 88px; }
+
+.col-report {
+  display: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.layout-split .col-report { display: block; opacity: 1; }
+
+/* Card */
+.scan-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 32px;
+  box-shadow: var(--shadow);
+  transition: padding 300ms ease;
+}
+.layout-split .scan-card { padding: 24px; }
+
+.card-header h1 { font-size: 28px; margin: 0 0 8px; line-height: 1.2; letter-spacing: -0.02em; }
+.card-header p { color: var(--muted); margin: 0 0 24px; font-size: 16px; }
+
+.layout-split .card-header h1 { font-size: 20px; }
+.layout-split .card-header p { font-size: 13px; margin-bottom: 16px; }
+
+/* Form Controls */
+.form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+.form-row .f { flex: 1; min-width: 0; }
+
+.layout-split .form-row { flex-direction: column; gap: 12px; margin-bottom: 12px; }
+
+.f label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+.f input, .f textarea { width: 100%; border: 1px solid var(--line); border-radius: var(--r-input); padding: 10px 12px; font-family: inherit; font-size: 14px; transition: border-color .2s; }
+.f input:focus, .f textarea:focus { outline: none; border-color: var(--accent); }
+
+.f textarea { min-height: 240px; resize: vertical; line-height: 1.6; }
+.layout-split .f textarea { min-height: 192px; }
+
+.btn-row { display: flex; gap: 16px; margin-top: 24px; }
+.btn-row button { flex: 1; padding: 10px 16px; border-radius: var(--r-btn); font-weight: 600; font-size: 14px; border: 1px solid transparent; cursor: pointer; transition: all .2s; }
+button.primary { background: var(--accent); color: var(--surface); }
+button.primary:hover { background: #085299; }
+button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+button.outline { background: transparent; border-color: var(--line); color: var(--ink); }
+button.outline:hover { background: var(--surface2); }
+
+.example-btns { display: flex; gap: 12px; margin-top: 16px; justify-content: center; }
+.example-btns button { background: none; border: none; color: var(--accent); font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+.err { color: var(--bad); font-size: 14px; background: var(--bad-bg); padding: 12px; border-radius: 8px; margin-top: 16px; }
+
+/* Live checks */
+.srv-label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 32px 0 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+.layout-split .srv-label { margin: 24px 0 12px; padding-top: 16px; }
+.srv { display: flex; flex-wrap: wrap; gap: 12px; }
+.srv-dot { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.srv-dot i { display: block; width: 8px; height: 8px; border-radius: 50%; background: #D1D9E2; }
+.srv-dot.on i { background: var(--good); }
+.srv-dot.on { color: var(--ink); }
+
+/* Report Styles */
+.verdict { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px; border-radius: var(--r-card); margin-bottom: 24px; background: var(--v-bg); border-left: 4px solid var(--v-border); border-top: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.v-low { --v-bg: #E6F4EF; --v-border: #12805C; --v-text: #12805C; }
+.v-medium { --v-bg: #FEF3DC; --v-border: #B7791F; --v-text: #B7791F; }
+.v-high { --v-bg: #FDEAEA; --v-border: #C62828; --v-text: #C62828; }
+.v-unknown { --v-bg: #EDF1F5; --v-border: #5F6F6C; --v-text: #5F6F6C; }
+.v-left { flex: 1; min-width: 0; }
+.v-left .lvl { font-size: 28px; font-weight: 700; line-height: 1.1; margin: 0 0 8px; color: var(--v-text); }
+.v-left p { margin: 0; max-width: 52ch; font-size: 14px; color: var(--ink); }
+.v-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.v-chip { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; background: rgba(255,255,255,0.7); color: var(--ink); border: 1px solid rgba(0,0,0,0.06); }
+.limited-evidence { font-size: 13px; color: var(--ink); opacity: 0.8; font-style: italic; margin-top: 12px !important; }
+.v-right { flex: 0 0 120px; margin-left: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.gauge-wrap { position: relative; width: 100px; height: 50px; margin-bottom: 8px; color: var(--v-border); }
+.gauge { width: 100%; height: 100%; overflow: visible; }
+.gauge-bg { stroke: rgba(0,0,0,0.08); }
+.gauge-val { stroke: currentColor; transition: stroke-dashoffset 1s ease-out; }
+.score-num { position: absolute; bottom: 0; left: 0; right: 0; font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--ink); line-height: 1; }
+.score-cap { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+
+.check-summary-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.check-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-decoration: none; transition: background 0.2s; }
+.check-pill:hover { background: var(--surface2); }
+.check-pill b { width: 8px; height: 8px; border-radius: 50%; display: block; }
+
+.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.check { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 20px; }
+.chead { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.chead h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+.pill { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 99px; }
+.s-ok { background: var(--good-bg); color: var(--good); }
+.s-warn { background: var(--warn-bg); color: var(--warn); }
+.s-bad { background: var(--bad-bg); color: var(--bad); }
+.s-unknown { background: var(--unk-bg); color: var(--unk); }
+
+.meter { height: 8px; background: var(--surface2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.meter i { display: block; height: 100%; transition: width .5s ease; }
+.m-ok i { background: var(--good); }
+.m-warn i { background: var(--warn); }
+.m-bad i { background: var(--bad); }
+.m-unknown { background: repeating-linear-gradient(45deg, var(--unk-bg) 0 8px, var(--surface2) 8px 16px); }
+
+ul.notes { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+ul.notes li { display: flex; gap: 12px; font-size: 14px; min-width: 0; }
+ul.notes li span { min-width: 0; overflow-wrap: anywhere; }
+ul.notes b { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; }
+.d-ok { background: var(--good); }
+.d-warn { background: var(--warn); }
+.d-bad { background: var(--bad); }
+.d-info { background: var(--unk); }
+
+.small { font-size: 13px; color: var(--muted); margin-top: 24px; }
+.mono { font-family: var(--mono); }
+
+/* Loading State */
+#loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 24px; text-align: center; }
+.spinner { width: 40px; height: 40px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+footer { text-align: center; padding: 32px 24px; color: var(--muted); font-size: 13px; margin-top: auto; }
+
+.proof-card { margin-top: 24px; }
+.proof-card h3 { margin: 0 0 16px; font-size: 16px; }
+.proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.proof-item { font-size: 13px; }
+.proof-item label { display: block; color: var(--muted); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
+.proof-item .val { font-family: var(--mono); word-break: break-all; display: flex; align-items: flex-start; gap: 8px; }
+.copy-btn { background: var(--surface2); border: none; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; color: var(--ink); }
+.copy-btn:hover { background: #D1D9E2; }
+.proof-warn { color: var(--warn); font-size: 12px; margin-top: 4px; font-weight: 600; }
+.proof-btns { display: flex; gap: 12px; margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; flex-wrap: wrap; }
+.proof-btns button { padding: 8px 12px; font-size: 13px; font-weight: 600; border-radius: var(--r-btn); cursor: pointer; background: var(--surface2); border: none; color: var(--ink); }
+.proof-btns button:hover { background: #D1D9E2; }
+
+/* Responsive */
+@media(max-width: 900px) {
+  .layout-split { grid-template-columns: 1fr; }
+  .col-form { position: static; }
+  .report-grid { grid-template-columns: 1fr; }
+  .proof-grid { grid-template-columns: 1fr; }
+}
+.drop-area { border: 2px dashed var(--line); border-radius: var(--r-input); padding: 32px 24px; text-align: center; cursor: pointer; color: var(--muted); background: var(--surface); transition: all .2s; }
+.drop-area:hover, .drop-area.dragover { border-color: var(--accent); background: var(--surface2); }
+.print-only { display: none; }
+@media print {
+  body { background: #fff; color: #000; }
+  header, .col-form, .tabs, footer, .proof-btns, .example-btns, .btn-row, .srv-label, .srv, #bc-form-card { display: none !important; }
+  .layout-container { margin: 0 !important; padding: 0 !important; display: block !important; }
+  .layout-split { grid-template-columns: 1fr; }
+  .col-report { display: block !important; opacity: 1 !important; }
+  .scan-card, .check { box-shadow: none; border: 1px solid #ccc; }
+  .verdict { border-left-width: 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-only { display: block !important; margin-bottom: 24px; font-size: 24px; font-weight: 700; color: #000; }
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="/" aria-label="Cyber Shield home">
+    <svg width="32" height="36" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M16 1L2 7v10c0 9.25 5.94 17.9 14 20 8.06-2.1 14-10.75 14-20V7L16 1z" fill="var(--accent)" fill-opacity=".12" stroke="var(--accent)" stroke-width="1.5"/>
+      <path d="M10 18l4 4 8-8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="logo-text">
+      <strong>Cyber Shield</strong>
+      <span>Verify job offers before you trust them</span>
+    </div>
+  </a>
+  <div class="tabs" role="tablist">
+    <button class="tab active" role="tab" aria-selected="true" id="tab-verify" aria-controls="panel-verify">Verify</button>
+    <button class="tab" role="tab" aria-selected="false" id="tab-blockchain" aria-controls="panel-blockchain">Blockchain</button>
+  </div>
+</header>
+
+<main id="main">
+  <div id="panel-verify" role="tabpanel" aria-labelledby="tab-verify">
+    <div id="verify-layout" class="layout-container layout-centered">
+      <div class="col-form">
+        <form class="scan-card" id="form" autocomplete="off">
+          <div class="card-header">
+            <h1>Is this job offer real?</h1>
+            <p>Instantly scan suspicious emails, links, and job descriptions.</p>
+          </div>
+          <div class="form-row">
+            <div class="f">
+              <label for="url">Job URL</label>
+              <input id="url" type="text" inputmode="url" placeholder="https://careers.example.com/role">
+            </div>
+            <div class="f">
+              <label for="company">Company name</label>
+              <input id="company" type="text" placeholder="As written in the offer">
+            </div>
+            <div class="f">
+              <label for="email">Recruiter email</label>
+              <input id="email" type="email" placeholder="name@company.com">
+            </div>
+          </div>
+          <div class="f">
+            <label for="desc">Job description or message</label>
+            <textarea id="desc" placeholder="Paste the full text of the offer"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="primary" type="submit" id="run">Verify offer</button>
+            <button type="button" id="clear" class="outline">Clear form</button>
+          </div>
+          <div class="example-btns">
+            <button type="button" id="btnScam">Try a scam example</button>
+            <button type="button" id="btnSafe">Try a safe example</button>
+          </div>
+          <p class="err" id="err" hidden></p>
+          <div class="srv-label">Live checks</div>
+          <div class="srv" id="srv" aria-label="Connected services"></div>
+        </form>
+      </div>
+      <div class="col-report" id="report-col">
+         <div id="report"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="panel-blockchain" role="tabpanel" aria-labelledby="tab-blockchain" hidden>
+    <div class="layout-container layout-centered" id="bc-layout">
+      <div class="col-form">
+        <div class="scan-card" id="bc-form-card">
+          <div class="card-header">
+            <h1>Verify a scan</h1>
+            <p>Check the integrity of a previous scan using the ledger.</p>
+          </div>
+
+          <div class="tabs" style="margin-left:0; margin-bottom: 12px;">
+            <button type="button" class="tab active" id="bc-tab-hash">Proof ID + hash</button>
+            <button type="button" class="tab" id="bc-tab-file">Receipt file or Access Code</button>
+          </div>
+          <div id="bc-help-text" style="font-size:13px; color:var(--muted); margin: 0 0 24px 16px;">Checks that the ledger record has not been touched. It shows no scan details.</div>
+
+          <form id="bc-form" autocomplete="off">
+            <div id="bc-mode-hash">
+              <div class="form-row">
+                <div class="f">
+                  <label for="bc-proof-id-hash">Proof ID</label>
+                  <input id="bc-proof-id-hash" type="text" placeholder="CS-...">
+                </div>
+                <div class="f">
+                  <label for="bc-block-hash">Block Hash</label>
+                  <input id="bc-block-hash" type="text" placeholder="Hex string">
+                </div>
+              </div>
+            </div>
+
+            <div id="bc-mode-file" hidden>
+              <div id="bc-drop" class="drop-area">
+                Drag &amp; drop your receipt .json here, or click to select
+                <input type="file" id="bc-file" accept="application/json" style="display:none">
+              </div>
+              <div id="bc-file-name" style="margin-top: 8px; font-weight: 600; font-size: 13px; text-align:center;"></div>
+              
+              <div style="margin-top: 16px; text-align: center;">
+                <button type="button" id="bc-use-code-btn" class="example-btns" style="display:inline-block; border:none; background:none; font-size:13px; text-decoration:underline; cursor:pointer;">Use Proof ID and Access Code instead</button>
+              </div>
+            </div>
+
+            <div id="bc-mode-code" hidden>
+              <div class="form-row">
+                <div class="f">
+                  <label for="bc-proof-id-code">Proof ID</label>
+                  <input id="bc-proof-id-code" type="text" placeholder="CS-...">
+                </div>
+                <div class="f">
+                  <label for="bc-access-code">Access Code</label>
+                  <input id="bc-access-code" type="text" placeholder="...">
+                </div>
+              </div>
+              <div style="margin-top: 16px; text-align: center;">
+                <button type="button" id="bc-use-file-btn" class="example-btns" style="display:inline-block; border:none; background:none; font-size:13px; text-decoration:underline; cursor:pointer;">Use receipt file instead</button>
+              </div>
+            </div>
+
+            <p class="err" id="bc-err" hidden></p>
+
+            <div class="btn-row">
+              <button class="primary" type="submit" id="bc-run">Verify scan</button>
+              <button type="button" id="bc-clear" class="outline">Clear form</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-report" id="bc-report-col">
+        <div id="bc-report"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>Cyber Shield &middot; Screening aid, not a legal finding</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SL={ok:'Looks fine',warn:'Warning',bad:'High risk',unknown:'Unable to verify'};
+
+async function api(path,opt){const r=await fetch(path,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed ('+r.status+')');return j}
+
+async function health(){
+  try{const h=await api('/api/health');
+    const items=[['RDAP',h.rdap],['VirusTotal',h.virustotal],['URLhaus',h.urlhaus],['Google Places',h.googlePlaces],['AI reading',h.llm],['On-chain anchor',h.onChain]];
+    $('srv').innerHTML=items.map(([n,o])=>`<div class="srv-dot ${o?'on':''}"><i></i>${n}</div>`).join('');
+  }catch(e){$('srv').innerHTML='<span class="tag">Backend not reachable</span>'}
+}
+
+$('tab-verify').onclick = () => {
+  $('tab-verify').classList.add('active'); $('tab-verify').setAttribute('aria-selected', 'true');
+  $('tab-blockchain').classList.remove('active'); $('tab-blockchain').setAttribute('aria-selected', 'false');
+  $('panel-verify').hidden = false; $('panel-blockchain').hidden = true;
+};
+$('tab-blockchain').onclick = () => {
+  $('tab-blockchain').classList.add('active'); $('tab-blockchain').setAttribute('aria-selected', 'true');
+  $('tab-verify').classList.remove('active'); $('tab-verify').setAttribute('aria-selected', 'false');
+  $('panel-blockchain').hidden = false; $('panel-verify').hidden = true;
+};
+
+function render(d){
+  const r=d.report,o=r.overall,[t,sub]=d.headline;
+  const checks=r.checks.map((c, i)=>{
+    let extra = '';
+    if (c.key === 'desc' && d.evidenceStatus && d.evidenceStatus.ai && d.evidenceStatus.ai !== 'ok') {
+      extra = `<p style="font-size:13px; color:var(--warn); margin-top:12px;">AI analysis unavailable (${esc(d.evidenceStatus.ai)}).</p>`;
+    }
+    if (c.key === 'company' && d.evidenceStatus && d.evidenceStatus.places && d.evidenceStatus.places !== 'ok') {
+      extra = `<p style="font-size:13px; color:var(--muted); margin-top:12px;">Could not be verified. This is common for small or new companies.</p>`;
+    }
+    return `<div class="check" id="check-${i}"><div class="chead"><h3>${esc(c.title)}</h3><span class="pill s-${c.state}">${SL[c.state]}</span></div>
+  <div class="meter m-${c.state}" role="img" aria-label="${c.score==null?'No evidence':'Risk '+c.score+' of 100'}">${c.score==null?'':`<i style="width:${c.score}%"></i>`}</div>
+  <ul class="notes">${c.findings.map(n=>`<li><b class="d-${n.severity}"></b><span>${esc(n.text)}</span></li>`).join('')}</ul>${extra}</div>`;
+  }).join('');
+  
+  const reasons = Object.entries(d.evidenceStatus || {}).filter(([k,v]) => v !== 'ok').map(([k,v]) => k + ': ' + v).join(', ');
+  const sourcesChip = reasons ? `<div style="font-size:12px; margin-top:8px; color:var(--muted)">Sources: ${reasons}</div>` : '';
+  const vChips = `<div class="v-chips"><span class="v-chip">${d.live} of 5 checks had evidence</span><span class="v-chip">Confidence ${o.confidence}%</span></div>${sourcesChip}`;
+  const limitedEv = o.limitedEvidence ? `<p class="limited-evidence">Based on limited evidence. Some live checks did not answer, so treat this result with care.</p>` : '';
+  const gaugeDashOffset = o.score == null ? 125.6 : 125.6 - (125.6 * o.score / 100);
+  
+  const verdict = `<div class="verdict v-${o.level}">
+    <div class="v-left">
+      ${vChips}
+      <h2 class="lvl">${esc(t)}</h2>
+      <p>${esc(sub)}</p>
+      ${limitedEv}
+    </div>
+    <div class="v-right">
+      <div class="gauge-wrap" role="img" aria-label="${o.score==null?'No score':'Risk score of '+o.score}">
+        <svg class="gauge" viewBox="0 0 100 50">
+          <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="12" stroke-linecap="round"></path>
+          ${o.score==null?'':`<path class="gauge-val" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="125.6" stroke-dashoffset="${gaugeDashOffset}"></path>`}
+        </svg>
+        <div class="score-num">${o.score==null?'\u2014':o.score}</div>
+      </div>
+      <div class="score-cap">Risk score of 100</div>
+    </div>
+  </div>`;
+
+  const summaryRow = `<div class="check-summary-row">${r.checks.map((c, i) => `<a href="#check-${i}" class="check-pill s-${c.state}"><b></b>${esc(c.title)}</a>`).join('')}</div>`;
+  
+  window.currentReceipt = d.receipt;
+  const proofCard = `<div class="scan-card proof-card">
+    <h3>Your scan proof</h3>
+    <div class="proof-grid">
+      <div class="proof-item"><label>Proof ID</label><div class="val">${esc(d.proofId)}</div></div>
+      <div class="proof-item"><label>Block number</label><div class="val">${d.block}</div></div>
+      <div class="proof-item"><label>Time (UTC)</label><div class="val">${esc(d.timestamp.replace('T', ' ').slice(0, 19))}</div></div>
+      <div class="proof-item"><label>Access Code</label><div class="val">${esc(d.accessCode)} <button type="button" class="copy-btn" onclick="navigator.clipboard.writeText('${esc(d.accessCode)}')">Copy</button></div><div class="proof-warn">Save this code now. It is shown only once.</div></div>
+      <div class="proof-item" style="grid-column: 1 / -1;"><label>Block hash</label><div class="val">${esc(d.blockHash)} <button type="button" class="copy-btn" onclick="navigator.clipboard.writeText('${esc(d.blockHash)}')">Copy</button></div></div>
+    </div>
+    <div class="proof-btns" style="align-items:flex-start;">
+      <button type="button" class="primary" onclick="window.print()">Save report as PDF</button>
+      <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; max-width:300px;">
+        <button type="button" onclick="downloadReceipt('${esc(d.proofId)}')">Download verification file (.json)</button>
+        <div style="font-size:11px; color:var(--muted); line-height:1.3; font-weight:normal;">Keep this file. It lets you prove later that the scan contents were not changed.</div>
+      </div>
+    </div>
+    <div style="margin-top:16px; text-align:center;">
+      <button type="button" style="border:none; background:none; color:var(--accent); text-decoration:underline; font-size:13px; cursor:pointer; padding:0;" onclick="checkProof('${esc(d.proofId)}', '${esc(d.blockHash)}', '${esc(d.accessCode)}')">Test this scan now</button>
+    </div>
+  </div>`;
+
+  $('report').innerHTML = verdict + summaryRow + `<div class="report-grid">${checks}</div>
+  <p class="small">Sources used: ${r.sources.length?esc(r.sources.join(', ')):'none of the live services answered'}. Screening aid, not a legal finding.</p>
+  ${proofCard}`;
+}
+
+window.downloadReceipt = function(id) {
+  const blob = new Blob([JSON.stringify(window.currentReceipt, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = id + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.checkProof = function(proofId, hash, code) {
+  window.location.hash = '#proof=' + encodeURIComponent(proofId) + '&hash=' + encodeURIComponent(hash) + '&code=' + encodeURIComponent(code);
+  $('tab-blockchain').click();
+};
+
+$('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('run'), err=$('err');
+  err.hidden=true;
+  
+  $('verify-layout').classList.remove('layout-centered');
+  $('verify-layout').classList.add('layout-split');
+  
+  $('report').innerHTML = '<div class="scan-card" id="loading"><div class="spinner"></div><p>Checking the link, company and recruiter...</p></div>';
+  b.disabled=true;
+  b.textContent='Checking\u2026';
+  
+  try{
+    const d=await api('/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value,company:$('company').value,email:$('email').value,desc:$('desc').value})});
+    render(d);
+  } catch(x){
+    if (x.message.includes('Too many scans')) {
+      err.innerHTML = '<strong>Rate Limit Reached</strong><br>Too many scans. Please wait a minute and try again.';
+      err.style.background = 'var(--warn-bg)';
+      err.style.color = 'var(--warn)';
+    } else {
+      err.textContent=x.message;
+      err.style.background = 'var(--bad-bg)';
+      err.style.color = 'var(--bad)';
+    }
+    err.hidden=false;
+    $('verify-layout').classList.remove('layout-split');
+    $('verify-layout').classList.add('layout-centered');
+    $('report').innerHTML = '';
+  }
+  b.disabled=false;
+  b.textContent='Verify offer'
+});
+
+$('clear').onclick=()=>{
+  ['url','company','email','desc'].forEach(i=>$(i).value='');
+  $('err').hidden=true;
+  $('verify-layout').classList.remove('layout-split');
+  $('verify-layout').classList.add('layout-centered');
+  $('report').innerHTML = '';
+};
+
+$('btnScam').onclick=async ()=>{
+  const r = await fetch('/api/samples'); const s = await r.json();
+  $('url').value = s.scam.url; $('company').value = s.scam.company; $('email').value = s.scam.email; $('desc').value = s.scam.desc;
+  $('err').hidden = true;
+};
+
+$('btnSafe').onclick=async ()=>{
+  const r = await fetch('/api/samples'); const s = await r.json();
+  $('url').value = s.legit.url; $('company').value = s.legit.company; $('email').value = s.legit.email; $('desc').value = s.legit.desc;
+  $('err').hidden = true;
+};
+
+let bcMode = 'hash';
+let bcUploadedReceipt = null;
+
+$('bc-tab-hash').onclick = () => setBcMode('hash');
+$('bc-tab-file').onclick = () => setBcMode('file');
+$('bc-use-code-btn').onclick = () => setBcMode('code');
+$('bc-use-file-btn').onclick = () => setBcMode('file');
+
+function setBcMode(mode) {
+  bcMode = mode;
+  $('bc-tab-hash').classList.toggle('active', mode === 'hash');
+  $('bc-tab-file').classList.toggle('active', mode !== 'hash');
+  $('bc-mode-hash').hidden = mode !== 'hash';
+  $('bc-mode-file').hidden = mode !== 'file';
+  $('bc-mode-code').hidden = mode !== 'code';
+  $('bc-help-text').textContent = mode === 'hash' 
+    ? 'Checks that the ledger record has not been touched. It shows no scan details.' 
+    : 'Also checks the scan contents, and shows the full report when you upload your receipt file.';
+}
+
+const bcDrop = $('bc-drop');
+const bcFile = $('bc-file');
+bcDrop.onclick = () => bcFile.click();
+bcDrop.ondragover = (e) => { e.preventDefault(); bcDrop.classList.add('dragover'); };
+bcDrop.ondragleave = () => { bcDrop.classList.remove('dragover'); };
+bcDrop.ondrop = (e) => {
+  e.preventDefault(); bcDrop.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleBcFile(e.dataTransfer.files[0]);
+};
+bcFile.onchange = (e) => {
+  if (e.target.files.length) handleBcFile(e.target.files[0]);
+};
+
+function handleBcFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      bcUploadedReceipt = JSON.parse(e.target.result);
+      $('bc-file-name').textContent = file.name;
+    } catch(x) {
+      alert("Invalid JSON file");
+      bcUploadedReceipt = null;
+      $('bc-file-name').textContent = '';
+      bcFile.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+$('bc-clear').onclick = () => {
+  $('bc-proof-id-hash').value = '';
+  $('bc-block-hash').value = '';
+  $('bc-proof-id-code').value = '';
+  $('bc-access-code').value = '';
+  bcUploadedReceipt = null;
+  bcFile.value = '';
+  $('bc-file-name').textContent = '';
+  $('bc-err').hidden = true;
+  $('bc-layout').classList.remove('layout-split');
+  $('bc-layout').classList.add('layout-centered');
+  $('bc-report').innerHTML = '';
+};
+
+$('bc-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = $('bc-run'), err = $('bc-err');
+  err.hidden = true;
+  
+  $('bc-layout').classList.remove('layout-centered');
+  $('bc-layout').classList.add('layout-split');
+  
+  $('bc-report').innerHTML = '<div class="scan-card" id="loading"><div class="spinner"></div><p>Verifying ledger...</p></div>';
+  b.disabled = true;
+  b.textContent = 'Verifying\u2026';
+  
+  let payload = {};
+  if (bcMode === 'hash') {
+    payload = { proofId: $('bc-proof-id-hash').value, hash: $('bc-block-hash').value };
+  } else if (bcMode === 'code') {
+    payload = { proofId: $('bc-proof-id-code').value, accessCode: $('bc-access-code').value };
+  } else if (bcMode === 'file') {
+    if (!bcUploadedReceipt) {
+      err.textContent = "Please select a receipt file first.";
+      err.hidden = false;
+      $('bc-layout').classList.remove('layout-split');
+      $('bc-layout').classList.add('layout-centered');
+      $('bc-report').innerHTML = '';
+      b.disabled = false;
+      b.textContent = 'Verify scan';
+      return;
+    }
+    payload = { receipt: bcUploadedReceipt };
+  }
+  
+  try {
+    const d = await api('/api/proof/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    renderBc(d);
+  } catch(x) {
+    err.textContent = x.message;
+    err.hidden = false;
+    $('bc-layout').classList.remove('layout-split');
+    $('bc-layout').classList.add('layout-centered');
+    $('bc-report').innerHTML = '';
+  }
+  b.disabled = false;
+  b.textContent = 'Verify scan';
+});
+
+function renderBc(res) {
+  const sc = { 'intact': 'v-low', 'record_valid': 'v-low', 'verified': 'v-low', 'report_modified': 'v-medium', 'hash_mismatch': 'v-medium', 'ledger_altered': 'v-high', 'not_found': 'v-unknown' };
+  const colorClass = sc[res.status] || 'v-unknown';
+  
+  const titles = { 'intact': 'Intact', 'record_valid': 'Record Valid', 'verified': 'Verified', 'report_modified': 'Report Modified', 'ledger_altered': 'Ledger Altered', 'not_found': 'Not Found', 'hash_mismatch': 'Hash does not match' };
+  const titleText = titles[res.status] || res.status;
+
+  const sub = res.subject || {};
+  let subHtml = '';
+  if (sub.proofId) {
+    subHtml = `<div style="margin-top:16px; font-size:14px; color:var(--ink);">
+      <strong>Proof ID:</strong> <span class="mono">${esc(sub.proofId)}</span> &middot; 
+      <strong>Block:</strong> ${sub.block} &middot; 
+      <strong>Date:</strong> ${esc(sub.timestamp ? sub.timestamp.replace('T', ' ').slice(0, 19) : '')}
+    </div>`;
+  }
+  
+  const banner = `<div class="verdict ${colorClass}">
+    <div class="v-left" style="margin-right: 0;">
+      <h2 class="lvl">${esc(titleText)}</h2>
+      <p>${esc(res.summary)}</p>
+      ${subHtml}
+    </div>
+  </div>`;
+
+  const ALL_STEPS = [
+    { id: 'a', title: 'Record found for this Proof ID' },
+    { id: 'b', title: 'Provided hash matches stored record' },
+    { id: 'c', title: 'Block hash matches contents' },
+    { id: 'd', title: 'Proof-of-work meets difficulty' },
+    { id: 'e', title: 'Links correctly to previous block' },
+    { id: 'f', title: 'Subsequent blocks link correctly' },
+    { id: 'g', title: 'Full chain is intact' },
+    { id: 'h', title: 'Anchor status' }
+  ];
+  const expectedSteps = ALL_STEPS.filter(s => s.id !== 'b' || bcMode === 'hash');
+  
+  const stepsHtml = expectedSteps.map(stepDef => {
+    const s = (res.steps || []).find(x => x.id === stepDef.id);
+    let icon, title, detail;
+    if (s) {
+      icon = s.passed ? `<b style="color:var(--good); font-size:18px;">&#10003;</b>` : `<b style="color:var(--bad); font-size:18px;">&#10007;</b>`;
+      title = esc(s.title);
+      detail = esc(s.detail);
+    } else {
+      icon = `<b style="color:var(--muted); font-size:18px;">&minus;</b>`;
+      title = esc(stepDef.title);
+      detail = 'Not evaluated';
+    }
+    return `<div style="display:flex; gap:12px; margin-bottom:12px; align-items:flex-start;">
+      <div style="flex:0 0 24px; text-align:center;">${icon}</div>
+      <div>
+        <div style="font-weight:600; font-size:14px; color:var(--ink);">${title}</div>
+        <div style="font-size:13px; color:var(--muted);">${detail}</div>
+      </div>
+    </div>`;
+  }).join('');
+  
+  let cStatHtml = '';
+  if (res.content) {
+    let cStat = '';
+    if (res.content.status === 'not_checked') cStat = `<div style="font-size:14px; color:var(--muted);">Scan details are private. Upload your receipt file to see them.</div>`;
+    else if (res.content.status === 'verified') cStat = `<div style="font-size:14px; color:var(--good); font-weight:600;">Verified</div>`;
+    else if (res.content.status === 'modified') {
+      const changed = (res.content.changedSections || []).map(s => `<span class="v-chip">${esc(s)}</span>`).join('');
+      cStat = `<div style="font-size:14px; color:var(--warn); font-weight:600; margin-bottom:8px;">Modified sections:</div><div class="v-chips">${changed}</div>`;
+    }
+    cStatHtml = `<h3 style="font-size:16px; margin:24px 0 16px;">Report contents</h3>${cStat}`;
+  }
+
+  const stepsCard = `<div class="scan-card bc-report-card">
+    <div class="print-only">Blockchain Verification Report</div>
+    ${banner}
+    <h3 style="font-size:16px; margin:24px 0 16px;">Verification Steps</h3>
+    <div>${stepsHtml}</div>
+    ${cStatHtml}
+  </div>`;
+  
+  let scannedContents = '';
+  if (res.content && res.content.status === 'verified' && bcMode === 'file' && bcUploadedReceipt && bcUploadedReceipt.report) {
+    const r = bcUploadedReceipt.report;
+    const checks = r.checks.map((c, i)=>`<div class="check"><div class="chead"><h3>${esc(c.title)}</h3><span class="pill s-${c.state}">${SL[c.state]}</span></div>
+    <div class="meter m-${c.state}" role="img" aria-label="${c.score==null?'No evidence':'Risk '+c.score+' of 100'}">${c.score==null?'':`<i style="width:${c.score}%"></i>`}</div>
+    <ul class="notes">${c.findings.map(n=>`<li><b class="d-${n.severity}"></b><span>${esc(n.text)}</span></li>`).join('')}</ul></div>`).join('');
+    scannedContents = `<h3 style="font-size:20px; margin:32px 0 16px;">Scanned contents</h3><div class="report-grid">${checks}</div>`;
+  }
+  
+  $('bc-report').innerHTML = stepsCard + scannedContents;
+}
+
+function checkHash() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#proof=')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const pId = params.get('proof');
+    const bHash = params.get('hash');
+    const bCode = params.get('code');
+    
+    $('tab-blockchain').click();
+    
+    if (pId) {
+      if (bHash && bCode) {
+        $('bc-proof-id-hash').value = pId;
+        $('bc-block-hash').value = bHash;
+        $('bc-proof-id-code').value = pId;
+        $('bc-access-code').value = bCode;
+        setBcMode('hash');
+      } else if (bHash) {
+        $('bc-proof-id-hash').value = pId;
+        $('bc-block-hash').value = bHash;
+        setBcMode('hash');
+      } else if (bCode) {
+        $('bc-proof-id-code').value = pId;
+        $('bc-access-code').value = bCode;
+        setBcMode('code');
+      }
+      $('bc-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+  }
+}
+window.addEventListener('hashchange', checkHash);
+window.addEventListener('DOMContentLoaded', checkHash);
+
+let publicConfig = {};
+fetch('/api/config-public').then(r=>r.json()).then(c=>{ publicConfig=c; }).catch(()=>{});
+health();
+</script>
+</body>
+</html>

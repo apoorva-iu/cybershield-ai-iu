@@ -1,0 +1,639 @@
+[
+  {
+    "url": "",
+    "company": "Tech Solutions",
+    "email": "hr-techsolutions@gmail.com",
+    "desc": "URGENT: You have been selected for Data Entry. Pay Rs. 2,500 towards training kit immediately to confirm.",
+    "id": "scam_1",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "http://amazon-jobs.xyz/apply",
+    "company": "Amazon",
+    "email": "recruiter@amazon-jobs.xyz",
+    "desc": "Amazon is hiring remote staff. Earn $500/day. Message us on WhatsApp +1234567890 to apply.",
+    "id": "scam_2",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "https://bit.ly/3sdfH",
+    "company": "Global Corp",
+    "email": "globalcorp.hr@yahoo.com",
+    "desc": "Work from home opportunity. Click the link to register. Registration fee applies.",
+    "id": "scam_3",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "https://infosys-hr.in/careers",
+    "company": "Infosys",
+    "email": "careers@infosys-hr.in",
+    "desc": "Congratulations! Please send a copy of your Aadhaar card, PAN card, and a cancelled cheque to process your onboarding.",
+    "id": "scam_4",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "Startup Inc",
+    "email": "startup.hiring.manager123@gmail.com",
+    "desc": "We are a stealth startup looking for remote workers. Please buy the required Apple laptop from our approved vendor. We will reimburse you on your first paycheck.",
+    "id": "scam_5",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "https://telegram.me/job_bot",
+    "company": "Crypto Trading Ltd",
+    "email": "",
+    "desc": "Make passive income from your phone! Trade crypto with our signals. No experience needed. Join Telegram.",
+    "id": "scam_6",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "http://t.co/fakejob",
+    "company": "Logistics Pro",
+    "email": "hr@logistics-pro.net",
+    "desc": "Reshipping agent needed. Receive packages, inspect them, and ship them out. Keep 10% of the item value!",
+    "id": "scam_7",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "TCS",
+    "email": "tcs.recruitment@gmail.com",
+    "desc": "Dear Candidate, you have been shortlisted for a direct interview. Please transfer a refundable security deposit of Rs. 1000.",
+    "id": "scam_8",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "http://google-careers-update.xyz",
+    "company": "Google",
+    "email": "admin@google-careers-update.xyz",
+    "desc": "Google Work From Home Jobs. Sign up now and get a free $50 signup bonus.",
+    "id": "scam_9",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "International Bank",
+    "email": "hr.internationalbank@gmail.com",
+    "desc": "Your profile has been selected. To complete background verification, please reply with your full bank account details and internet banking password.",
+    "id": "scam_10",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "Alpha Tech",
+    "email": "alpha.tech.hr@hotmail.com",
+    "desc": "We are impressed by your resume. We will send you a check for $3000 to purchase your home office equipment. Please deposit it and wire the remaining funds to our supplier.",
+    "id": "scam_11",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "http://flipkart-hiring.co.in",
+    "company": "Flipkart",
+    "email": "jobs@flipkart-hiring.co.in",
+    "desc": "Mega recruitment drive! Send your resume and pay a nominal Rs. 500 processing fee to secure your spot.",
+    "id": "scam_12",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "SoftDev Solutions",
+    "email": "ceo@softdev-solutions-inc.com",
+    "desc": "Very polite follow up on your application. We loved your profile. Could you please share a scan of your passport and driver's license for our records?",
+    "id": "scam_13",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "https://bit.ly/scamjob",
+    "company": "Marketing Agency",
+    "email": "marketing@agency.com",
+    "desc": "Need virtual assistants immediately. Just send a text to our WhatsApp number to get started.",
+    "id": "scam_14",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "http://earn-money-fast.com",
+    "company": "Earn Money Fast",
+    "email": "",
+    "desc": "No experience? No problem. Get paid $50 for every survey you fill out. Guaranteed earnings!",
+    "id": "scam_15",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "Global Investments",
+    "email": "recruitment@global-investments.yahoo.com",
+    "desc": "You are hired as a regional representative. A cashier's check will be mailed to you tomorrow for your initial expenses.",
+    "id": "scam_16",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "https://apple-hr-india.in",
+    "company": "Apple",
+    "email": "support@apple-hr-india.in",
+    "desc": "Apple Retail is hiring in your area. Contact us on WhatsApp to schedule your immediate phone screen.",
+    "id": "scam_17",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "Freelance Hub",
+    "email": "jobs@freelance-hub-network.com",
+    "desc": "Post links on social media and make $2000 a week. Just pay a one-time setup fee of $49.99 for your affiliate dashboard.",
+    "id": "scam_18",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "https://wa.me/1234567890",
+    "company": "Data Entry Inc",
+    "email": "",
+    "desc": "Typing jobs available. Work from home and type documents for 5 hours a day. Message on WhatsApp for details.",
+    "id": "scam_19",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "",
+    "company": "State Bank of India",
+    "email": "sbi.recruitment2026@gmail.com",
+    "desc": "SBI PO Recruitment 2026. Direct selection based on merit. Please send your 10th and 12th marksheets along with Aadhaar copy.",
+    "id": "scam_20",
+    "label": "scam",
+    "split": "tune"
+  },
+  {
+    "url": "http://tesla-remote.com/apply",
+    "company": "Tesla",
+    "email": "hr@tesla-remote.com",
+    "desc": "Tesla remote data analyst position. Start immediately. We will ship you an iMac; just cover the $150 shipping cost.",
+    "id": "scam_21",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "http://bit.ly/xyz987",
+    "company": "Survey Rewards",
+    "email": "contact@survey-rewards.net",
+    "desc": "Earn crypto by completing daily tasks. Connect your wallet to our app and start earning today!",
+    "id": "scam_22",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "",
+    "company": "HR Consulting",
+    "email": "recruiter.sharma@yahoo.in",
+    "desc": "Hello, I am a freelance recruiter. I have a guaranteed job placement for you in an MNC. My consultation fee is Rs 3000, payable upfront.",
+    "id": "scam_23",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "https://netflix-jobs.xyz",
+    "company": "Netflix",
+    "email": "casting@netflix-jobs.xyz",
+    "desc": "Looking for extras for our new series shooting in your city. Send 3 photographs and a $25 processing fee to apply.",
+    "id": "scam_24",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "",
+    "company": "Local Business",
+    "email": "local.biz.owner@gmail.com",
+    "desc": "Need a personal assistant. I travel often, so you will handle my bills and emails. I will send you checks to pay my vendors.",
+    "id": "scam_25",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "http://t.me/crypto_hiring",
+    "company": "Blockchain Solutions",
+    "email": "",
+    "desc": "Crypto traders needed. High daily returns. Send us 0.1 BTC to activate your trading account and start trading for us.",
+    "id": "scam_26",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "https://wipro-careers.in",
+    "company": "Wipro",
+    "email": "careers@wipro-careers.in",
+    "desc": "Wipro BPO hiring freshers. Direct walk-in today. Bring Rs 500 for the mandatory aptitude test registration.",
+    "id": "scam_27",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "",
+    "company": "Online Tutor Services",
+    "email": "hiring@tutor-services-online.org",
+    "desc": "Teach English online. Buy our proprietary teaching software for $99 to get your first student assigned.",
+    "id": "scam_28",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "https://amazon-prime-jobs.com",
+    "company": "Amazon",
+    "email": "support@amazon-prime-jobs.com",
+    "desc": "Review Amazon products and get paid! We will send you products to keep. Just pay for the shipping upfront.",
+    "id": "scam_29",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "",
+    "company": "Unknown",
+    "email": "hiring@mystery-company.net",
+    "desc": "High paying job available. No interview required. Reply with your bank details to get added to our payroll.",
+    "id": "scam_30",
+    "label": "scam",
+    "split": "hidden"
+  },
+  {
+    "url": "https://careers.google.com/jobs/results/",
+    "company": "Google",
+    "email": "recruiter@google.com",
+    "desc": "Minimum qualifications: Bachelor's degree in Computer Science or equivalent practical experience. 3 years of experience with software development in one or more programming languages (e.g., Python, C++, Java, JavaScript).",
+    "id": "legit_1",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.linkedin.com/jobs/view/123456",
+    "company": "Microsoft",
+    "email": "",
+    "desc": "We are looking for a passionate Software Engineer to join our Azure team. You will work on distributed systems and cloud infrastructure.",
+    "id": "legit_2",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.naukri.com/job-listings-software-engineer-infosys-ltd-bangalore",
+    "company": "Infosys Ltd",
+    "email": "careers@infosys.com",
+    "desc": "Role: Systems Engineer. Location: Bangalore. Skills required: Java, Spring Boot, Microservices. Good communication skills are a must.",
+    "id": "legit_3",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://careers.swiggy.com/",
+    "company": "Swiggy",
+    "email": "tech-hiring@swiggy.in",
+    "desc": "Join India's leading on-demand delivery platform. We are hiring Backend Developers (SDE II) with strong experience in Go or Java.",
+    "id": "legit_4",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.zomato.com/careers",
+    "company": "Zomato",
+    "email": "jobs@zomato.com",
+    "desc": "Product Manager role. You will own the roadmap for our core consumer app. Requires 4+ years of product management experience.",
+    "id": "legit_5",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://stripe.com/jobs",
+    "company": "Stripe",
+    "email": "recruiting@stripe.com",
+    "desc": "Stripe is building the economic infrastructure for the internet. We're looking for an Engineering Manager to lead our Payments team.",
+    "id": "legit_6",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://github.com/about/careers",
+    "company": "GitHub",
+    "email": "careers@github.com",
+    "desc": "Senior Frontend Engineer. Help build the home for all developers. Strong experience with React, TypeScript, and web accessibility required. Remote OK.",
+    "id": "legit_7",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.atlassian.com/company/careers",
+    "company": "Atlassian",
+    "email": "talent@atlassian.com",
+    "desc": "Join our Jira Software team as a Data Scientist. Use data to drive product decisions and improve user experience.",
+    "id": "legit_8",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://small-startup.io/jobs",
+    "company": "Small Startup",
+    "email": "founder@small-startup.io",
+    "desc": "We are a small but fast-growing startup building dev tools. Looking for a full-stack engineer who loves tinkering with Rust and React.",
+    "id": "legit_9",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://careers.tcs.com",
+    "company": "Tata Consultancy Services",
+    "email": "careers@tcs.com",
+    "desc": "TCS is hiring IT professionals across multiple domains. Apply online via our portal. Candidates must have a valid TCS reference number.",
+    "id": "legit_10",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.amazon.jobs/en/",
+    "company": "Amazon",
+    "email": "hiring@amazon.com",
+    "desc": "Software Development Engineer II. Amazon Web Services (AWS) is seeking an experienced engineer to help build scalable cloud services.",
+    "id": "legit_11",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.flipkartcareers.com/",
+    "company": "Flipkart",
+    "email": "ta@flipkart.com",
+    "desc": "Supply Chain Operations Manager. Optimize logistics and supply chain networks across India.",
+    "id": "legit_12",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://careers.uber.com/",
+    "company": "Uber",
+    "email": "eng-jobs@uber.com",
+    "desc": "iOS Engineer. Help improve the driver app experience. Deep understanding of Swift and Objective-C required.",
+    "id": "legit_13",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.apple.com/jobs/",
+    "company": "Apple",
+    "email": "careers@apple.com",
+    "desc": "Hardware Engineer. Join the team that designs the next generation of Apple silicon.",
+    "id": "legit_14",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.netflix.com/jobs",
+    "company": "Netflix",
+    "email": "talent@netflix.com",
+    "desc": "Senior Data Engineer. Build robust data pipelines to support our content recommendation algorithms.",
+    "id": "legit_15",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://careers.airbnb.com/",
+    "company": "Airbnb",
+    "email": "recruiting@airbnb.com",
+    "desc": "Data Analyst. Help us understand travel patterns and optimize our pricing models using SQL and Python.",
+    "id": "legit_16",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://slack.com/careers",
+    "company": "Slack",
+    "email": "jobs@slack.com",
+    "desc": "Customer Success Manager. Work closely with our enterprise clients to ensure they get the most out of Slack.",
+    "id": "legit_17",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.spotifyjobs.com/",
+    "company": "Spotify",
+    "email": "talent@spotify.com",
+    "desc": "Machine Learning Engineer. Improve our music recommendation engine to help users discover new artists.",
+    "id": "legit_18",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://careers.twitter.com/",
+    "company": "Twitter",
+    "email": "eng-recruiting@twitter.com",
+    "desc": "Site Reliability Engineer. Ensure Twitter remains highly available and scalable during major global events.",
+    "id": "legit_19",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://www.salesforce.com/company/careers/",
+    "company": "Salesforce",
+    "email": "careers@salesforce.com",
+    "desc": "Account Executive. Drive enterprise sales in the APAC region. 5+ years of B2B SaaS sales experience required.",
+    "id": "legit_20",
+    "label": "legit",
+    "split": "tune"
+  },
+  {
+    "url": "https://careers.adobe.com/",
+    "company": "Adobe",
+    "email": "talent@adobe.com",
+    "desc": "UX Designer. Create intuitive and beautiful interfaces for our Creative Cloud suite of applications.",
+    "id": "legit_21",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://careers.zoom.us/",
+    "company": "Zoom",
+    "email": "jobs@zoom.us",
+    "desc": "Security Engineer. Help secure our platform and protect user data from emerging threats.",
+    "id": "legit_22",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://careers.paypal.com/",
+    "company": "PayPal",
+    "email": "recruiting@paypal.com",
+    "desc": "Risk Analyst. Monitor transactions and identify patterns of fraudulent activity to protect our ecosystem.",
+    "id": "legit_23",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://www.oracle.com/corporate/careers/",
+    "company": "Oracle",
+    "email": "jobs@oracle.com",
+    "desc": "Database Administrator. Manage and optimize large-scale database deployments for our enterprise customers.",
+    "id": "legit_24",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://careers.ibm.com/",
+    "company": "IBM",
+    "email": "recruiting@ibm.com",
+    "desc": "Cloud Architect. Design and implement hybrid cloud solutions using IBM Cloud and Red Hat OpenShift.",
+    "id": "legit_25",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://jobs.cisco.com/",
+    "company": "Cisco",
+    "email": "careers@cisco.com",
+    "desc": "Network Engineer. Design, configure, and troubleshoot complex enterprise networks.",
+    "id": "legit_26",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://careers.intel.com/",
+    "company": "Intel",
+    "email": "talent@intel.com",
+    "desc": "Hardware Design Engineer. Work on the architecture and logic design of our next-generation microprocessors.",
+    "id": "legit_27",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://www.nvidia.com/en-us/about-nvidia/careers/",
+    "company": "NVIDIA",
+    "email": "jobs@nvidia.com",
+    "desc": "Deep Learning Software Engineer. Optimize deep learning frameworks for NVIDIA GPUs.",
+    "id": "legit_28",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://careers.vmware.com/",
+    "company": "VMware",
+    "email": "careers@vmware.com",
+    "desc": "Technical Support Engineer. Provide expert troubleshooting and support for VMware vSphere environments.",
+    "id": "legit_29",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "url": "https://www.samsung.com/global/careers/",
+    "company": "Samsung",
+    "email": "recruiting@samsung.com",
+    "desc": "Mobile Application Developer. Build innovative Android applications for our Galaxy ecosystem.",
+    "id": "legit_30",
+    "label": "legit",
+    "split": "hidden"
+  },
+  {
+    "id": "legit_mock_1",
+    "label": "legit",
+    "split": "tune",
+    "url": "https://amazon.jobs/en/roles/123",
+    "company": "Amazon",
+    "email": "hiring@amazon.com",
+    "desc": "Great job at Amazon doing software engineering.",
+    "evidence": {
+      "places": {
+        "checked": true,
+        "found": true,
+        "website": "https://www.amazon.com",
+        "name": "Amazon"
+      }
+    }
+  },
+  {
+    "id": "legit_mock_2",
+    "label": "legit",
+    "split": "tune",
+    "url": "https://smallstartup.com/careers",
+    "company": "Small Startup",
+    "email": "founders@smallstartup.com",
+    "desc": "We are a small startup looking for talented engineers. You will have a lot of responsibilities and good benefits.",
+    "evidence": {
+      "places": {
+        "checked": true,
+        "found": false
+      }
+    }
+  },
+  {
+    "id": "legit_mock_3",
+    "label": "legit",
+    "split": "tune",
+    "url": "https://www.linkedin.com/jobs/view/12345",
+    "company": "SomeCorp",
+    "email": "recruiter@somecorp.com",
+    "desc": "SomeCorp is hiring. We need your experience.",
+    "evidence": {
+      "places": {
+        "checked": true,
+        "found": true,
+        "website": "https://somecorp.com",
+        "name": "SomeCorp"
+      }
+    }
+  },
+  {
+    "id": "scam_mock_1",
+    "label": "scam",
+    "split": "tune",
+    "url": "https://amazon-jobs.xyz/apply",
+    "company": "Amazon",
+    "email": "recruiter@gmail.com",
+    "desc": "Work from home! Pay a  refundable deposit for your training kit. Earn daily payout.",
+    "evidence": {
+      "places": {
+        "checked": true,
+        "found": true,
+        "website": "https://www.amazon.com",
+        "name": "Amazon"
+      }
+    }
+  },
+  {
+    "id": "scam_mock_2",
+    "label": "scam",
+    "split": "tune",
+    "url": "https://apple-hr-india.in/jobs",
+    "company": "Apple",
+    "email": "hr@apple-hr-india.in",
+    "desc": "Immediate hiring. Please send your aadhaar copy and bank details.",
+    "evidence": {
+      "rdap": {
+        "createdAt": "2026-09-28T07:36:27.251Z"
+      }
+    }
+  },
+  {
+    "id": "scam_mock_3",
+    "label": "scam",
+    "split": "tune",
+    "url": "https://new-domain.com",
+    "company": "BigBank",
+    "email": "recruiter@different-domain.com",
+    "desc": "A well-written offer with standard requirements. Apply now.",
+    "evidence": {
+      "places": {
+        "checked": true,
+        "found": true,
+        "website": "https://bigbank.com",
+        "name": "BigBank"
+      }
+    }
+  }
+]

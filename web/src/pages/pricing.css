@@ -1,0 +1,683 @@
+/* =========================================================================
+   Pricing Page Styling
+   Equal-height cards, distinct highlighted Free primary tier,
+   responsive "Compare plans" table with sticky desktop header and
+   mobile accordion collapse, waitlist modal, and FAQ.
+   Follows system tokens: --section-gap, --container-max, dark palette.
+   ========================================================================= */
+
+.pricing-page-wrap {
+  padding-top: calc(var(--nav-height) + 24px);
+  padding-bottom: var(--section-gap);
+  min-height: 100vh;
+}
+
+/* Header Section */
+.pricing-hero {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 48px;
+}
+
+.pricing-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--brand, #4DA3FF);
+  margin-bottom: 10px;
+}
+
+.pricing-hero h1 {
+  font-size: clamp(30px, 4.5vw, 42px);
+  font-weight: 800;
+  color: var(--ink, #FFFFFF);
+  margin: 0 0 16px;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.pricing-hero p {
+  font-size: 16px;
+  color: var(--text-dim, #94A3B8);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Plan Cards Grid: Equal Height */
+.pricing-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: var(--section-gap);
+}
+
+@media (max-width: 960px) {
+  .pricing-cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Individual Plan Card */
+.pricing-plan-card {
+  background: var(--surface, #0B1120);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pricing-plan-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Highlighted Primary Plan (Free) */
+.pricing-plan-card.plan-highlighted {
+  border-color: rgba(77, 163, 255, 0.4);
+  background: linear-gradient(180deg, rgba(77, 163, 255, 0.06) 0%, var(--surface, #0B1120) 100%);
+  box-shadow: 0 0 24px rgba(77, 163, 255, 0.12);
+}
+
+.plan-badge-top {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+}
+
+.badge-available {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--risk-ok-text, #34D399);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.badge-soon {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim, #94A3B8);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.plan-header-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink, #FFFFFF);
+  margin: 0 0 8px;
+}
+
+.plan-price-wrap {
+  margin-bottom: 12px;
+}
+
+.plan-price-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink, #FFFFFF);
+  letter-spacing: -0.02em;
+}
+
+.plan-price-announced {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-dim, #94A3B8);
+  letter-spacing: -0.01em;
+}
+
+.plan-price-sub {
+  font-size: 12px;
+  color: var(--muted, #64748B);
+  margin-top: 4px;
+}
+
+.plan-desc {
+  font-size: 13.5px;
+  color: var(--text-dim, #94A3B8);
+  line-height: 1.55;
+  margin: 0 0 24px;
+  min-height: 42px;
+}
+
+/* Features list stretches middle of card */
+.plan-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1; /* Pushes bottom action button down so cards align */
+}
+
+.plan-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim, #94A3B8);
+  line-height: 1.5;
+}
+
+.plan-feature-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tag-planned {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim, #94A3B8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Card Bottom Action */
+.plan-card-action {
+  margin-top: auto;
+}
+
+.btn-card-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--brand, #4DA3FF);
+  color: #FFFFFF !important;
+  border: none;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 12px rgba(77, 163, 255, 0.25);
+}
+
+.btn-card-primary:hover {
+  background: #3B82F6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(77, 163, 255, 0.4);
+}
+
+.btn-card-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text, #F1F5F9);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-card-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+
+/* =========================================================================
+   Compare Plans Section
+   ========================================================================= */
+
+.pricing-compare-section {
+  margin-bottom: var(--section-gap);
+}
+
+.pricing-section-title-wrap {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 36px;
+}
+
+.pricing-section-title-wrap h2 {
+  font-size: clamp(24px, 3.5vw, 30px);
+  font-weight: 700;
+  color: var(--ink, #FFFFFF);
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.pricing-section-title-wrap p {
+  font-size: 15px;
+  color: var(--text-dim, #94A3B8);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Desktop Compare Table (>= 768px) */
+.compare-table-container {
+  display: block;
+  background: var(--surface, #0B1120);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .compare-table-container {
+    display: none;
+  }
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+/* Sticky Header on Desktop */
+.compare-table thead th {
+  position: sticky;
+  top: var(--nav-height);
+  background: #0B1324;
+  z-index: 10;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #FFFFFF);
+  backdrop-filter: blur(8px);
+}
+
+.compare-table thead th.col-feature {
+  width: 40%;
+}
+
+.compare-table thead th.col-plan {
+  width: 20%;
+  text-align: center;
+}
+
+.compare-table tbody tr.category-header-row td {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand, #4DA3FF);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compare-table tbody tr.feature-data-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.compare-table tbody tr.feature-data-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.compare-table tbody td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  font-size: 13.5px;
+  color: var(--text-dim, #94A3B8);
+}
+
+.compare-table tbody td.col-plan {
+  text-align: center;
+}
+
+.feature-meta strong {
+  display: block;
+  color: var(--ink, #FFFFFF);
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.feature-meta span {
+  display: block;
+  color: var(--muted, #64748B);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.check-icon-active {
+  color: var(--risk-ok-text, #34D399);
+}
+
+.dash-icon-empty {
+  color: var(--muted, #64748B);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Mobile Accordion View (< 768px) */
+.compare-mobile-accordion {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .compare-mobile-accordion {
+    display: flex;
+  }
+}
+
+.mobile-category-card {
+  background: var(--surface, #0B1120);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.mobile-category-title {
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand, #4DA3FF);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.03);
+  margin: 0;
+}
+
+.mobile-feature-item {
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.mobile-feature-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-feature-item strong {
+  display: block;
+  font-size: 14px;
+  color: var(--ink, #FFFFFF);
+  margin-bottom: 4px;
+}
+
+.mobile-feature-item p {
+  font-size: 12.5px;
+  color: var(--muted, #64748B);
+  margin: 0 0 10px;
+  line-height: 1.45;
+}
+
+.mobile-plan-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.mobile-plan-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-plan-name {
+  font-weight: 700;
+  color: var(--text-dim, #94A3B8);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+/* =========================================================================
+   FAQ Section
+   ========================================================================= */
+
+.pricing-faq-section {
+  max-width: 800px;
+  margin: 0 auto var(--section-gap);
+}
+
+.pricing-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pricing-faq-item {
+  background: var(--surface, #0B1120);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.pricing-faq-item:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.pricing-faq-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  background: transparent;
+  border: none;
+  color: var(--ink, #FFFFFF);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pricing-faq-trigger svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: var(--text-dim, #94A3B8);
+}
+
+.pricing-faq-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.pricing-faq-body {
+  padding: 0 20px 20px;
+  font-size: 14px;
+  color: var(--text-dim, #94A3B8);
+  line-height: 1.65;
+}
+
+.pricing-disclaimer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted, #64748B);
+  margin-top: 32px;
+}
+
+/* =========================================================================
+   Waitlist Modal
+   ========================================================================= */
+
+.waitlist-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 15, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.waitlist-modal-card {
+  background: var(--surface, #0B1120);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  padding: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+@keyframes modalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.waitlist-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim, #94A3B8);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.waitlist-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.waitlist-modal-header {
+  margin-bottom: 20px;
+}
+
+.waitlist-modal-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink, #FFFFFF);
+  margin: 0 0 6px;
+}
+
+.waitlist-modal-header p {
+  font-size: 13.5px;
+  color: var(--text-dim, #94A3B8);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.waitlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.waitlist-input-group label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text, #F1F5F9);
+  margin-bottom: 6px;
+}
+
+.waitlist-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--ink, #FFFFFF);
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.waitlist-input:focus {
+  border-color: var(--brand, #4DA3FF);
+  box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.15);
+}
+
+.waitlist-error-msg {
+  font-size: 12.5px;
+  color: var(--risk-bad-text, #F87171);
+  margin: 0;
+}
+
+.waitlist-friendly-note {
+  font-size: 13px;
+  color: var(--risk-warn-text, #FCD34D);
+  background: rgba(183, 121, 31, 0.12);
+  border: 1px solid rgba(183, 121, 31, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.waitlist-success-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 0 6px;
+}
+
+.waitlist-success-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--risk-ok-text, #34D399);
+  margin-bottom: 14px;
+}
+
+.waitlist-success-box h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink, #FFFFFF);
+  margin: 0 0 8px;
+}
+
+.waitlist-success-box p {
+  font-size: 14px;
+  color: var(--text-dim, #94A3B8);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+

@@ -1,0 +1,153 @@
+{
+  "rules": [
+    {
+      "id": "msg_kyc_pan_blocked",
+      "severity": "high",
+      "score": 90,
+      "reason": "Threat of account suspension or block due to unverified KYC, PAN, or Aadhaar",
+      "patterns": [
+        "(?:account|sim|card|services?|netbanking|yono)\\s+(?:will\\s+be|has\\s+been|is)\\s+(?:blocked|suspended|deactivated|closed|terminated|hold|locked)",
+        "(?:update|link|complete|verify)\\s+(?:your\\s+)?(?:kyc|pan|aadhaar|pan\\s+card|documents?)\\s+(?:immediately|urgently|today|within\\s+\\d+)",
+        "account\\s+band\\s+ho\\s+jayega",
+        "kyc\\s+(?:kraye|update\\s+kare|pending|expired)",
+        "b[\\s._-]*l[\\s._-]*o[\\s._-]*c[\\s._-]*k[\\s._-]*e[\\s._-]*d",
+        "k[\\s._-]*y[\\s._-]*c.*(?:update|verify|suspend)"
+      ]
+    },
+    {
+      "id": "msg_fake_utility_courier_notice",
+      "severity": "high",
+      "score": 85,
+      "reason": "Fake electricity disconnection, gas, tax notice, or customs parcel threat",
+      "patterns": [
+        "(?:electricity|power|bijli).*?(?:disconnected|cut|shutdown).*?tonight",
+        "(?:electricity|power|bijli)\\s+(?:power\\s+)?(?:will\\s+be\\s+)?(?:disconnected|cut|shutdown)\\s+tonight",
+        "bijli\\s+bill\\s+(?:not\\s+paid|baki\\s+hai|jama\\s+kare)",
+        "(?:gas|indianoil|bharatgas)\\s+(?:connection|cylinder|delivery|subsidy)\\s+(?:suspended|failed|block)",
+        "(?:courier|parcel|shipment|fedex|dhl)\\s+.*?(?:customs|held|seized|detained|duty|charges|drugs|narcotics)",
+        "(?:income\\s+tax|it\\s+dept|tax\\s+refund).*?(?:approved|credit|claim).*?(?:click|link|http)"
+      ]
+    },
+    {
+      "id": "msg_digital_arrest_officer_threat",
+      "severity": "high",
+      "score": 95,
+      "reason": "Impersonation of law enforcement, CBI, customs, or 'digital arrest' coercion",
+      "patterns": [
+        "digital\\s+arrest",
+        "(?:police|cbi|customs|narcotics|crime\\s+branch|inspector|officer).*?(?:arrest|warrant|illegal|drugs|passports|money\\s+laundering|seized|fir)",
+        "(?:stay|do\\s+not\\s+disconnect)\\s+(?:on\\s+)?(?:video\\s+call|skype|call)",
+        "arrest\\s+warrant\\s+issued"
+      ]
+    },
+    {
+      "id": "msg_otp_credential_request",
+      "severity": "high",
+      "score": 90,
+      "reason": "Requesting OTP, password, CVV, or security credentials",
+      "patterns": [
+        "(?:share|tell|send|provide|give|forward)\\s+(?:your|this)?\\s*(?:otp|one\\s+time\\s+password|cvv|password|pin|code)\\s+(?:to|with|on)",
+        "(?:share|tell|send|provide)\\s+(?:your|this)?\\s*(?:otp|code).*?(?:with|to)",
+        "otp\\s+(?:batao|share\\s+karo|send\\s+kare)",
+        "(?:cancel|stop|prevent)\\s+(?:fraud|unauthorized|transaction).*?(?:share|provide)\\s+otp"
+      ]
+    },
+    {
+      "id": "msg_task_job_scam",
+      "severity": "high",
+      "score": 90,
+      "reason": "Telegram or WhatsApp task scam: like/review/follow for pay or deposit to unlock tasks",
+      "patterns": [
+        "(?:like|subscribe|review|follow)\\s+(?:youtube|videos?|google\\s+maps?|hotels?|products?).*?(?:earn|pay|rs\\.?|daily)",
+        "(?:part\\s*time|work\\s+from\\s+home).*?(?:earn|salary)\\s+(?:rs\\.?|inr)?\\s*\\d{3,5}\\s*(?:daily|per\\s+day|per\\s+hour)",
+        "(?:deposit|recharge|pay)\\s+(?:rs\\.?|inr)?\\s*\\d+.*?(?:unlock|vip|higher\\s+task|commission)",
+        "telegram\\s+(?:task|group|channel).*?(?:earn|commission|deposit)"
+      ]
+    },
+    {
+      "id": "msg_investment_crypto_tips",
+      "severity": "high",
+      "score": 85,
+      "reason": "Unsolicited investment, crypto, or stock market tip groups promising guaranteed returns",
+      "patterns": [
+        "(?:guaranteed|sure\\s+shot|100%|risk\\s*free)\\s+(?:returns?|profit|gain|call)",
+        "(?:daily|weekly)\\s+\\d+[%]\\s+(?:return|profit)",
+        "vip\\s+(?:crypto|trading|stock|investment)\\s+(?:group|channel|tips)",
+        "(?:double|triple)\\s+your\\s+money\\s+(?:in|within)\\s+\\d+"
+      ]
+    },
+    {
+      "id": "msg_lottery_prizes",
+      "severity": "high",
+      "score": 85,
+      "reason": "Lottery, prize, or contest winning notifications with contact claim numbers",
+      "patterns": [
+        "(?:kbc|lucky\\s+draw|lottery|mega\\s+prize).*?(?:winner|won|claimed|selected)",
+        "(?:congratulations|badhai).*?(?:won|selected\\s+for).*?(?:car|cash|rs\\.?|prize|jackpot)",
+        "lottery\\s+number\\s*[:#]?\\s*\\w+"
+      ]
+    },
+    {
+      "id": "msg_remote_access_apps",
+      "severity": "high",
+      "score": 90,
+      "reason": "Instructions to install remote desktop or screen-sharing tools",
+      "patterns": [
+        "(?:install|download)\\s+(?:anydesk|teamviewer|rustdesk|quicksupport|zoho\\s+assist|screenshare)",
+        "(?:share|provide)\\s+(?:your\\s+)?(?:9|10)\\s*digit\\s+(?:code|id|number).*?(?:screen|support|access)"
+      ]
+    },
+    {
+      "id": "msg_suspicious_customer_care",
+      "severity": "medium",
+      "score": 65,
+      "reason": "Urgent prompt to call an unverified mobile number for official customer support",
+      "patterns": [
+        "(?:contact|call|reach)\\s+(?:customer\\s+care|support|officer|manager|helpline)\\s+(?:at|on|number)?\\s*[:=]?\\s*(?:\\+?91)?[6-9]\\d{9}",
+        "helpline\\s+number\\s*[:=]?\\s*(?:\\+?91)?[6-9]\\d{9}"
+      ]
+    },
+    {
+      "id": "msg_suspicious_links_apk",
+      "severity": "high",
+      "score": 85,
+      "reason": "Link pointing to direct .apk file or suspicious executable download",
+      "patterns": [
+        "https?://\\S+\\.apk(?:\\?\\S*)?",
+        "download\\s+app\\s+from\\s+https?://",
+        "install\\s+our\\s+apk"
+      ]
+    }
+  ],
+  "benignRules": [
+    {
+      "id": "msg_benign_transactional_otp",
+      "reduction": 60,
+      "reason": "Standard automated OTP security dispatch with warning not to share",
+      "patterns": [
+        "(?:one\\s+time\\s+password|otp\\s+is|otp\\s+for|verification\\s+code\\s+is)\\s*[:=]?\\s*\\d{4,8}",
+        "(?:do\\s+not|never)\\s+share\\s+(?:this\\s+)?(?:otp|code|pin)\\s+(?:with\\s+anyone|including\\s+bank\\s+staff|anybody)",
+        "valid\\s+for\\s+\\d+\\s+minutes?"
+      ]
+    },
+    {
+      "id": "msg_benign_delivery_notice",
+      "reduction": 50,
+      "reason": "Standard e-commerce delivery notice without links or payment demands",
+      "patterns": [
+        "(?:package|order|shipment)\\s+.*?has\\s+been\\s+delivered",
+        "delivered\\s+(?:by|to\\s+your|at\\s+front\\s+door)",
+        "thank\\s+you\\s+for\\s+(?:shopping|ordering)\\s+with"
+      ]
+    },
+    {
+      "id": "msg_benign_casual_chat",
+      "reduction": 45,
+      "reason": "Casual personal, family, or work conversation",
+      "patterns": [
+        "(?:are\\s+you\\s+free|let'?s\\s+catch\\s+up|happy\\s+birthday|how\\s+are\\s+you|call\\s+me\\s+when|kal\\s+milte\\s+hain|meeting\\s+at|sprint\\s+review)",
+        "(?:coffee|lunch|dinner|weekend|movie|office|homework|assignment)"
+      ]
+    }
+  ]
+}

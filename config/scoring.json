@@ -1,0 +1,108 @@
+{
+  "levels": {
+    "okBelow": 25,
+    "warnBelow": 55
+  },
+  "checkWeights": {
+    "url": 20,
+    "desc": 30,
+    "company": 15,
+    "recruiter": 20,
+    "security": 15
+  },
+  "combine": {
+    "hardSignalScore": 90,
+    "hardSignalFloor": 70,
+    "strongCheckScore": 55,
+    "strongChecksNeeded": 2,
+    "strongChecksFloor": 60,
+    "minChecksForVerdict": 2,
+    "singleCheckVerdictMin": 55,
+    "lowBelow": 25,
+    "mediumBelow": 55
+  },
+  "url": {
+    "base": 10,
+    "knownBoard": 5,
+    "invalid": 80,
+    "noHttps": 25,
+    "rawIp": 40,
+    "shortener": 35,
+    "badTld": 30,
+    "siteBuilder": 25,
+    "chatOrForm": 35,
+    "punycode": 30,
+    "manySubdomainsOver": 4,
+    "manySubdomains": 15,
+    "manyHyphensAtLeast": 3,
+    "manyHyphens": 15,
+    "atSign": 40,
+    "brandLookalike": 35,
+    "hiringWords": 10
+  },
+  "company": {
+    "placesFound": 10,
+    "fewReviewsUnder": 5,
+    "fewReviewsAdd": 15,
+    "websiteMismatchAdd": 30,
+    "notFound": 65,
+    "nameMatchNoPlaces": 15,
+    "nameMismatchNoPlaces": 55,
+    "nameMismatchWithPlacesAdd": 10,
+    "nameTokenMinLength": 4,
+    "nameDomainMinLength": 4,
+    "maxScore": 100
+  },
+  "recruiter": {
+    "base": 10,
+    "malformed": 80,
+    "disposable": 95,
+    "freeMail": 65,
+    "matched": 8,
+    "lookalike": 90,
+    "mismatch": 60,
+    "noReference": 30,
+    "lookalikeMaxDistance": 2,
+    "lookalikeMinLabelLength": 5
+  },
+  "security": {
+    "youngDomainDays": 30,
+    "youngDomainScore": 90,
+    "newDomainDays": 180,
+    "newDomainScore": 55,
+    "oldDomainScore": 5,
+    "yearsDisplayDays": 730,
+    "monthsDisplayDays": 60,
+    "urlhausListed": 100,
+    "urlhausClean": 5,
+    "virustotalMaliciousStrong": 3,
+    "virustotalStrongScore": 100,
+    "virustotalSomeScore": 60,
+    "virustotalCleanScore": 5
+  },
+  "ai": {
+    "warnAtRisk": 55
+  },
+  "verdicts": {
+    "low": [
+      "Low risk",
+      "No strong scam signals in the evidence available. Still confirm the role on the company's own website."
+    ],
+    "medium": [
+      "Medium risk",
+      "Some warning signs showed up. Verify the company and recruiter independently before sharing anything."
+    ],
+    "high": [
+      "High risk",
+      "Several strong scam signals. Do not pay money or share identity or bank details."
+    ],
+    "unknown": [
+      "Unable to verify",
+      "There is not enough evidence to judge this offer. Add more details or enable the live API backend."
+    ]
+  },
+  "confidence": {
+    "base": 50,
+    "max": 100
+  }
+}

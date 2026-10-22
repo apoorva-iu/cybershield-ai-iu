@@ -1,0 +1,17 @@
+{
+  "freeMail": ["gmail.com","googlemail.com","yahoo.com","yahoo.in","yahoo.co.in","outlook.com","hotmail.com","live.com","rediffmail.com","aol.com","icloud.com","proton.me","protonmail.com","mail.com","gmx.com","yandex.com","zoho.in"],
+  "disposableMail": ["mailinator.com","10minutemail.com","guerrillamail.com","tempmail.com","temp-mail.org","yopmail.com","trashmail.com","sharklasers.com","getnada.com"],
+  "jobBoards": ["linkedin.com","indeed.com","naukri.com","glassdoor.com","monster.com","foundit.in","wellfound.com","shine.com","timesjobs.com","bayt.com","naukrigulf.com","reed.co.uk","totaljobs.com","ziprecruiter.com","greenhouse.io","lever.co","workable.com","myworkdayjobs.com","smartrecruiters.com"],
+  "shorteners": ["bit.ly","tinyurl.com","t.co","goo.gl","ow.ly","is.gd","cutt.ly","rb.gy","shorturl.at","tiny.cc","rebrand.ly","wa.link"],
+  "badTlds": ["xyz","top","click","work","loan","icu","cfd","sbs","buzz","rest","gq","tk","ml","ga","cf","monster","cyou","quest"],
+  "siteBuilders": ["wixsite.com","blogspot.com","weebly.com","github.io","000webhostapp.com","webflow.io","carrd.co","sites.google.com","wordpress.com","godaddysites.com"],
+  "chatAndFormHosts": ["wa.me","t.me","chat.whatsapp.com","api.whatsapp.com","telegram.me","forms.gle","docs.google.com"],
+  "secondLevelSuffixes": ["co.uk","org.uk","co.in","net.in","org.in","com.au","co.za","com.sg","co.ae","com.br","co.nz","com.pk"],
+  "companySuffixWords": "pvt|private|ltd|limited|llc|inc|corp|corporation|llp|plc|gmbh|fzco|fze|co|company|the",
+  "brandHints": {
+    "amazon": "amazon.com", "google": "google.com", "microsoft": "microsoft.com", "infosys": "infosys.com",
+    "tcs": "tcs.com", "wipro": "wipro.com", "deloitte": "deloitte.com", "accenture": "accenture.com",
+    "flipkart": "flipkart.com", "cognizant": "cognizant.com", "hcl": "hcltech.com",
+    "emirates": "emirates.com", "etisalat": "etisalat.ae"
+  }
+}

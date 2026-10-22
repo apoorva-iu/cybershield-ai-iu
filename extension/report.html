@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber Shield - Verification Report</title>
+  <style>
+    /* System fonts and dark theme matching the website */
+    :root {
+      --bg: #05080F;
+      --surface: #0B1220;
+      --surface-2: #101B2E;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.05);
+      --text: #FFFFFF;
+      --text-muted: #C9D3E3;
+      --primary: #0A66C2;
+      --accent: #4DA3FF;
+      --low: #12805C;
+      --med: #B7791F;
+      --high: #C62828;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      padding: 32px 20px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      transition: background 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--surface-2);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: #095196;
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    /* Verdict Card */
+    .verdict {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .v-low { border-left-color: var(--low); }
+    .v-med, .v-medium { border-left-color: var(--med); }
+    .v-high, .v-critical { border-left-color: var(--high); }
+    .v-unknown { border-left-color: #64748B; }
+
+    .lvl {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .v-sub {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+
+    .v-chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .v-chip {
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .gauge-wrap {
+      text-align: center;
+    }
+
+    .score-num {
+      font-size: 36px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+
+    .score-cap {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Check Cards Grid */
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .check-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .chead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .chead h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: capitalize;
+    }
+
+    .pill.s-ok { background: rgba(18, 128, 92, 0.2); color: #34D399; }
+    .pill.s-warn { background: rgba(183, 121, 31, 0.2); color: #FBBF24; }
+    .pill.s-bad { background: rgba(198, 40, 40, 0.2); color: #F87171; }
+    .pill.s-unknown { background: rgba(100, 116, 139, 0.2); color: #94A3B8; }
+
+    ul.notes {
+      list-style: none;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    ul.notes li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .d-warn, .d-bad { background: #F87171; }
+    .d-info, .d-ok { background: #34D399; }
+
+    .source-chip {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* Proof Card */
+    .proof-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .proof-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .proof-item label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .proof-item .val {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      word-break: break-all;
+    }
+
+    /* ==========================================================================
+       PRINT STYLESHEET (MATCHING WEBSITE layout.css & scan.css)
+       ========================================================================== */
+    @media print {
+      html, body, .container {
+        background: #FFFFFF !important;
+        color: #111827 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .no-print, .top-actions {
+        display: none !important;
+      }
+
+      .print-only {
+        display: block !important;
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827 !important;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #111827;
+      }
+
+      .verdict, .check-card, .proof-card {
+        background: #FFFFFF !important;
+        color: #111827 !important;
+        border: 1px solid #D1D5DB !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        margin-bottom: 16px;
+      }
+
+      .verdict .lvl, .verdict p, .chead h3, ul.notes li, .proof-card h3,
+      .proof-item .val, .score-num, .small, .v-sub {
+        color: #111827 !important;
+      }
+
+      .v-chip, .source-chip {
+        background: #F3F4F6 !important;
+        color: #111827 !important;
+        border: 1px solid #D1D5DB !important;
+      }
+
+      .pill {
+        border: 1px solid #9CA3AF !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-actions no-print">
+      <div class="brand">
+        <svg width="24" height="24" viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" rx="25" fill="#0A66C2" />
+          <path d="M 50 20 L 76 28 C 76 54 64 69 50 80 C 36 69 24 54 24 28 Z" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" />
+          <path d="M 50 28 L 68 34 C 68 53 59 63 50 72 C 41 63 32 53 32 34 Z" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" />
+          <path d="M 50 37 L 60 41 C 60 52 55 58 50 63 C 45 58 40 52 40 41 Z" fill="#FFFFFF" />
+        </svg>
+        <span>Cyber Shield</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-primary" onclick="window.print()">Save as PDF</button>
+        <button type="button" class="btn" onclick="window.close()">Close</button>
+      </div>
+    </div>
+
+    <div class="print-only">
+      Cyber Shield - Verification Report
+    </div>
+
+    <div id="report-content">
+      <p style="color: var(--text-muted); font-size: 14px;">Loading report data...</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      function render(d) {
+        if (!d) {
+          document.getElementById('report-content').innerHTML = '<p>No report data found.</p>';
+          return;
+        }
+
+        const o = d.report ? (d.report.overall || {}) : {};
+        const score = typeof o.score === 'number' ? o.score : (typeof d.score === 'number' ? d.score : null);
+        const level = String(o.level || d.level || 'unknown').toLowerCase();
+        const confidence = typeof o.confidence === 'number' ? o.confidence : 0;
+        const liveCount = typeof d.live === 'number' ? d.live : (typeof o.live === 'number' ? o.live : 0);
+        const headline = Array.isArray(d.headline) ? d.headline : [d.headline || 'Verification Completed', ''];
+        const title = headline[0] || 'Verification Completed';
+        const sentence = headline[1] || '';
+
+        const checks = (d.report && Array.isArray(d.report.checks)) ? d.report.checks : [];
+        const sources = (d.report && Array.isArray(d.report.sources)) ? d.report.sources : [];
+
+        let timeFormatted = '—';
+        if (typeof d.timestamp === 'string') {
+          timeFormatted = d.timestamp.replace('T', ' ').slice(0, 19);
+        } else if (d.timestamp) {
+          timeFormatted = String(d.timestamp);
+        }
+
+        const checksHtml = checks.map(function(c, i) {
+          const findings = Array.isArray(c.findings) ? c.findings : [];
+          const state = c.state || 'unknown';
+          const notesHtml = findings.map(function(n) {
+            const sev = n.severity || 'info';
+            return '<li><span class="dot d-' + sev + '"></span><span>' + (n.text || '') + '</span></li>';
+          }).join('');
+
+          return '<div class="check-card">' +
+            '<div class="chead">' +
+              '<h3>' + (c.title || c.key || ('Check ' + (i + 1))) + '</h3>' +
+              '<span class="pill s-' + state + '">' + state + '</span>' +
+            '</div>' +
+            '<ul class="notes">' + notesHtml + '</ul>' +
+          '</div>';
+        }).join('');
+
+        const sourcesText = sources.length ? sources.join(', ') : 'none of the live services answered';
+
+        const html =
+          '<div class="verdict v-' + level + '">' +
+            '<div>' +
+              '<h2 class="lvl">' + title + '</h2>' +
+              '<p class="v-sub">' + sentence + '</p>' +
+              '<div class="v-chips">' +
+                '<span class="v-chip">' + liveCount + ' of 5 checks had evidence</span>' +
+                '<span class="v-chip">Confidence ' + confidence + '%</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="gauge-wrap">' +
+              '<div class="score-num">' + (score != null ? score : '—') + '</div>' +
+              '<div class="score-cap">Risk score of 100</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="report-grid">' + checksHtml + '</div>' +
+          '<p class="small">Sources used: ' + sourcesText + '. Screening aid, not a legal finding.</p>' +
+          '<div class="proof-card">' +
+            '<h3>Your scan proof</h3>' +
+            '<div class="proof-grid">' +
+              '<div class="proof-item"><label>Proof ID</label><div class="val">' + (d.proofId || '—') + '</div></div>' +
+              '<div class="proof-item"><label>Block number</label><div class="val">' + (d.block != null ? d.block : '—') + '</div></div>' +
+              '<div class="proof-item"><label>Time (UTC)</label><div class="val">' + timeFormatted + '</div></div>' +
+              '<div class="proof-item" style="grid-column: 1 / -1;"><label>Block hash</label><div class="val">' + (d.blockHash || '—') + '</div></div>' +
+            '</div>' +
+          '</div>';
+
+        document.getElementById('report-content').innerHTML = html;
+
+        // Automatically trigger print dialog
+        setTimeout(function() {
+          window.print();
+        }, 300);
+      }
+
+      // Read report data from sessionStorage, chrome.storage or URL hash
+      try {
+        if (window.location.hash && window.location.hash.length > 1) {
+          const raw = decodeURIComponent(window.location.hash.slice(1));
+          const data = JSON.parse(raw);
+          render(data);
+          return;
+        }
+      } catch (e) {}
+
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['pendingReport'], function(res) {
+          if (res && res.pendingReport) {
+            render(res.pendingReport);
+          } else {
+            render(null);
+          }
+        });
+      } else {
+        render(null);
+      }
+    })();
+  </script>
+</body>
+</html>
+

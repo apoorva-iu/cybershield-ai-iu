@@ -1,0 +1,203 @@
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.section {
+  padding: calc(var(--section-gap) / 2) 0;
+  background-color: var(--bg);
+  border-bottom: none;
+}
+
+.section-alt {
+  background-color: var(--bg);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-btn);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid transparent;
+  text-decoration: none !important;
+  box-sizing: border-box;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: var(--primary, #0A66C2);
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(10, 102, 194, 0.35);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover, #004182);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--accent-cyan, #22D3EE) !important;
+  border: 1px solid var(--primary, #0A66C2);
+}
+
+.btn-outline:hover {
+  background-color: rgba(10, 102, 194, 0.15);
+  border-color: var(--accent-cyan, #22D3EE);
+}
+
+.btn-secondary {
+  background-color: var(--surface);
+  color: var(--text) !important;
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-dim) !important;
+}
+
+.btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text) !important;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--r-card, 16px);
+  padding: 24px;
+  box-shadow: var(--shadow-base);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.badge-neutral {
+  background: var(--risk-unknown-bg);
+  color: var(--risk-unknown-text);
+  border: 1px solid var(--risk-unknown);
+}
+
+.badge-low {
+  background: var(--risk-low-bg);
+  color: var(--risk-low-text);
+  border: 1px solid var(--risk-low);
+}
+
+.badge-medium {
+  background: var(--risk-medium-bg);
+  color: var(--risk-medium-text);
+  border: 1px solid var(--risk-medium);
+}
+
+.badge-high {
+  background: var(--risk-high-bg);
+  color: var(--risk-high-text);
+  border: 1px solid var(--risk-high);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--r-base);
+}
+
+.accordion {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card, 16px);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.accordion-item {
+  border-bottom: 1px solid var(--border);
+}
+
+.accordion-item:last-child {
+  border-bottom: none;
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.accordion-icon {
+  color: var(--text-dim);
+  transition: transform 0.3s ease;
+}
+
+.accordion-icon.rotate {
+  transform: rotate(180deg);
+  color: var(--accent-cyan);
+}
+
+.accordion-content-wrapper {
+  overflow: hidden;
+  transition: height 0.3s ease;
+}
+
+.accordion-content {
+  padding: 0 var(--space-3) var(--space-3);
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

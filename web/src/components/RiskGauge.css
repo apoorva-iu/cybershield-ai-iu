@@ -1,0 +1,52 @@
+.risk-gauge-container {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.risk-gauge-svg-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.risk-gauge-svg {
+  transform: rotate(-90deg);
+}
+
+.risk-gauge-bg {
+  stroke: var(--line);
+}
+
+.risk-gauge-progress {
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.risk-gauge-score-text {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 700;
+  text-anchor: middle;
+  transform: rotate(90deg) translate(0, -100px);
+  transform-origin: center;
+}
+
+.risk-gauge-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.risk-gauge-title {
+  font-size: 14px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.risk-gauge-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+

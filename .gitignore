@@ -1,0 +1,32 @@
+# secrets - NEVER push
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# dependencies
+node_modules/
+
+# local data and test files
+data/
+tests/temp_ledger*.json
+last_user_input.json
+
+# build outputs (can be rebuilt with npm run build:all)
+extension/dist/
+public/assets/
+public/downloads/
+web/public/downloads/
+
+# logs, OS and editor files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+
+# local backups
+backup*/
+*-backup/
+*.bak

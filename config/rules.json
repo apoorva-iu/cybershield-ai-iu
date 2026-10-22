@@ -1,0 +1,102 @@
+{
+  "descriptionRules": [
+    {
+      "id": "rule_1",
+      "weight": 45,
+      "pattern": "((registration|security|training|processing|application|refundable|onboarding|kit|laptop|equipment|verification|interview)\\s+(fee|deposit|charges?|amount))|pay\\s+(a\\s+)?(small\\s+)?(fee|deposit)|(send|transfer|deposit)\\s+(rs\\.?|inr|usd|aed|\\$|₹)?\\s*\\d{3,}",
+      "flags": "i",
+      "text": "Asks you to pay money before or to get the job.",
+      "severity": "bad"
+    },
+    {
+      "id": "rule_2",
+      "weight": 35,
+      "pattern": "(cheque|check)\\s+(deposit|will be sent|to buy|to purchase)|crypto|bitcoin|gift\\s?cards?|re-?ship|parcel forwarding|payment processing agent",
+      "flags": "i",
+      "text": "Mentions cheques, crypto, gift cards or reshipping, typical of payment scams.",
+      "severity": "bad"
+    },
+    {
+      "id": "rule_3",
+      "weight": 30,
+      "pattern": "aadhaar|aadhar|passport (copy|number|scan)|\\bssn\\b|social security|bank (account|details|statement)|credit card|debit card|\\botp\\b|pan card|emirates id",
+      "flags": "i",
+      "text": "Requests identity or bank details at the offer stage.",
+      "severity": "bad"
+    },
+    {
+      "id": "rule_4",
+      "weight": 30,
+      "pattern": "earn\\s+(up to\\s+)?(rs\\.?|inr|₹|\\$|aed)?\\s*[\\d,]{4,}\\s*(per|\\/|a)\\s*(day|week|hour)|daily (payout|payment|income)|weekly payout|easy money|work (only )?\\d\\s*hours?.{0,25}(earn|₹|\\$|aed)",
+      "flags": "i",
+      "text": "Promises unusually high or daily pay for little work.",
+      "severity": "bad"
+    },
+    {
+      "id": "rule_5",
+      "weight": 25,
+      "pattern": "(no|without)\\s+(an\\s+)?(interview|resume|cv)|direct (joining|offer)|selected without|instant (hiring|joining|offer)|you (have been|are) (selected|shortlisted) (without|directly)",
+      "flags": "i",
+      "text": "Offers the job without a real interview or screening.",
+      "severity": "bad"
+    },
+    {
+      "id": "rule_6",
+      "weight": 25,
+      "pattern": "guarantee[d]?\\s+(a\\s+)?(job|placement|income|salary)|100%\\s+(placement|job)",
+      "flags": "i",
+      "text": "Guarantees a job or income, which legitimate employers cannot do.",
+      "severity": "bad"
+    },
+    {
+      "id": "rule_7",
+      "weight": 25,
+      "pattern": "whatsapp|telegram|signal app|text us on|contact (us )?on wa",
+      "flags": "i",
+      "text": "Moves the conversation to WhatsApp or Telegram.",
+      "severity": "warn"
+    },
+    {
+      "id": "rule_8",
+      "weight": 20,
+      "pattern": "[a-z0-9._%+-]+@(gmail|yahoo|outlook|hotmail|rediffmail)\\.[a-z.]+",
+      "flags": "i",
+      "text": "Gives a free mailbox address as the company contact.",
+      "severity": "warn"
+    },
+    {
+      "id": "rule_9",
+      "weight": 15,
+      "pattern": "no (skills|experience|qualification)s? (is |are )?(required|needed)|any (qualification|graduate)|data entry|typing job|form filling|(like|subscribe) (to )?(youtube|videos)|task[- ]based",
+      "flags": "i",
+      "text": "Uses vague, low-skill task wording common in work-from-home scams.",
+      "severity": "warn"
+    },
+    {
+      "id": "rule_10",
+      "weight": 12,
+      "pattern": "urgent(ly)?|apply (immediately|today|now)|limited (seats|slots|vacanc)|hurry|last chance|offer expires|within 24 hours",
+      "flags": "i",
+      "text": "Applies time pressure to rush your decision.",
+      "severity": "warn"
+    }
+  ],
+  "shortDescriptionLength": 200,
+  "shortDescriptionPenalty": 10,
+  "goodSectionKeywords": [
+    "responsibilit",
+    "requirement",
+    "qualification",
+    "about the (company|role)",
+    "benefits",
+    "experience"
+  ],
+  "goodSectionsMin": 3,
+  "goodSectionsScoreCeiling": 40,
+  "goodSectionsReduction": 10,
+  "hiringWordsPattern": "(job|career|hiring|offer|recruit|vacanc)",
+  "roleMailboxPattern": "^(hr|careers?|jobs?|recruit(ment|er)?|talent|hiring)@",
+  "emailPattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$",
+  "foundSnippetLength": 60,
+  "ipPattern": "^\\d{1,3}(\\.\\d{1,3}){3}$"
+}
