@@ -605,7 +605,7 @@ export function Header() {
 
                   <Link
                     ref={(el) => (accountItemsRef.current[2] = el)}
-                    to="/dashboard/plan"
+                    to="/pricing"
                     role="menuitem"
                     className="dropdown-menu-item"
                     onClick={closeAllMenus}
@@ -792,7 +792,7 @@ export function Header() {
                       Settings
                     </Link>
                     <Link
-                      to="/dashboard/plan"
+                      to="/pricing"
                       className="drawer-btn-outline"
                       onClick={() => setMobileDrawerOpen(false)}
                     >

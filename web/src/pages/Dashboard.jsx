@@ -1734,17 +1734,17 @@ export function DashboardPlan() {
             <span className="feature-pill-badge pill-active">Current plan</span>
             <h2 className="pricing-card-title">Free</h2>
             <p className="pricing-card-desc">
-              Automated job screening for individual job seekers with saved scan history.
+              Essential screening for job offers, UPI requests, and messages with saved history.
             </p>
           </div>
           <ul className="pricing-features-list">
             <li>
               <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
-              <span>Five live parallel checks</span>
+              <span>Job, UPI and Message checks</span>
             </li>
             <li>
               <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
-              <span>Save scans to your account history</span>
+              <span>5 checks per month with saved history</span>
             </li>
             <li>
               <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
@@ -1752,87 +1752,55 @@ export function DashboardPlan() {
             </li>
             <li>
               <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
-              <span>Delete scans or your account any time</span>
+              <span>PDF and JSON receipts download</span>
             </li>
           </ul>
           <div className="pricing-card-action">
             <Link
               to="/dashboard/scan"
               className="dash-btn-primary"
-              style={{ width: '100%' }}
+              style={{ width: '100%', textAlign: 'center' }}
             >
               Scan a job
             </Link>
           </div>
         </div>
 
-        {/* 2. Pro (Coming soon) */}
+        {/* 2. Pro */}
         <div className="pricing-card">
           <div className="pricing-card-header">
-            <span className="feature-pill-badge pill-soon">Coming soon</span>
+            <span className="feature-pill-badge pill-soon">Pro</span>
             <h2 className="pricing-card-title">Pro</h2>
             <p className="pricing-card-desc">
-              Expanded screening throughput and early access to browser tooling.
+              Expanded check allowance and permanent history retention for active screening.
             </p>
           </div>
           <ul className="pricing-features-list">
             <li>
               <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Batch screening for multiple postings</span>
+              <span>Everything in Free</span>
             </li>
             <li>
               <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Browser extension priority access</span>
+              <span>Up to 100 checks in 30 days</span>
             </li>
             <li>
               <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Exportable verification receipts</span>
+              <span>Saved history and receipts for every check</span>
+            </li>
+            <li>
+              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
+              <span>Same Proof ID verification and downloads</span>
             </li>
           </ul>
           <div className="pricing-card-action">
-            <button
-              type="button"
-              className="btn-disabled"
-              disabled
-              style={{ width: '100%' }}
+            <Link
+              to="/pricing"
+              className="dash-btn-primary"
+              style={{ width: '100%', textAlign: 'center' }}
             >
-              Coming soon
-            </button>
-          </div>
-        </div>
-
-        {/* 3. Teams (Coming soon) */}
-        <div className="pricing-card">
-          <div className="pricing-card-header">
-            <span className="feature-pill-badge pill-soon">Coming soon</span>
-            <h2 className="pricing-card-title">Teams</h2>
-            <p className="pricing-card-desc">
-              Screening infrastructure for campus placement cells and employer verification.
-            </p>
-          </div>
-          <ul className="pricing-features-list">
-            <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Recruiter domain impersonation alerts</span>
-            </li>
-            <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Placement drive batch screening</span>
-            </li>
-            <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Team ledger verification audit trail</span>
-            </li>
-          </ul>
-          <div className="pricing-card-action">
-            <button
-              type="button"
-              className="btn-disabled"
-              disabled
-              style={{ width: '100%' }}
-            >
-              Coming soon
-            </button>
+              Upgrade for ₹1
+            </Link>
           </div>
         </div>
       </div>

@@ -1374,16 +1374,18 @@
 }
 
 /* ==========================================================================
-   PRICING CARDS (FREE, PRO, TEAMS)
+   PRICING CARDS (FREE, PRO)
    ========================================================================== */
 
 .pricing-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  max-width: 880px;
+  margin: 0 auto;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .pricing-cards-grid {
     grid-template-columns: 1fr;
   }

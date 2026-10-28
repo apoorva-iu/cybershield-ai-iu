@@ -351,7 +351,7 @@ export const Helpline1930 = () => (
 export const Pricing = () => (
   <StubPage
     title="Pricing"
-    description="Transparent screening aid plans for individuals and institutions."
+    description="Transparent screening aid plans for individuals."
   >
     <PricingCards />
   </StubPage>

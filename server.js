@@ -1103,7 +1103,7 @@ const waitlistLimiter = rateLimit({
 
 const inMemoryWaitlist = new Set();
 const WAITLIST_EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const WAITLIST_PLANS = new Set(['pro', 'teams']);
+const WAITLIST_PLANS = new Set(['pro']);
 let waitlistTablePresent = true;
 
 app.post('/api/waitlist', waitlistLimiter, async (req, res) => {
@@ -1119,7 +1119,7 @@ app.post('/api/waitlist', waitlistLimiter, async (req, res) => {
   }
 
   if (!rawPlan || !WAITLIST_PLANS.has(rawPlan)) {
-    return res.status(400).json({ error: 'Invalid plan. Allowed plans: pro, teams' });
+    return res.status(400).json({ error: 'Invalid plan. Allowed plans: pro' });
   }
 
   const planTitle = rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1);

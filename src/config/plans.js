@@ -1,6 +1,6 @@
 /**
  * Central Plan Configuration & Limits
- * Single source of truth for Cyber Shield tiers (Free, Pro, Teams).
+ * Single source of truth for Cyber Shield tiers (Free, Pro).
  * Re-exports the canonical plan definitions.
  */
 
