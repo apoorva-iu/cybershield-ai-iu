@@ -4,6 +4,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { readScreenshot, detectImageMimeAndMagic, MAX_IMAGE_SIZE } = require('./vision');
 const { performMessageCheck } = require('./checker');
+const { quotaMiddleware } = require('../detectors/quota');
 
 const MAX_MULTIPART_BYTES = MAX_IMAGE_SIZE + 65536; // 5MB + 64KB overhead
 
@@ -217,8 +218,8 @@ module.exports = function createMessageRouter(optionalAuthMiddleware) {
   // POST /api/message/read-screenshot
   router.post('/api/message/read-screenshot', messageScreenshotLimiter, handleReadScreenshot);
 
-  // POST /api/message/check (anonymous and signed in via optionalAuth, free scan quota not applied)
-  router.post('/api/message/check', auth, messageCheckLimiter, handleMessageCheck);
+  // POST /api/message/check (anonymous and signed in via optionalAuth, metered via quotaMiddleware)
+  router.post('/api/message/check', auth, quotaMiddleware, messageCheckLimiter, handleMessageCheck);
 
   return router;
 };

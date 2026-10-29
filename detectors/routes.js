@@ -4,7 +4,7 @@ const rateLimit = require('express-rate-limit');
 const cfg = require('../config');
 const { handleExtractText } = require('./extract-text');
 const { handleAnalyze } = require('./analyze');
-const { quotaMiddleware, quotaRoute } = require('./quota');
+const { quotaMiddleware, quotaRoute, usageRoute } = require('./quota');
 
 const router = express.Router();
 const sec = cfg.runtime.security || {};
@@ -72,6 +72,7 @@ module.exports = function createDetectorRouter(optionalAuthMiddleware) {
 
   // GET /api/quota (anonymous and signed in)
   router.get('/api/quota', auth, quotaRoute);
+  router.get('/api/usage', auth, usageRoute);
 
   // POST /api/extract-text (screenshot OCR, its own rate limits, does not consume quota)
   router.post('/api/extract-text', extractLimiterMin, extractLimiterDay, handleExtractText);

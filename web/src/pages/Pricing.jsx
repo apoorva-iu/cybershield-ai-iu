@@ -5,12 +5,14 @@ import { PageTransition } from '../components/wow';
 import { CheckCircle2, Sparkles, ChevronDown, ArrowRight } from 'lucide-react';
 import { PLAN_LIMITS, getPlans, getPricingFaq } from '../config/plans';
 import { useAuth, setReturnTo } from '../auth';
-import { startUpgrade } from '../lib/billing';
+import { startUpgrade, useBillingStatus, formatExpiryDate } from '../lib/billing';
 import './pricing.css';
 
 export function Pricing() {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const { isPro, expiresAt, paymentsMode, isPaymentsAvailable } = useBillingStatus(session);
+  const [inProgress, setInProgress] = useState(false);
 
   // Accordion: strictly one open at a time (first FAQ item open by default)
   const [openFaqId, setOpenFaqId] = useState('faq-free');
@@ -28,7 +30,11 @@ export function Pricing() {
       navigate('/login', { state: { from: '/pricing' } });
       return;
     }
-    startUpgrade();
+    if (!isPaymentsAvailable) return;
+    startUpgrade({
+      session,
+      onProgress: setInProgress
+    });
   };
 
   return (
@@ -51,24 +57,56 @@ export function Pricing() {
           <div className="pricing-cards-grid">
             {plans.map((plan) => {
               const isHighlight = plan.isPrimary;
+              const isProCard = plan.id === 'pro';
+
+              let buttonText = plan.buttonText;
+              let isDisabled = false;
+
+              if (isProCard) {
+                if (!isPaymentsAvailable) {
+                  buttonText = 'Payments unavailable right now';
+                  isDisabled = true;
+                } else if (inProgress) {
+                  buttonText = 'Processing...';
+                  isDisabled = true;
+                } else if (isPro) {
+                  buttonText = 'Add 30 days for Rs 1';
+                }
+              }
+
+              let badgeText = plan.status;
+              let badgeClass = plan.id === 'free' ? 'badge-available' : 'badge-pro';
+
+              if (isProCard && isPro) {
+                badgeText = 'Current plan';
+                badgeClass = 'badge-available badge-current';
+              } else if (!isProCard && !isPro && session) {
+                badgeText = 'Current plan';
+                badgeClass = 'badge-available badge-current';
+              }
+
               return (
                 <div
                   key={plan.id}
                   className={`pricing-plan-card ${isHighlight ? 'plan-highlighted' : ''}`}
                 >
-                  <span
-                    className={`plan-badge-top ${
-                      plan.id === 'free' ? 'badge-available' : 'badge-pro'
-                    }`}
-                  >
-                    {plan.status}
+                  <span className={`plan-badge-top ${badgeClass}`}>
+                    {badgeText}
                   </span>
 
                   <h2 className="plan-header-title">{plan.name}</h2>
 
                   <div className="plan-price-wrap">
                     <div className="plan-price-val">{plan.priceDisplay}</div>
-                    <div className="plan-price-sub">{plan.billingNote}</div>
+                    <div className="plan-price-sub">
+                      {isProCard && isPro && expiresAt ? (
+                        <span style={{ color: 'var(--brand, #4DA3FF)', fontWeight: 600 }}>
+                          Active until {formatExpiryDate(expiresAt)}
+                        </span>
+                      ) : (
+                        plan.billingNote
+                      )}
+                    </div>
                   </div>
 
                   <p className="plan-desc">{plan.description}</p>
@@ -94,19 +132,48 @@ export function Pricing() {
                   {/* Action Button */}
                   <div className="plan-card-action">
                     {plan.id === 'free' ? (
-                      <Link to="/tools" className="btn-card-primary">
+                      <Link
+                        to="/tools"
+                        className="btn-card-primary"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                        }}
+                      >
                         <span>{plan.buttonText}</span>
                         <ArrowRight size={15} />
                       </Link>
                     ) : (
-                      <button
-                        type="button"
-                        className="btn-card-primary btn-pro-action"
-                        onClick={handleUpgradeClick}
-                      >
-                        <span>{plan.buttonText}</span>
-                        <ArrowRight size={15} />
-                      </button>
+                      <div>
+                        <button
+                          type="button"
+                          className={`btn-card-primary btn-pro-action ${
+                            isDisabled ? 'is-disabled' : ''
+                          }`}
+                          onClick={handleUpgradeClick}
+                          disabled={isDisabled}
+                          style={
+                            isDisabled
+                              ? { opacity: 0.65, cursor: 'not-allowed', filter: 'grayscale(0.2)' }
+                              : undefined
+                          }
+                        >
+                          <span>{buttonText}</span>
+                          {!isDisabled && <ArrowRight size={15} />}
+                        </button>
+                        {paymentsMode === 'test' && (
+                          <p
+                            className="pricing-test-mode-notice"
+                            style={{
+                              fontSize: '12px',
+                              color: 'var(--text-dim, #94A3B8)',
+                              textAlign: 'center',
+                              margin: '10px 0 0'
+                            }}
+                          >
+                            Test mode: no real money is charged.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -146,8 +213,11 @@ export function Pricing() {
               })}
             </div>
 
-            <div className="pricing-disclaimer">
-              Screening aid, not a legal finding.
+            <div style={{ marginTop: '36px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text-dim, #94A3B8)' }}>
+              <span>Looking for detailed legal limitations or data handling policies? </span>
+              <Link to="/terms" style={{ color: 'var(--accent-cyan, #22D3EE)', textDecoration: 'none', fontWeight: 600 }}>Terms of Service</Link>
+              <span> &bull; </span>
+              <Link to="/privacy" style={{ color: 'var(--accent-cyan, #22D3EE)', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</Link>
             </div>
           </section>
         </Container>

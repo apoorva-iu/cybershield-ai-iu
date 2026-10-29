@@ -253,31 +253,35 @@
   .check-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-decoration: none; transition: opacity 0.2s; white-space: nowrap; line-height: 1; }
   .check-pill:hover { opacity: 0.85; text-decoration: none; }
   .check-pill b { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .check-pill.s-ok { background: var(--risk-ok-bg); color: var(--risk-ok-text); }
-  .check-pill.s-ok b { background: var(--risk-ok); }
-  .check-pill.s-warn { background: var(--risk-warn-bg); color: var(--risk-warn-text); }
-  .check-pill.s-warn b { background: var(--risk-warn); }
-  .check-pill.s-bad { background: var(--risk-bad-bg); color: var(--risk-bad-text); }
-  .check-pill.s-bad b { background: var(--risk-bad); }
+  .check-pill.s-ok, .check-pill.s-safe, .check-pill.s-pass { background: var(--risk-ok-bg); color: var(--risk-ok-text); }
+  .check-pill.s-ok b, .check-pill.s-safe b, .check-pill.s-pass b { background: var(--risk-ok); }
+  .check-pill.s-warn, .check-pill.s-warning, .check-pill.s-caution { background: var(--risk-warn-bg); color: var(--risk-warn-text); }
+  .check-pill.s-warn b, .check-pill.s-warning b, .check-pill.s-caution b { background: var(--risk-warn); }
+  .check-pill.s-bad, .check-pill.s-flag, .check-pill.s-fail, .check-pill.s-danger { background: var(--risk-bad-bg); color: var(--risk-bad-text); }
+  .check-pill.s-bad b, .check-pill.s-flag b, .check-pill.s-fail b, .check-pill.s-danger b { background: var(--risk-bad); }
   .check-pill.s-unknown { background: var(--risk-unknown-bg); color: var(--risk-unknown-text); }
   .check-pill.s-unknown b { background: var(--risk-unknown); }
+  .check-pill.s-not_applicable { background: rgba(255, 255, 255, 0.06); color: var(--text-dim, #94A3B8); }
+  .check-pill.s-not_applicable b { background: var(--text-dim, #94A3B8); }
   
   .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
   .check { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card, 12px); padding: 20px; }
   .chead { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .chead h3 { margin: 0; font-size: 16px; font-weight: 600; color: #FFFFFF; }
   .pill { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; line-height: 1; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-  .s-ok { background: var(--risk-ok-bg); color: var(--risk-ok-text); }
-  .s-warn { background: var(--risk-warn-bg); color: var(--risk-warn-text); }
-  .s-bad { background: var(--risk-bad-bg); color: var(--risk-bad-text); }
+  .s-ok, .s-safe, .s-pass { background: var(--risk-ok-bg); color: var(--risk-ok-text); }
+  .s-warn, .s-warning, .s-caution { background: var(--risk-warn-bg); color: var(--risk-warn-text); }
+  .s-bad, .s-flag, .s-fail, .s-danger { background: var(--risk-bad-bg); color: var(--risk-bad-text); }
   .s-unknown { background: var(--risk-unknown-bg); color: var(--risk-unknown-text); }
+  .s-not_applicable { background: rgba(255, 255, 255, 0.06); color: var(--text-dim, #94A3B8); }
   
   .meter { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 12px; width: 100%; }
   .meter i { display: block; height: 100%; border-radius: 999px; animation: meterFill 500ms ease-out forwards; }
-  .m-ok i { background: var(--risk-ok); }
-  .m-warn i { background: var(--risk-warn); }
-  .m-bad i { background: var(--risk-bad); }
+  .m-ok i, .m-safe i, .m-pass i { background: var(--risk-ok); }
+  .m-warn i, .m-warning i, .m-caution i { background: var(--risk-warn); }
+  .m-bad i, .m-flag i, .m-fail i, .m-danger i { background: var(--risk-bad); }
   .m-unknown i { background: var(--risk-unknown); }
+  .m-not_applicable i { background: rgba(255, 255, 255, 0.15); }
 
   @media (prefers-reduced-motion: reduce) {
     .meter i { animation: none !important; }
@@ -287,10 +291,10 @@
   ul.notes li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.5; min-width: 0; color: var(--text); }
   ul.notes li span { min-width: 0; overflow-wrap: anywhere; }
   ul.notes b { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; display: inline-block; }
-  .d-ok { background: var(--risk-ok); }
-  .d-warn { background: var(--risk-warn); }
-  .d-bad { background: var(--risk-bad); }
-  .d-info { background: var(--risk-unknown); }
+  .d-ok, .d-safe, .d-pass { background: var(--risk-ok); }
+  .d-warn, .d-warning, .d-caution { background: var(--risk-warn); }
+  .d-bad, .d-flag, .d-fail, .d-danger { background: var(--risk-bad); }
+  .d-info, .d-not_applicable { background: var(--risk-unknown); }
   
   .source-chip {
     display: inline-flex;

@@ -48,6 +48,16 @@ const LegacyScanRedirect = React.lazy(() =>
 const Resources = React.lazy(() =>
   import('./pages/Resources').then((m) => ({ default: m.Resources }))
 );
+const HowItWorks = React.lazy(() =>
+  import('./pages/HowItWorks').then((m) => ({ default: m.HowItWorks }))
+);
+
+const Terms = React.lazy(() =>
+  import('./pages/Terms').then((m) => ({ default: m.Terms }))
+);
+const Privacy = React.lazy(() =>
+  import('./pages/Privacy').then((m) => ({ default: m.Privacy }))
+);
 
 const Pricing = React.lazy(() =>
   import('./pages/Pricing').then((m) => ({ default: m.Pricing }))
@@ -115,6 +125,34 @@ function DashboardRouteFallback() {
   );
 }
 
+function DashboardShellFallback() {
+  return (
+    <div className="dash-shell" role="status" aria-live="polite" aria-label="Loading dashboard">
+      <aside className="dash-sidebar no-print" aria-hidden="true">
+        <div className="dash-sidebar-top">
+          <div className="dash-sidebar-brand-row">
+            <div className="dash-skeleton" style={{ width: '130px', height: '26px' }} />
+          </div>
+          <div className="dash-skeleton" style={{ width: '84px', height: '16px', marginTop: '6px' }} />
+        </div>
+        <div className="dash-sidebar-nav" style={{ gap: '8px' }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="dash-skeleton" style={{ width: '100%', height: '38px', borderRadius: '8px' }} />
+          ))}
+        </div>
+        <div className="dash-sidebar-footer">
+          <div className="dash-skeleton" style={{ width: '100%', height: '44px', borderRadius: '8px' }} />
+        </div>
+      </aside>
+      <div className="dash-main-area">
+        <div className="dash-main-container">
+          <DashboardRouteFallback />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoute({ children }) {
   const { authReady, session } = useAuth();
   const location = useLocation();
@@ -138,10 +176,23 @@ function ScanRedirect() {
   return <Navigate to={`/tools/job-scam-check${location.search}${location.hash}`} replace />;
 }
 
+function ScrollToTop() {
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (!location.hash && !location.search.includes('section=')) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+}
+
 export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
@@ -229,14 +280,35 @@ export function App() {
                 </Suspense>
               }
             />
-            <Route path="how-it-works" element={<Navigate to="/resources?section=how-it-works" replace />} />
+            <Route
+              path="how-it-works"
+              element={
+                <Suspense fallback={<RouteLoading />}>
+                  <HowItWorks />
+                </Suspense>
+              }
+            />
+            <Route path="about" element={<Navigate to="/how-it-works" replace />} />
             <Route path="guide" element={<Navigate to="/resources?section=scam-guides" replace />} />
             <Route path="scam-types" element={<Navigate to="/resources?section=scam-guides" replace />} />
             <Route path="helpline-1930" element={<Navigate to="/resources?section=safety-checklist" replace />} />
-            <Route path="privacy" element={<Navigate to="/resources?section=privacy-data" replace />} />
-            <Route path="terms" element={<Navigate to="/resources?section=limitations" replace />} />
+            <Route
+              path="privacy"
+              element={
+                <Suspense fallback={<RouteLoading />}>
+                  <Privacy />
+                </Suspense>
+              }
+            />
+            <Route
+              path="terms"
+              element={
+                <Suspense fallback={<RouteLoading />}>
+                  <Terms />
+                </Suspense>
+              }
+            />
             <Route path="contact" element={<Navigate to="/resources?section=contact-report" replace />} />
-            <Route path="about" element={<Navigate to="/resources?section=how-it-works" replace />} />
 
             <Route
               path="pricing"
@@ -261,7 +333,7 @@ export function App() {
               element={
                 <ErrorBoundary>
                   <ProtectedRoute>
-                    <Suspense fallback={<DashboardRouteFallback />}>
+                    <Suspense fallback={<DashboardShellFallback />}>
                       <DashboardLayout />
                     </Suspense>
                   </ProtectedRoute>

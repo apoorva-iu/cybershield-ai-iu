@@ -1973,6 +1973,26 @@ body.msg-printing .msg-tab-panel {
   transform: none !important;
 }
 
+body.msg-printing .msg-quick-guidance,
+.msg-result-card-printing .msg-quick-guidance {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: none !important;
+}
+
+body.msg-printing .msg-guidance-title,
+.msg-result-card-printing .msg-guidance-title {
+  color: #111827 !important;
+}
+
+body.msg-printing .msg-guidance-list,
+body.msg-printing .msg-guidance-list li,
+.msg-result-card-printing .msg-guidance-list,
+.msg-result-card-printing .msg-guidance-list li {
+  color: #1F2937 !important;
+}
+
 @media print {
   .msg-tab-panel {
     animation: none !important;
@@ -2046,14 +2066,14 @@ body.msg-printing .msg-tab-panel {
     box-shadow: none !important;
   }
 
-  /* Printed container gets 14mm padding to offset zero-margin @page */
+  /* Printed container: minimal top padding (3mm) to eliminate excessive top gap, clean side/bottom gutters */
   .msg-result-card,
   .msg-result-card-printing {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 14mm !important;
+    padding: 3mm 8mm 8mm 8mm !important;
     background: #FFFFFF !important;
     color: #111827 !important;
     border: none !important;
@@ -2086,7 +2106,8 @@ body.msg-printing .msg-tab-panel {
   .msg-conversation-context-card,
   .msg-sender-advisory,
   .msg-verdict-methodology,
-  .msg-check-box {
+  .msg-check-box,
+  .msg-quick-guidance {
     background: #FFFFFF !important;
     color: #111827 !important;
     border: 1px solid #E5E7EB !important;
@@ -2238,6 +2259,31 @@ body.msg-printing .msg-tab-panel {
   }
 
   /* Quick guidance & actions list in print */
+  .msg-quick-guidance {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 8px !important;
+    padding: 12pt 14pt !important;
+    margin-top: 12pt !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .msg-guidance-title {
+    color: #111827 !important;
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    margin-bottom: 6pt !important;
+  }
+
+  .msg-guidance-list {
+    color: #1F2937 !important;
+    margin: 0 !important;
+    padding-left: 18pt !important;
+  }
+
   .msg-actions-card {
     break-inside: auto !important;
     page-break-inside: auto !important;
@@ -2447,6 +2493,7 @@ body.msg-printing .msg-tab-panel {
   .msg-checks-na-line,
   .msg-legend-item,
   .msg-action-full-item,
+  .msg-quick-guidance,
   .msg-helpline-box,
   .msg-proof-cell,
   .msg-breakdown-card,

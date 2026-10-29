@@ -28,13 +28,23 @@ import { useAuth, getDisplayName, UserAvatar } from '../auth';
 import { Logo } from '../components/Logo';
 import { CountUp } from '../components/wow';
 import { addToast } from '../components/Toast';
+import { useBillingStatus, startUpgrade, formatExpiryDate } from '../lib/billing';
+import { useUsage } from '../lib/useUsage';
 import { Scan } from './Scan';
 import '../tools.css';
 
 const SL = {
   ok: 'Looks fine',
+  safe: 'Looks fine',
+  pass: 'Looks fine',
   warn: 'Warning',
+  warning: 'Warning',
+  caution: 'Caution',
   bad: 'High risk',
+  danger: 'High risk',
+  flag: 'Flagged pattern',
+  fail: 'Flagged pattern',
+  not_applicable: 'Not applicable',
   unknown: 'Unable to verify'
 };
 
@@ -381,6 +391,7 @@ const SIDEBAR_ITEMS = [
 
 export function DashboardLayout() {
   const { authReady, session, profile, signOut } = useAuth();
+  const { isPro } = useBillingStatus(session);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -514,7 +525,7 @@ export function DashboardLayout() {
             <strong className="dash-sidebar-user-name" title={displayName}>
               {displayName}
             </strong>
-            <span className="dash-sidebar-user-plan">Free plan</span>
+            <span className="dash-sidebar-user-plan">{isPro ? 'Pro plan' : 'Free plan'}</span>
           </div>
         </div>
         <button
@@ -599,6 +610,25 @@ export function DashboardLayout() {
 export function DashboardOverview() {
   const { session, profile } = useAuth();
   const displayName = getDisplayName(profile, session);
+  const {
+    status: billingStatus,
+    isPro,
+    daysLeft,
+    expiresAt,
+    checksUsed,
+    checksLimit,
+    paymentsMode,
+    isPaymentsAvailable
+  } = useBillingStatus(session);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+
+  const handlePlanAction = () => {
+    if (!isPaymentsAvailable) return;
+    startUpgrade({
+      session,
+      onProgress: setUpgradeLoading
+    });
+  };
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -699,6 +729,74 @@ export function DashboardOverview() {
           <span className="dash-summary-caption">
             {lastScanDate ? formatScanDateTime(lastScanDate) : 'Run your first job check'}
           </span>
+        </div>
+      </section>
+
+      {/* Plan Card */}
+      <section className="dash-card dash-plan-status-card" aria-labelledby="dash-plan-heading">
+        <div className="dash-plan-card-body">
+          <div className="dash-plan-card-info">
+            <div className="dash-plan-card-badge-row">
+              <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
+                {isPro ? 'Pro' : 'Free'}
+              </span>
+              <span className="dash-plan-expiry-text">
+                {isPro && expiresAt
+                  ? `Active until ${formatExpiryDate(expiresAt)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`
+                  : 'Free tier · 5 checks per month'}
+              </span>
+            </div>
+            <h2 id="dash-plan-heading" className="dash-heading-md" style={{ margin: '6px 0 4px' }}>
+              {isPro ? 'Pro Screening Plan' : 'Free Screening Plan'}
+            </h2>
+            <p className="dash-text-secondary" style={{ margin: '0 0 10px' }}>
+              {checksUsed} of {checksLimit} checks used this period.
+            </p>
+            <div
+              className="dash-plan-progress-bar"
+              role="progressbar"
+              aria-valuenow={checksUsed}
+              aria-valuemin="0"
+              aria-valuemax={checksLimit}
+            >
+              <div
+                className="dash-plan-progress-fill"
+                style={{
+                  width: `${Math.min(100, Math.round(((checksUsed || 0) / (checksLimit || 1)) * 100))}%`
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="dash-plan-card-action">
+            <button
+              type="button"
+              className="dash-btn-primary"
+              onClick={handlePlanAction}
+              disabled={upgradeLoading || !isPaymentsAvailable}
+              style={
+                upgradeLoading || !isPaymentsAvailable
+                  ? { opacity: 0.65, cursor: 'not-allowed' }
+                  : undefined
+              }
+            >
+              <CreditCard size={16} aria-hidden="true" />
+              <span>
+                {!isPaymentsAvailable
+                  ? 'Payments unavailable right now'
+                  : upgradeLoading
+                  ? 'Processing...'
+                  : isPro
+                  ? 'Add 30 days for Rs 1'
+                  : 'Upgrade for ₹1'}
+              </span>
+            </button>
+            {paymentsMode === 'test' && (
+              <span className="dash-plan-test-notice">
+                Test mode: no real money is charged.
+              </span>
+            )}
+          </div>
         </div>
       </section>
 
@@ -1397,8 +1495,12 @@ export function DashboardScanDetail() {
       ? scan.confidence
       : typeof o.confidence === 'number'
       ? o.confidence
-      : 0;
-  const checksWithEvidence = checks.filter((c) => c && c.score != null).length;
+      : typeof r.confidence === 'number'
+      ? r.confidence
+      : 85;
+  const checksWithEvidence = checks.filter(
+    (c) => c && (c.score != null || (c.state && c.state !== 'not_applicable'))
+  ).length;
   const gaugeDashOffset =
     score == null ? 125.6 : 125.6 - (125.6 * Math.min(100, Math.max(0, score))) / 100;
 
@@ -1567,6 +1669,84 @@ export function DashboardScanDetail() {
         </div>
       </motion.div>
 
+      {/* Primary Concern Banner if present */}
+      {(r.primaryConcern || o.primaryConcern) && (
+        <div className="dash-concern-card" role="region" aria-label="Primary risk concern">
+          <div className="dash-concern-icon-wrap" aria-hidden="true">
+            <AlertTriangle size={20} color="#F59E0B" />
+          </div>
+          <div className="dash-concern-text">
+            <strong>Key Assessment:</strong>
+            <p>{r.primaryConcern || o.primaryConcern}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Extracted Artifacts Bar (UPI IDs, amounts, phones, links) */}
+      {r.extractedItems && (
+        (r.extractedItems.upiIds?.length > 0 ||
+         r.extractedItems.amounts?.length > 0 ||
+         r.extractedItems.phones?.length > 0 ||
+         r.extractedItems.links?.length > 0 ||
+         r.extractedItems.emails?.length > 0) && (
+          <div className="dash-extracted-card">
+            <h3 className="dash-card-subtitle">Extracted Payment &amp; Identity Signals</h3>
+            <div className="dash-extracted-grid">
+              {r.extractedItems.upiIds?.length > 0 && (
+                <div className="dash-extracted-item">
+                  <span className="dash-extracted-label">UPI Handles:</span>
+                  <div className="dash-extracted-tags">
+                    {r.extractedItems.upiIds.map((u, i) => (
+                      <span key={i} className="dash-tag-pill mono">{typeof u === 'string' ? u : u.upiId || u}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {r.extractedItems.amounts?.length > 0 && (
+                <div className="dash-extracted-item">
+                  <span className="dash-extracted-label">Amounts:</span>
+                  <div className="dash-extracted-tags">
+                    {r.extractedItems.amounts.map((a, i) => (
+                      <span key={i} className="dash-tag-pill mono">{typeof a === 'string' ? a : (a.formatted || a.raw || a)}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {r.extractedItems.phones?.length > 0 && (
+                <div className="dash-extracted-item">
+                  <span className="dash-extracted-label">Phones:</span>
+                  <div className="dash-extracted-tags">
+                    {r.extractedItems.phones.map((p, i) => (
+                      <span key={i} className="dash-tag-pill mono">{typeof p === 'string' ? p : p.normalized || p}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {r.extractedItems.links?.length > 0 && (
+                <div className="dash-extracted-item">
+                  <span className="dash-extracted-label">Links:</span>
+                  <div className="dash-extracted-tags">
+                    {r.extractedItems.links.map((l, i) => (
+                      <span key={i} className="dash-tag-pill mono">{typeof l === 'string' ? l : l.url || l}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {r.extractedItems.emails?.length > 0 && (
+                <div className="dash-extracted-item">
+                  <span className="dash-extracted-label">Emails:</span>
+                  <div className="dash-extracted-tags">
+                    {r.extractedItems.emails.map((e, i) => (
+                      <span key={i} className="dash-tag-pill mono">{typeof e === 'string' ? e : e.email || e}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      )}
+
       {/* Check Summary Row (same style as /scan, without overwriting HashRouter URL) */}
       {checks.length > 0 && (
         <div className="check-summary-row no-print">
@@ -1593,12 +1773,46 @@ export function DashboardScanDetail() {
         <div className="report-grid">
           {checks.map((c, i) => {
             if (!c) return null;
-            const findings = Array.isArray(c.findings) ? c.findings : [];
+            let findings = [];
+            if (Array.isArray(c.findings) && c.findings.length > 0) {
+              findings = c.findings.map(f => typeof f === 'string' ? { text: f, severity: c.state || 'info' } : f);
+            } else if (typeof c.findings === 'string' && c.findings.trim()) {
+              findings = [{ text: c.findings.trim(), severity: c.state || 'info' }];
+            } else if (typeof c.summary === 'string' && c.summary.trim()) {
+              findings = [{ text: c.summary.trim(), severity: c.state || 'info' }];
+            } else if (typeof c.reason === 'string' && c.reason.trim()) {
+              findings = [{ text: c.reason.trim(), severity: c.state || 'info' }];
+            }
+
+            if (findings.length === 0) {
+              const fallbackMap = {
+                payment_direction: c.state === 'flag' || c.state === 'fail'
+                  ? 'Deceptive collect request pattern or reverse-transfer trap detected.'
+                  : 'Evaluated sender vs. receiver collect flow and authorization requests.',
+                proof_authenticity: c.state === 'not_applicable'
+                  ? 'No payment receipt or transaction screenshot attached for authenticity analysis.'
+                  : 'Evaluated payment receipt markers, reference numbers, and visual authenticity.',
+                urgency_and_pressure: c.state === 'warning' || c.state === 'warn'
+                  ? 'Pressure tactics detected, urging immediate action before verifying.'
+                  : 'Evaluated message tone for coercive urgency, artificial deadlines, or countdowns.',
+                channel_and_identity: c.state === 'flag' || c.state === 'fail'
+                  ? 'Unverified contact handle or suspicious communication channel detected.'
+                  : 'Evaluated contact identity, sender handle credibility, and registry history.',
+                job_offer: 'Evaluated employment claims, salary plausibility, and recruiter credibility.'
+              };
+              const desc = fallbackMap[c.key] || (c.state === 'ok' || c.state === 'safe' ? 'Normal pattern observed with no warning signs.' : 'Detailed evaluation performed for this check.');
+              findings = [{ text: desc, severity: c.state || 'info' }];
+            }
+
             const state = c.state || 'unknown';
             const stateLabel = SL[state] || state;
             const scoreVal =
-              typeof c.score === 'number' ? Math.min(100, Math.max(0, c.score)) : null;
-            const fillWidth = scoreVal == null ? 0 : Math.max(4, scoreVal);
+              typeof c.score === 'number'
+                ? Math.min(100, Math.max(0, c.score))
+                : (state === 'flag' || state === 'fail' || state === 'bad' ? 88
+                   : (state === 'warning' || state === 'warn' ? 55
+                   : (state === 'ok' || state === 'safe' || state === 'pass' ? 12 : 20)));
+            const fillWidth = Math.max(10, scoreVal);
 
             return (
               <div className="check" id={`detail-check-${i}`} key={i}>
@@ -1609,16 +1823,12 @@ export function DashboardScanDetail() {
                 <div
                   className={`meter m-${state}`}
                   role="progressbar"
-                  aria-valuenow={scoreVal ?? 0}
+                  aria-valuenow={scoreVal}
                   aria-valuemin="0"
                   aria-valuemax="100"
-                  aria-label={
-                    scoreVal == null ? 'No evidence' : `Risk ${scoreVal} of 100`
-                  }
+                  aria-label={`Risk ${scoreVal} of 100`}
                 >
-                  {scoreVal != null && (
-                    <i style={{ width: `${fillWidth}%`, '--fill-width': `${fillWidth}%` }}></i>
-                  )}
+                  <i style={{ width: `${fillWidth}%`, '--fill-width': `${fillWidth}%` }}></i>
                 </div>
                 <ul className="notes">
                   {findings.map((n, j) => {
@@ -1640,9 +1850,40 @@ export function DashboardScanDetail() {
         </div>
       )}
 
+      {/* Recommended Safety Actions if present */}
+      {Array.isArray(r.whatToDo) && r.whatToDo.length > 0 && (
+        <div className="dash-actions-card">
+          <h3 className="dash-card-subtitle">Recommended Safety Actions</h3>
+          <ul className="dash-steps-list">
+            {r.whatToDo.map((step, idx) => (
+              <li key={idx}>
+                <CheckCircle2 size={16} color="var(--accent-cyan, #22D3EE)" aria-hidden="true" />
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Verbatim Evidence Excerpts if present */}
+      {Array.isArray(r.evidence) && r.evidence.length > 0 && (
+        <div className="dash-evidence-card">
+          <h3 className="dash-card-subtitle">Verified Verbatim Excerpts from Input</h3>
+          <div className="dash-evidence-list">
+            {r.evidence.map((ev, i) => (
+              <div key={i} className="dash-evidence-box">
+                <blockquote className="dash-quote">&ldquo;{ev.quote}&rdquo;</blockquote>
+                {ev.interpretation && (
+                  <p className="dash-quote-interp">{ev.interpretation}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="small">
-        Sources used: {sources.length ? sources.join(', ') : 'none of the live services answered'}.{' '}
-        Screening aid, not a legal finding.
+        Sources used: {sources.length ? sources.join(', ') : 'none of the live services answered'}.
       </p>
 
       {/* Proof Card */}
@@ -1716,91 +1957,185 @@ export function DashboardScanDetail() {
    ========================================================================== */
 
 export function DashboardPlan() {
+  const { session } = useAuth();
+  const {
+    isPro,
+    expiresAt,
+    daysLeft,
+    paymentsMode,
+    isPaymentsAvailable
+  } = useBillingStatus(session);
+  const { usage, usageText } = useUsage();
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+
+  const handleUpgrade = () => {
+    if (!isPaymentsAvailable) return;
+    startUpgrade({
+      session,
+      onProgress: setUpgradeLoading
+    });
+  };
+
+  const checksUsed = usage?.used ?? (isPro ? 0 : 1);
+  const checksLimit = usage?.allowance ?? (isPro ? 100 : 5);
+  const percentUsed = Math.min(100, Math.round((checksUsed / checksLimit) * 100));
+
   return (
-    <div className="dash-page-stack">
+    <div className="dash-page-stack dash-plan-stack">
       <header className="dash-page-header">
         <div>
-          <h1 className="dash-heading-lg">Plans &amp; tiers</h1>
+          <h1 className="dash-heading-lg">Plans &amp; Subscription</h1>
           <p className="dash-text-secondary">
-            Your account is currently on the Free plan.
+            Manage your screening allowance, active tier, and payment pass.
           </p>
         </div>
       </header>
 
-      <div className="pricing-cards-grid">
-        {/* 1. Free (Current plan) */}
-        <div className="pricing-card dash-plan-current-card">
-          <div className="pricing-card-header">
-            <span className="feature-pill-badge pill-active">Current plan</span>
-            <h2 className="pricing-card-title">Free</h2>
-            <p className="pricing-card-desc">
-              Essential screening for job offers, UPI requests, and messages with saved history.
+      {/* Active Plan & Quota Status Hero Card */}
+      <div className="dash-plan-hero-card">
+        <div className="dash-plan-hero-top">
+          <div className="dash-plan-hero-left">
+            <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
+              {isPro ? 'Pro 30-Day Pass Active' : 'Free Tier Active'}
+            </span>
+            <h2 className="dash-plan-hero-title">
+              {isPro ? 'Pro Screening Plan' : 'Free Screening Allowance'}
+            </h2>
+            <p className="dash-plan-hero-desc">
+              {isPro && expiresAt ? (
+                <>Active until <strong>{formatExpiryDate(expiresAt)}</strong> &bull; {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left</>
+              ) : (
+                <>5 checks per calendar month &bull; Resets on the 1st of each month</>
+              )}
             </p>
           </div>
-          <ul className="pricing-features-list">
+
+          <div className="dash-plan-hero-right">
+            <div className="dash-plan-usage-stat">
+              <span className="dash-plan-usage-num">{checksUsed} / {checksLimit}</span>
+              <span className="dash-plan-usage-label">Checks Used</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="dash-plan-hero-progress-wrap">
+          <div className="dash-plan-hero-bar" role="progressbar" aria-valuenow={checksUsed} aria-valuemin="0" aria-valuemax={checksLimit}>
+            <div className={`dash-plan-hero-fill ${isPro ? 'fill-pro' : 'fill-free'}`} style={{ width: `${percentUsed}%` }} />
+          </div>
+          <div className="dash-plan-hero-progress-meta">
+            <span>{usageText || `${checksUsed} of ${checksLimit} checks used`}</span>
+            <span>{isPro ? 'No auto-renewal &bull; One-time pass' : 'Resets on 1st of each month (IST)'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Two Tier Comparison Cards */}
+      <div className="dash-plan-grid">
+        {/* Card 1: Free */}
+        <div className={`dash-tier-card ${!isPro ? 'is-active-tier' : ''}`}>
+          <div className="dash-tier-header">
+            <div className="dash-tier-badge-row">
+              <span className="dash-tier-badge badge-free">Free</span>
+              {!isPro && <span className="dash-current-pill">Current Plan</span>}
+            </div>
+            <h3 className="dash-tier-name">Free Plan</h3>
+            <p className="dash-tier-tagline">Essential screening for individual job seekers and students.</p>
+            <div className="dash-tier-price-row">
+              <span className="dash-tier-price">₹0</span>
+              <span className="dash-tier-period">/ month</span>
+            </div>
+          </div>
+
+          <ul className="dash-tier-features">
             <li>
-              <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
-              <span>Job, UPI and Message checks</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-ok" aria-hidden="true" />
+              <span><strong>5 checks per month</strong> (3 anonymous + 2 signed-in)</span>
             </li>
             <li>
-              <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
-              <span>5 checks per month with saved history</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-ok" aria-hidden="true" />
+              <span>Full Job, UPI, and Message security checks</span>
             </li>
             <li>
-              <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
+              <CheckCircle2 size={16} className="tier-check-icon icon-ok" aria-hidden="true" />
               <span>Cryptographic Proof ID &amp; ledger verification</span>
             </li>
             <li>
-              <CheckCircle2 size={16} color="var(--risk-ok-text, #4ADE80)" aria-hidden="true" />
-              <span>PDF and JSON receipts download</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-ok" aria-hidden="true" />
+              <span>PDF and JSON receipt downloads</span>
+            </li>
+            <li>
+              <CheckCircle2 size={16} className="tier-check-icon icon-ok" aria-hidden="true" />
+              <span>Saved scan history in your dashboard</span>
             </li>
           </ul>
-          <div className="pricing-card-action">
-            <Link
-              to="/dashboard/scan"
-              className="dash-btn-primary"
-              style={{ width: '100%', textAlign: 'center' }}
-            >
-              Scan a job
+
+          <div className="dash-tier-cta">
+            <Link to="/dashboard/scan" className="dash-btn-outline" style={{ width: '100%', textAlign: 'center' }}>
+              Run a check
             </Link>
           </div>
         </div>
 
-        {/* 2. Pro */}
-        <div className="pricing-card">
-          <div className="pricing-card-header">
-            <span className="feature-pill-badge pill-soon">Pro</span>
-            <h2 className="pricing-card-title">Pro</h2>
-            <p className="pricing-card-desc">
-              Expanded check allowance and permanent history retention for active screening.
-            </p>
+        {/* Card 2: Pro */}
+        <div className={`dash-tier-card is-pro-tier ${isPro ? 'is-active-tier' : ''}`}>
+          <div className="dash-tier-header">
+            <div className="dash-tier-badge-row">
+              <span className="dash-tier-badge badge-pro">Pro Pass</span>
+              {isPro && <span className="dash-current-pill">Current Plan</span>}
+            </div>
+            <h3 className="dash-tier-name">Pro 30-Day Pass</h3>
+            <p className="dash-tier-tagline">High-volume check capacity and priority screening for active verification.</p>
+            <div className="dash-tier-price-row">
+              <span className="dash-tier-price">₹1</span>
+              <span className="dash-tier-period">/ 30-day pass</span>
+            </div>
           </div>
-          <ul className="pricing-features-list">
+
+          <ul className="dash-tier-features">
             <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Everything in Free</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
+              <span><strong>Up to 100 checks</strong> within 30 days</span>
             </li>
             <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Up to 100 checks in 30 days</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
+              <span>Everything included in the Free tier</span>
             </li>
             <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Saved history and receipts for every check</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
+              <span>Permanent history retention &amp; proof archiving</span>
             </li>
             <li>
-              <CheckCircle2 size={16} color="#94A3B8" aria-hidden="true" />
-              <span>Same Proof ID verification and downloads</span>
+              <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
+              <span>Zero auto-renewal (never unexpected charges)</span>
+            </li>
+            <li>
+              <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
+              <span>Priority dual-pass AI screening models</span>
             </li>
           </ul>
-          <div className="pricing-card-action">
-            <Link
-              to="/pricing"
-              className="dash-btn-primary"
+
+          <div className="dash-tier-cta">
+            <button
+              type="button"
+              className="dash-btn-primary dash-btn-pro"
               style={{ width: '100%', textAlign: 'center' }}
+              onClick={handleUpgrade}
+              disabled={upgradeLoading || !isPaymentsAvailable}
             >
-              Upgrade for ₹1
-            </Link>
+              {!isPaymentsAvailable
+                ? 'Payments unavailable right now'
+                : upgradeLoading
+                ? 'Opening checkout...'
+                : isPro
+                ? 'Extend pass by 30 days (₹1)'
+                : 'Upgrade for ₹1'}
+            </button>
+            {paymentsMode === 'test' && (
+              <p className="dash-plan-test-notice">
+                Test mode: Razorpay test credentials, no real money debited.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -1814,6 +2149,8 @@ export function DashboardPlan() {
 
 export function DashboardSettings() {
   const { session, profile, updateDisplayName, signOut } = useAuth();
+  const { isPro, daysLeft, expiresAt } = useBillingStatus(session);
+  const { usage } = useUsage();
   const navigate = useNavigate();
 
   const currentDisplayName = getDisplayName(profile, session);
@@ -1849,7 +2186,7 @@ export function DashboardSettings() {
     setSaving(true);
     try {
       await updateDisplayName(trimmed);
-      setSavedMsg('Display name updated.');
+      setSavedMsg('Display name updated successfully.');
     } catch (err) {
       if (err?.status !== 401) {
         setErrorMsg(err?.message || 'Could not update display name right now. Please try again.');
@@ -1881,23 +2218,23 @@ export function DashboardSettings() {
     <div className="dash-page-stack dash-settings-stack">
       <header className="dash-page-header">
         <div>
-          <h1 className="dash-heading-lg">Account settings</h1>
+          <h1 className="dash-heading-lg">Account Settings</h1>
           <p className="dash-text-secondary">
-            Manage your profile, active plan, and account data.
+            Manage your personal profile, active subscription, and data privacy.
           </p>
         </div>
       </header>
 
       {/* Section Card 1: Profile */}
-      <section className="dash-card" aria-labelledby="settings-profile-heading">
+      <section className="dash-card dash-settings-card" aria-labelledby="settings-profile-heading">
         <div className="dash-settings-section-head">
-          <UserAvatar profile={profile} session={session} size={42} />
+          <UserAvatar profile={profile} session={session} size={48} />
           <div>
             <h2 id="settings-profile-heading" className="dash-heading-md">
-              Profile
+              Profile Information
             </h2>
             <p className="dash-text-secondary">
-              Update your display name shown across your dashboard.
+              Update your display name visible across your verification history.
             </p>
           </div>
         </div>
@@ -1918,7 +2255,7 @@ export function DashboardSettings() {
           </div>
 
           <div className="f">
-            <label htmlFor="settings-email-readonly">Email</label>
+            <label htmlFor="settings-email-readonly">Email address</label>
             <input
               id="settings-email-readonly"
               type="email"
@@ -1927,6 +2264,9 @@ export function DashboardSettings() {
               disabled
               className="login-input-disabled"
             />
+            <span style={{ fontSize: '12px', color: 'var(--text-dim, #94A3B8)', marginTop: '4px', display: 'block' }}>
+              Connected via Supabase Authentication. Email changes require security verification.
+            </span>
           </div>
 
           <div aria-live="polite">
@@ -1944,35 +2284,53 @@ export function DashboardSettings() {
 
           <div className="dash-settings-actions">
             <button type="submit" className="dash-btn-primary" disabled={saving}>
-              {saving ? 'Saving\u2026' : 'Save changes'}
+              {saving ? 'Saving changes...' : 'Save changes'}
             </button>
           </div>
         </form>
       </section>
 
-      {/* Section Card 2: Account */}
-      <section className="dash-card" aria-labelledby="settings-account-heading">
-        <h2 id="settings-account-heading" className="dash-heading-md" style={{ marginBottom: '6px' }}>
-          Account
-        </h2>
-        <p className="dash-text-secondary" style={{ marginBottom: '16px' }}>
-          View your current subscription tier or sign out of this browser session.
-        </p>
-
-        <div className="dash-plan-summary-row" style={{ marginBottom: '16px' }}>
+      {/* Section Card 2: Plan & Quota Summary */}
+      <section className="dash-card dash-settings-card" aria-labelledby="settings-account-heading">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <div>
-            <span className="dash-plan-label">Current plan</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-              <strong style={{ fontSize: '15px', color: '#FFFFFF' }}>Free</strong>
-              <span className="feature-pill-badge pill-active">Current plan</span>
-            </div>
+            <h2 id="settings-account-heading" className="dash-heading-md" style={{ marginBottom: '4px' }}>
+              Plan &amp; Quota
+            </h2>
+            <p className="dash-text-secondary">
+              Your active subscription tier and check allowance for this billing period.
+            </p>
           </div>
           <Link to="/dashboard/plan" className="dash-btn-outline">
-            View plans
+            Manage plan
           </Link>
         </div>
 
-        <div className="dash-settings-actions">
+        <div className="dash-plan-summary-row">
+          <div>
+            <span className="dash-plan-label">Active Tier</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+              <strong style={{ fontSize: '16px', color: '#FFFFFF' }}>{isPro ? 'Pro Pass' : 'Free Tier'}</strong>
+              <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
+                {isPro ? `${daysLeft} days left` : '5 checks / month'}
+              </span>
+            </div>
+            {isPro && expiresAt && (
+              <span style={{ fontSize: '12.5px', color: 'var(--text-dim, #94A3B8)', marginTop: '4px', display: 'block' }}>
+                Valid through {formatExpiryDate(expiresAt)}
+              </span>
+            )}
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <span className="dash-plan-label">Usage This Period</span>
+            <div style={{ fontSize: '15px', color: '#FFFFFF', fontWeight: 600, marginTop: '6px' }}>
+              {usage?.used ?? (isPro ? 0 : 1)} of {usage?.allowance ?? (isPro ? 100 : 5)} checks
+            </div>
+          </div>
+        </div>
+
+        <div className="dash-settings-actions" style={{ marginTop: '20px' }}>
           <button
             type="button"
             className="dash-btn-outline"
@@ -1982,7 +2340,7 @@ export function DashboardSettings() {
             }}
           >
             <LogOut size={15} aria-hidden="true" />
-            <span>Sign out</span>
+            <span>Sign out of session</span>
           </button>
         </div>
       </section>

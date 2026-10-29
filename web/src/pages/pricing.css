@@ -116,6 +116,20 @@
   border: 1px solid rgba(77, 163, 255, 0.35);
 }
 
+.badge-current {
+  background: rgba(52, 211, 153, 0.18);
+  color: var(--risk-ok-text, #34D399);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.pricing-test-mode-notice {
+  font-size: 12px;
+  color: var(--text-dim, #94A3B8);
+  text-align: center;
+  margin: 10px 0 0;
+  line-height: 1.4;
+}
+
 .plan-header-title {
   font-size: 24px;
   font-weight: 700;

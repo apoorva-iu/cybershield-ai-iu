@@ -14,6 +14,9 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useAuth } from '../auth';
+import { UsagePill } from '../components/UsagePill';
+import { QuotaExceededModal } from '../components/QuotaExceededModal';
+import { triggerUsageRefresh } from '../lib/useUsage';
 import { processScreenshotFile } from '../components/upi/imageProcessor';
 import { UpiThumbnail, ImageViewerDialog } from '../components/upi/UpiCanvasViewer';
 import { UpiResult } from '../components/upi/UpiResult';
@@ -79,6 +82,8 @@ export function UpiCheck() {
   const [checkError, setCheckError] = useState(null);
   const [checkErrorCode, setCheckErrorCode] = useState(null);
   const [result, setResult] = useState(null);
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+  const [quotaModalData, setQuotaModalData] = useState(null);
 
   // Layout states
   const [accordionOpen, setAccordionOpen] = useState(false);
@@ -294,6 +299,7 @@ export function UpiCheck() {
 
       setResult(res);
       setAccordionOpen(false);
+      triggerUsageRefresh();
 
       // On mobile viewports, collapse input to summary bar
       if (window.innerWidth <= 860) {
@@ -307,7 +313,10 @@ export function UpiCheck() {
     } catch (err) {
       console.error('UPI check error:', err);
       setCheckErrorCode(err.status || null);
-      if (err.status === 404 || err.message?.includes('Network error')) {
+      if (err.status === 429 && (err.data?.error === 'quota_exceeded' || err.data?.code === 'QUOTA_EXCEEDED')) {
+        setQuotaModalData(err.data);
+        setIsQuotaModalOpen(true);
+      } else if (err.status === 404 || err.message?.includes('Network error')) {
         setCheckError('This tool is not available yet.');
       } else if (err.status === 429) {
         setCheckError('Too many checks right now. Please try again in a minute.');
@@ -333,9 +342,12 @@ export function UpiCheck() {
         </Link>
       </div>
 
-      <header className="upi-page-header">
-        <h1 className="upi-page-title">UPI and Payment Check</h1>
-        <p className="upi-page-subtitle">Pay-to-receive, collect requests and refund links</p>
+      <header className="upi-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 className="upi-page-title">UPI and Payment Check</h1>
+          <p className="upi-page-subtitle">Pay-to-receive, collect requests and refund links</p>
+        </div>
+        <UsagePill variant="tool" />
       </header>
 
       {/* 2. MOBILE COLLAPSED SUMMARY (Shown on mobile after result) */}
@@ -651,6 +663,12 @@ export function UpiCheck() {
           }}
         />
       )}
+
+      <QuotaExceededModal
+        isOpen={isQuotaModalOpen}
+        onClose={() => setIsQuotaModalOpen(false)}
+        data={quotaModalData}
+      />
     </div>
   );
 }

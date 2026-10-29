@@ -218,7 +218,8 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
     title: c.title,
     state: c.state,
     score: c.state === 'fail' ? 80 : (c.state === 'warn' ? 45 : 10),
-    findings: c.reason,
+    findings: c.reason ? [{ text: c.reason, severity: c.state === 'fail' ? 'warn' : 'info' }] : [],
+    summary: c.reason,
     reason: c.reason
   }));
 
@@ -227,6 +228,9 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
     generatedAt: new Date().toISOString(),
     tool: 'message',
     scamType: finalAi.scamType,
+    primaryConcern: finalAi.primaryConcern,
+    whatToDo: finalAi.whatToDo,
+    evidence: finalAi.evidence,
     requestedAction: finalAi.requestedAction,
     evidenceSourceCount,
     input: {
@@ -250,6 +254,7 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
       score: finalAi.score,
       confidence: finalAi.confidence,
       limitedEvidence: finalAi.level === 'unable',
+      primaryConcern: finalAi.primaryConcern,
       scoreBreakdown: finalAi.scoreBreakdown
     },
     sources: [

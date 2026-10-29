@@ -26,18 +26,18 @@ export function ToolCard({ tool, isUpcoming = false }) {
     <Link to={tool.href} className="tool-card tool-card-link" aria-label={`${tool.name}: ${tool.line}`}>
       <div className="tool-card-top">
         <div className="tool-icon-square" aria-hidden="true">
-          {Icon && <Icon size={24} strokeWidth={1.75} />}
+          {Icon && <Icon size={26} strokeWidth={1.75} />}
         </div>
-        {tool.badge && (
-          <span className="tool-badge-new">{tool.badge}</span>
-        )}
       </div>
       <div className="tool-card-body">
-        <div className="tool-card-title-row">
-          <h3 className="tool-card-title">{tool.name}</h3>
-          <ArrowRight size={16} className="tool-card-arrow" aria-hidden="true" />
-        </div>
+        <h3 className="tool-card-title">{tool.name}</h3>
         <p className="tool-card-line">{tool.line}</p>
+      </div>
+      <div className="tool-card-action" aria-hidden="true">
+        <span className="tool-card-action-text">Start screening</span>
+        <span className="tool-card-action-pill">
+          <ArrowRight size={15} className="tool-card-arrow" />
+        </span>
       </div>
     </Link>
   );

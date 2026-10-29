@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
 import { Header } from './Header';
 import { Container } from './ui';
 import { ToastContainer } from './Toast';
@@ -54,10 +55,23 @@ export function Layout() {
                 <Link to="/terms">Terms</Link>
                 <Link to="/contact">Contact</Link>
               </div>
-              <p className="footer-disclaimer">Screening aid, not a legal finding.</p>
-              <p className="footer-copy" style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-                Privacy &amp; Terms: Draft for review, not legal advice. &bull; &copy; {new Date().getFullYear()} Cyber Shield.
+              <p className="footer-copy" style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+                &copy; {new Date().getFullYear()} Cyber Shield. All rights reserved.
               </p>
+
+              <div className="footer-creators-wrap">
+                <div className="footer-creators-badge">
+                  <Sparkles size={13} className="creators-sparkle-icon" aria-hidden="true" />
+                  <span className="creators-label">Created &amp; Engineered by</span>
+                  <div className="creators-names">
+                    <span className="creator-pill">Apoorva</span>
+                    <span className="creator-dot">&bull;</span>
+                    <span className="creator-pill">Maruthi</span>
+                    <span className="creator-dot">&bull;</span>
+                    <span className="creator-pill">Lohith</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </Container>
         </footer>

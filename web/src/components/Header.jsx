@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useAuth, getDisplayName, getShortDisplayName, UserAvatar } from '../auth';
+import { UsagePill } from './UsagePill';
+import { useBillingStatus } from '../lib/billing';
 import {
   Menu,
   X,
@@ -43,12 +45,6 @@ function BrowserIcon({ size = 14, className = '' }) {
 
 const RESOURCE_ITEMS = [
   {
-    id: 'how-it-works',
-    title: 'How it works',
-    desc: 'Screening process & verification',
-    icon: HelpCircle
-  },
-  {
     id: 'scam-guides',
     title: 'Scam guides',
     desc: 'Job, UPI & message tactics',
@@ -88,15 +84,14 @@ const RESOURCE_ITEMS = [
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [resourcesOpen, setResourcesOpen] = useState(false);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null); // 'resources' | 'account' | null
+  const resourcesOpen = openDropdown === 'resources';
+  const accountMenuOpen = openDropdown === 'account';
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
 
-  const openTimerRef = useRef(null);
-  const closeTimerRef = useRef(null);
-
   const { session, profile, signOut } = useAuth();
+  const { isPro, daysLeft } = useBillingStatus(session);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -113,64 +108,19 @@ export function Header() {
   const shortDisplayName = getShortDisplayName(displayName, 14);
   const fullEmail = (profile?.email || session?.user?.email || '').trim();
 
-  // Clear any scheduled hover-intent timers
-  const clearDropdownTimers = () => {
-    if (openTimerRef.current) {
-      clearTimeout(openTimerRef.current);
-      openTimerRef.current = null;
-    }
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-  };
-
-  // Coordinated menu controls: opening one GUARANTEES the other is closed
+  // Coordinated menu controls: only one dropdown can ever be active at a time
   const closeAllMenus = () => {
-    clearDropdownTimers();
-    setResourcesOpen(false);
-    setAccountMenuOpen(false);
+    setOpenDropdown(null);
   };
 
-  const toggleResourcesMenu = () => {
-    clearDropdownTimers();
-    setAccountMenuOpen(false);
-    setResourcesOpen((prev) => !prev);
+  const toggleResourcesMenu = (e) => {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    setOpenDropdown((prev) => (prev === 'resources' ? null : 'resources'));
   };
 
-  const toggleAccountMenu = () => {
-    clearDropdownTimers();
-    setResourcesOpen(false);
-    setAccountMenuOpen((prev) => !prev);
-  };
-
-  const handleDropdownMouseEnter = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    // Prevent accidental hover-opening of resources when user has explicitly opened account menu
-    if (accountMenuOpen) return;
-    if (!resourcesOpen && !openTimerRef.current) {
-      openTimerRef.current = setTimeout(() => {
-        setAccountMenuOpen(false);
-        setResourcesOpen(true);
-        openTimerRef.current = null;
-      }, 120); // 120ms hover-intent delay
-    }
-  };
-
-  const handleDropdownMouseLeave = () => {
-    if (openTimerRef.current) {
-      clearTimeout(openTimerRef.current);
-      openTimerRef.current = null;
-    }
-    if (resourcesOpen && !closeTimerRef.current) {
-      closeTimerRef.current = setTimeout(() => {
-        setResourcesOpen(false);
-        closeTimerRef.current = null;
-      }, 200); // 200ms grace period so item clicks register cleanly
-    }
+  const toggleAccountMenu = (e) => {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    setOpenDropdown((prev) => (prev === 'account' ? null : 'account'));
   };
 
   const handleResourceItemClick = (id) => {
@@ -183,23 +133,11 @@ export function Header() {
     }
   };
 
-  const handleDropdownBlur = (e) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(e.relatedTarget)) {
-      clearDropdownTimers();
-      setResourcesOpen(false);
-    }
-  };
-
   // Close menus on route change or search/hash change
   useEffect(() => {
     closeAllMenus();
     setMobileDrawerOpen(false);
   }, [location.pathname, location.search, location.hash]);
-
-  // Clean up timers on unmount
-  useEffect(() => {
-    return () => clearDropdownTimers();
-  }, []);
 
   // Scroll detection: bar shrinks and strengthens border after 40px scroll
   useEffect(() => {
@@ -211,13 +149,13 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Uniform outside-click listener (pointerdown for mouse + touch)
+  // Uniform outside-click listener: closes open menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      const isInsideResources = dropdownRef.current && dropdownRef.current.contains(e.target);
-      const isInsideAccount = accountMenuRef.current && accountMenuRef.current.contains(e.target);
-      if (!isInsideResources && !isInsideAccount) {
-        closeAllMenus();
+      const inResources = dropdownRef.current && dropdownRef.current.contains(e.target);
+      const inAccount = accountMenuRef.current && accountMenuRef.current.contains(e.target);
+      if (!inResources && !inAccount) {
+        setOpenDropdown(null);
       }
     };
     document.addEventListener('pointerdown', handleClickOutside);
@@ -230,12 +168,11 @@ export function Header() {
       if (e.key === 'Escape') {
         if (resourcesOpen) {
           e.preventDefault();
-          clearDropdownTimers();
-          setResourcesOpen(false);
+          setOpenDropdown(null);
           if (dropdownBtnRef.current) dropdownBtnRef.current.focus();
         } else if (accountMenuOpen) {
           e.preventDefault();
-          setAccountMenuOpen(false);
+          setOpenDropdown(null);
           if (accountBtnRef.current) accountBtnRef.current.focus();
         }
       }
@@ -250,26 +187,21 @@ export function Header() {
   const handleDropdownKeyDown = (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      clearDropdownTimers();
-      setResourcesOpen(false);
+      setOpenDropdown(null);
       if (dropdownBtnRef.current) dropdownBtnRef.current.focus();
     } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       toggleResourcesMenu();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      clearDropdownTimers();
-      setAccountMenuOpen(false);
-      setResourcesOpen(true);
+      setOpenDropdown('resources');
       setTimeout(() => {
         const first = menuItemsRef.current[0];
         if (first) first.focus();
       }, 0);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      clearDropdownTimers();
-      setAccountMenuOpen(false);
-      setResourcesOpen(true);
+      setOpenDropdown('resources');
       setTimeout(() => {
         const items = menuItemsRef.current.filter(Boolean);
         const last = items[items.length - 1];
@@ -286,8 +218,7 @@ export function Header() {
 
     if (e.key === 'Escape') {
       e.preventDefault();
-      clearDropdownTimers();
-      setResourcesOpen(false);
+      setOpenDropdown(null);
       if (dropdownBtnRef.current) dropdownBtnRef.current.focus();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -304,8 +235,7 @@ export function Header() {
       e.preventDefault();
       if (items[total - 1]) items[total - 1].focus();
     } else if (e.key === 'Tab') {
-      clearDropdownTimers();
-      setResourcesOpen(false);
+      setOpenDropdown(null);
     }
   };
 
@@ -313,25 +243,21 @@ export function Header() {
   const handleAccountTriggerKeyDown = (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      setAccountMenuOpen(false);
+      setOpenDropdown(null);
       if (accountBtnRef.current) accountBtnRef.current.focus();
     } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       toggleAccountMenu();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      clearDropdownTimers();
-      setResourcesOpen(false);
-      setAccountMenuOpen(true);
+      setOpenDropdown('account');
       setTimeout(() => {
         const first = accountItemsRef.current[0];
         if (first) first.focus();
       }, 0);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      clearDropdownTimers();
-      setResourcesOpen(false);
-      setAccountMenuOpen(true);
+      setOpenDropdown('account');
       setTimeout(() => {
         const items = accountItemsRef.current.filter(Boolean);
         const last = items[items.length - 1];
@@ -346,7 +272,7 @@ export function Header() {
     if (items.length === 0) return;
     if (e.key === 'Escape') {
       e.preventDefault();
-      setAccountMenuOpen(false);
+      setOpenDropdown(null);
       if (accountBtnRef.current) accountBtnRef.current.focus();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -364,7 +290,7 @@ export function Header() {
       const last = items[items.length - 1];
       if (last) last.focus();
     } else if (e.key === 'Tab') {
-      setAccountMenuOpen(false);
+      setOpenDropdown(null);
     }
   };
 
@@ -454,18 +380,9 @@ export function Header() {
             Pricing
           </NavLink>
           <NavLink
-            to="/resources?section=how-it-works"
-            className={({ isActive }) =>
-              `header-nav-item ${
-                isActive && location.search.includes('how-it-works') ? 'active' : ''
-              }`
-            }
-            onClick={() => {
-              if (location.pathname === '/resources') {
-                const el = document.getElementById('how-it-works');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }}
+            to="/how-it-works"
+            className={({ isActive }) => `header-nav-item ${isActive ? 'active' : ''}`}
+            onClick={closeAllMenus}
           >
             How it works
           </NavLink>
@@ -474,9 +391,6 @@ export function Header() {
           <div
             className="resources-dropdown-wrap"
             ref={dropdownRef}
-            onMouseEnter={handleDropdownMouseEnter}
-            onMouseLeave={handleDropdownMouseLeave}
-            onBlur={handleDropdownBlur}
           >
             <button
               ref={dropdownBtnRef}
@@ -528,7 +442,7 @@ export function Header() {
         {/* Right: "Sign in" or Account menu + "Get extension" light button */}
         <div className="header-right-actions">
           {session ? (
-            <div className="resources-dropdown-wrap" ref={accountMenuRef}>
+            <div className="resources-dropdown-wrap header-account-wrap" ref={accountMenuRef}>
               <button
                 ref={accountBtnRef}
                 type="button"
@@ -566,10 +480,16 @@ export function Header() {
                       className="account-menu-avatar-lg"
                     />
                     <div className="account-menu-meta">
-                      <strong className="item-title account-menu-full-text">{displayName}</strong>
+                      <div className="account-menu-user-row">
+                        <strong className="item-title account-menu-full-text">{displayName}</strong>
+                        <span className={`account-plan-chip ${isPro ? 'chip-pro' : 'chip-free'}`}>
+                          {isPro ? `Pro · ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left` : 'Free'}
+                        </span>
+                      </div>
                       {fullEmail && (
                         <span className="item-desc account-menu-full-text">{fullEmail}</span>
                       )}
+                      <UsagePill variant="header" />
                     </div>
                   </div>
 
@@ -716,12 +636,8 @@ export function Header() {
                   Pricing
                 </NavLink>
                 <NavLink
-                  to="/resources?section=how-it-works"
-                  className={({ isActive }) =>
-                    `drawer-link-item ${
-                      isActive && location.search.includes('how-it-works') ? 'active' : ''
-                    }`
-                  }
+                  to="/how-it-works"
+                  className={({ isActive }) => `drawer-link-item ${isActive ? 'active' : ''}`}
                   onClick={() => setMobileDrawerOpen(false)}
                 >
                   How it works
@@ -775,6 +691,7 @@ export function Header() {
                         {fullEmail && (
                           <span className="item-desc account-menu-full-text">{fullEmail}</span>
                         )}
+                        <UsagePill variant="header" />
                       </div>
                     </div>
                     <Link

@@ -1980,6 +1980,26 @@
   display: none;
 }
 
+body.upi-printing .upi-quick-guidance,
+.upi-result-card-printing .upi-quick-guidance {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: none !important;
+}
+
+body.upi-printing .upi-guidance-title,
+.upi-result-card-printing .upi-guidance-title {
+  color: #111827 !important;
+}
+
+body.upi-printing .upi-guidance-list,
+body.upi-printing .upi-guidance-list li,
+.upi-result-card-printing .upi-guidance-list,
+.upi-result-card-printing .upi-guidance-list li {
+  color: #1F2937 !important;
+}
+
 /* Print CSS */
 @media print {
   header,
@@ -2045,14 +2065,14 @@
     box-shadow: none !important;
   }
 
-  /* Printed container gets 14mm padding to offset zero-margin @page */
+  /* Printed container: minimal top padding (3mm) to eliminate excessive top gap, clean side/bottom gutters */
   .upi-result-card,
   .upi-result-card-printing {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 14mm !important;
+    padding: 3mm 8mm 8mm 8mm !important;
     background: #FFFFFF !important;
     color: #111827 !important;
     border: none !important;
@@ -2200,15 +2220,33 @@
 
   /* Quick guidance & actions list in print */
   .upi-quick-guidance {
-    background: #F9FAFB !important;
+    background: #FFFFFF !important;
+    color: #111827 !important;
     border: 1px solid #E5E7EB !important;
+    border-radius: 8px !important;
+    padding: 12pt 14pt !important;
+    margin-top: 12pt !important;
+    box-shadow: none !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
+  .upi-guidance-title {
+    color: #111827 !important;
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    margin-bottom: 6pt !important;
+  }
+
+  .upi-guidance-list {
+    color: #1F2937 !important;
+    margin: 0 !important;
+    padding-left: 18pt !important;
+  }
+
   .upi-guidance-list li,
   .upi-actions-full-list li {
-    color: #111827 !important;
+    color: #1F2937 !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
     margin-bottom: 4pt !important;

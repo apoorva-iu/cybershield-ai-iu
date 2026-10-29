@@ -11,7 +11,7 @@ import {
   PhoneCall,
   ExternalLink
 } from 'lucide-react';
-import { TOOLS, UPCOMING_TOOL } from '../tools';
+import { TOOLS } from '../tools';
 import { ToolCard } from '../components/ToolCard';
 import { Container } from '../components/ui';
 import { PageTransition } from '../components/wow';
@@ -20,6 +20,10 @@ import '../tools.css';
 
 export function Tools() {
   const [quota, setQuota] = useState(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -65,11 +69,6 @@ export function Tools() {
             {TOOLS.map((tool) => (
               <ToolCard key={tool.id} tool={tool} />
             ))}
-          </div>
-
-          {/* More tools coming card */}
-          <div className="tools-upcoming-wrap">
-            <ToolCard tool={UPCOMING_TOOL} isUpcoming={true} />
           </div>
 
           {/* How every check works */}
@@ -173,10 +172,6 @@ export function Tools() {
             </div>
           </section>
 
-          {/* Honest Footer Note */}
-          <div className="tools-hub-footer-note">
-            <p>Screening aid, not a legal finding.</p>
-          </div>
         </Container>
       </div>
     </PageTransition>

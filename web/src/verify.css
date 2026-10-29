@@ -4,12 +4,15 @@
 
 .verify-page {
   width: 100%;
-  padding: 24px 0 0;
+  padding-top: calc(var(--nav-height) + 24px);
+  padding-bottom: var(--section-gap);
+  min-height: 100vh;
 }
 
 @media (max-width: 600px) {
   .verify-page {
-    padding: 16px 0 0;
+    padding-top: calc(var(--nav-height) + 16px);
+    padding-bottom: calc(var(--section-gap) * 0.75);
   }
 }
 

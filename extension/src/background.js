@@ -57,19 +57,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         url: typeof payload.url === 'string' ? payload.url : '',
         company: typeof payload.company === 'string' ? payload.company : '',
         email: typeof payload.email === 'string' ? payload.email : '',
-        desc: text.slice(0, 20000)
+        desc: (typeof payload.desc === 'string' && payload.desc.trim() ? payload.desc : text).slice(0, 20000)
       };
     } else if (checkType === 'upi') {
       endpoint = `${API_BASE}/api/upi/check`;
       reqBody = {
         input: text.slice(0, 20000),
-        source: 'text'
+        source: 'pasted'
       };
     } else {
       endpoint = `${API_BASE}/api/message/check`;
       reqBody = {
         input: text.slice(0, 20000),
-        source: 'text'
+        source: 'pasted'
       };
     }
 
@@ -78,7 +78,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         let res = await fetch(endpoint, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Client': 'extension'
           },
           body: JSON.stringify(reqBody)
         });
@@ -92,7 +93,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               res = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json'
+                  'Content-Type': 'application/json',
+                  'X-Client': 'extension'
                 },
                 body: JSON.stringify(reqBody)
               });
@@ -100,20 +102,33 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           } catch (e) {}
         }
 
+        let json = null;
+        try {
+          json = await res.json();
+        } catch (e) {
+          json = null;
+        }
+
         if (res.status === 429) {
+          if (json && (json.error === 'quota_exceeded' || json.code === 'QUOTA_EXCEEDED')) {
+            sendResponse({
+              ok: false,
+              status: 429,
+              code: 'quota_exceeded',
+              error: 'quota_exceeded',
+              action: json.action,
+              limit: json.limit,
+              used: json.used,
+              resetsAt: json.resetsAt
+            });
+            return;
+          }
           sendResponse({
             ok: false,
             status: 429,
             error: 'Too many checks right now. Please try again in a minute.'
           });
           return;
-        }
-
-        let json = null;
-        try {
-          json = await res.json();
-        } catch (e) {
-          json = null;
         }
 
         if (res.status === 400) {

@@ -43,7 +43,8 @@ async function zipExtension() {
   // Ensure extension/config.js has the target API_BASE before bundling
   const rootDir = path.join(__dirname, '..');
   const sourceConfigPath = path.join(rootDir, 'extension', 'config.js');
-  fs.writeFileSync(sourceConfigPath, `// Auto-generated configuration for Cyber Shield extension package.\nexport const API_BASE = "${apiUrl}";\n`, 'utf8');
+  const configExport = `// Auto-generated configuration for Cyber Shield extension package.\nexport const API_BASE = "${apiUrl}";\n\nexport const KNOWN_JOB_BOARDS = [\n  'linkedin',\n  'indeed',\n  'naukri',\n  'glassdoor',\n  'internshala',\n  'foundit',\n  'monster',\n  'shine',\n  'timesjobs',\n  'wellfound',\n  'instahyre',\n  'apna',\n  'workindia',\n  'cutshort',\n  'hirist',\n  'unstop'\n];\n`;
+  fs.writeFileSync(sourceConfigPath, configExport, 'utf8');
 
   console.log('[extension:zip] Running extension:build...');
   execSync(`node "${path.join(__dirname, 'build-extension.js')}"`, { stdio: 'inherit' });
@@ -61,8 +62,7 @@ async function zipExtension() {
 
   // Rewrite config.js in temp folder
   const tempConfigPath = path.join(tempExtDir, 'config.js');
-  const configContent = `// Auto-generated configuration for Cyber Shield extension package.\nexport const API_BASE = "${apiUrl}";\n`;
-  fs.writeFileSync(tempConfigPath, configContent, 'utf8');
+  fs.writeFileSync(tempConfigPath, configExport, 'utf8');
 
   // Rewrite manifest.json in temp folder
   const tempManifestPath = path.join(tempExtDir, 'manifest.json');

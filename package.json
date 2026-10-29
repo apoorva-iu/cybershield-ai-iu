@@ -25,6 +25,9 @@
     "test:auth": "node tests/auth.test.js",
     "test:upi": "node tests/upi.test.js",
     "test:message": "node tests/message.test.js",
+    "test:quota": "node tests/quota.test.js",
+    "test:billing": "node tests/billing.test.js",
+    "test:checkout": "node tests/checkout_ui.test.js",
     "extension:build": "node scripts/build-extension.js",
     "extension:zip": "node scripts/zip-extension.js",
     "build:all": "npm run extension:zip && npm run web:build && node -e \"const fs=require('fs'); fs.mkdirSync('public/downloads', {recursive:true}); fs.copyFileSync('web/public/downloads/cyber-shield-extension.zip', 'public/downloads/cyber-shield-extension.zip'); fs.copyFileSync('web/public/downloads/extension-info.json', 'public/downloads/extension-info.json');\""
@@ -36,7 +39,8 @@
     "ethers": "^6.13.2",
     "express": "^4.19.2",
     "express-rate-limit": "^8.7.1",
-    "helmet": "^8.3.0"
+    "helmet": "^8.3.0",
+    "razorpay": "^2.9.8"
   },
   "devDependencies": {
     "archiver": "^8.0.0",

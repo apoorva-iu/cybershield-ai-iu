@@ -1,5 +1,5 @@
 // Cyber Shield Extension - Content Script
-import { API_BASE } from '../config.js';
+import { API_BASE, KNOWN_JOB_BOARDS } from '../config.js';
 import { downloadReceipt } from '../shared/receipt-export.js';
 
 (function() {
@@ -89,19 +89,23 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     /* Verdict Bubble Dialog */
     .cs-bubble {
       position: fixed;
-      width: 360px;
-      max-height: 85vh;
-      overflow-y: auto;
+      width: min(380px, calc(100vw - 32px));
+      max-height: min(80vh, 640px);
       background: #0B1220;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 12px;
       box-shadow: 0 10px 36px rgba(0, 0, 0, 0.7);
-      padding: 16px;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      overflow: hidden;
       pointer-events: auto;
       animation: csFadeIn 0.18s ease-out;
+      box-sizing: border-box;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #E2E8F0;
+      z-index: 2147483647;
     }
 
     @keyframes csFadeIn {
@@ -110,11 +114,13 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-header {
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 8px;
+      padding: 12px 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0B1220;
     }
 
     .cs-brand {
@@ -150,6 +156,18 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       outline-offset: 1px;
     }
 
+    /* Scrollable Middle Body */
+    .cs-bubble-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+
     /* Ready State Styles */
     .cs-ready-section {
       display: flex;
@@ -178,7 +196,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       border: none;
       color: #94A3B8;
       padding: 7px 6px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
       border-radius: 6px;
       cursor: pointer;
@@ -206,9 +224,33 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-hint-line {
-      font-size: 11.5px;
+      font-size: 13px;
       color: #94A3B8;
       line-height: 1.4;
+    }
+
+    .cs-use-page-desc-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .cs-use-page-desc-btn {
+      background: rgba(77, 163, 255, 0.12);
+      border: 1px solid rgba(77, 163, 255, 0.35);
+      color: #60A5FA;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s;
+    }
+
+    .cs-use-page-desc-btn:hover {
+      background: rgba(77, 163, 255, 0.22);
+      border-color: #93C5FD;
     }
 
     .cs-textarea-container {
@@ -219,16 +261,16 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
     .cs-edit-textarea {
       width: 100%;
-      min-height: 84px;
-      max-height: 160px;
+      min-height: 90px;
+      max-height: 180px;
       resize: vertical;
       background: #05080F;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 6px;
       padding: 8px 10px;
       font-family: inherit;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 13px;
+      line-height: 1.45;
       color: #FFFFFF;
       outline: none;
       transition: border-color 0.15s;
@@ -240,7 +282,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-char-counter {
-      font-size: 11px;
+      font-size: 12px;
       color: #94A3B8;
       text-align: right;
     }
@@ -263,8 +305,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-spinner {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       border: 2px solid rgba(255, 255, 255, 0.2);
       border-top-color: #4DA3FF;
       border-radius: 50%;
@@ -276,7 +318,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-loading-note {
-      font-size: 12px;
+      font-size: 13px;
       color: #C9D3E3;
       line-height: 1.4;
     }
@@ -314,29 +356,29 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-level-pill {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
       background: var(--cs-risk-bg, rgba(18, 128, 92, 0.2));
       color: var(--cs-risk-color, #12805C);
     }
 
     .cs-pill-type {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.08);
       color: #E2E8F0;
     }
 
     .cs-pill-confidence {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
       background: rgba(77, 163, 255, 0.12);
       color: #60A5FA;
@@ -353,13 +395,13 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       font-size: 14px;
       font-weight: 700;
       color: #FFFFFF;
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
     .cs-headline-sub {
-      font-size: 12px;
+      font-size: 13px;
       color: #C9D3E3;
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
     /* Top Findings */
@@ -370,7 +412,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     .cs-section-label {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -381,11 +423,12 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      font-size: 12px;
+      font-size: 13px;
       color: #FFFFFF;
       background: rgba(255, 255, 255, 0.03);
       padding: 6px 8px;
       border-radius: 6px;
+      line-height: 1.4;
     }
 
     .cs-finding-dot {
@@ -401,7 +444,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     .cs-sev-info, .cs-sev-ok { background: #12805C; }
 
     .cs-finding-badge {
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       padding: 1px 6px;
       border-radius: 3px;
@@ -411,17 +454,63 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
     .cs-badge-bad { background: rgba(198, 40, 40, 0.25); color: #F87171; border: 1px solid rgba(198, 40, 40, 0.4); }
     .cs-badge-warn { background: rgba(183, 121, 31, 0.25); color: #FBBF24; border: 1px solid rgba(183, 121, 31, 0.4); }
-    .cs-badge-info { background: rgba(18, 128, 92, 0.25); color: #34D399; border: 1px solid rgba(18, 128, 92, 0.4); }
+    .cs-badge-info, .cs-badge-ok { background: rgba(18, 128, 92, 0.25); color: #34D399; border: 1px solid rgba(18, 128, 92, 0.4); }
 
     /* Honest Line */
     .cs-honest-line {
-      font-size: 12px;
+      font-size: 13px;
       color: #C9D3E3;
       padding: 6px 8px;
       background: rgba(255, 255, 255, 0.03);
       border-left: 3px solid #4DA3FF;
       border-radius: 0 4px 4px 0;
-      line-height: 1.4;
+      line-height: 1.45;
+    }
+
+    /* Collapsible What Was Sent */
+    .cs-sent-details {
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.2);
+      font-size: 12px;
+    }
+
+    .cs-sent-summary {
+      cursor: pointer;
+      color: #C9D3E3;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+    }
+
+    .cs-sent-summary:focus-visible {
+      color: #4DA3FF;
+    }
+
+    .cs-sent-content {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: #94A3B8;
+      word-break: break-all;
+      font-size: 12px;
+    }
+
+    .cs-sent-field strong {
+      color: #C9D3E3;
+    }
+
+    /* Sticky Footer */
+    .cs-sticky-footer {
+      flex-shrink: 0;
+      padding: 10px 14px 12px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0B1220;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     /* Proof ID Row */
@@ -432,22 +521,24 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       background: rgba(255, 255, 255, 0.03);
       padding: 6px 10px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 13px;
     }
 
     .cs-proof-id {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       color: #4DA3FF;
       font-weight: 600;
+      font-size: 12px;
     }
 
     .cs-copy-btn {
       background: transparent;
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #C9D3E3;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
     }
 
@@ -469,8 +560,9 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
     .cs-action-btn {
       padding: 8px 10px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
+      min-height: 36px;
       border-radius: 6px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: #101B2E;
@@ -478,6 +570,9 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       cursor: pointer;
       text-align: center;
       transition: background 0.15s, border-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .cs-action-btn:hover {
@@ -504,43 +599,10 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
     .cs-pdf-hint {
       grid-column: 1 / -1;
-      font-size: 11px;
+      font-size: 12px;
       color: #94A3B8;
       text-align: center;
       font-style: italic;
-    }
-
-    /* Collapsible What Was Sent */
-    .cs-sent-details {
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      padding: 6px 10px;
-      background: rgba(0, 0, 0, 0.2);
-      font-size: 11px;
-    }
-
-    .cs-sent-summary {
-      cursor: pointer;
-      color: #C9D3E3;
-      font-weight: 500;
-      outline: none;
-    }
-
-    .cs-sent-summary:focus-visible {
-      color: #4DA3FF;
-    }
-
-    .cs-sent-content {
-      margin-top: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      color: #94A3B8;
-      word-break: break-all;
-    }
-
-    .cs-sent-field strong {
-      color: #C9D3E3;
     }
 
     /* Error Box */
@@ -550,7 +612,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       color: #FCA5A5;
       padding: 10px 12px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 13px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -561,9 +623,9 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       background: #C62828;
       border: none;
       color: #FFFFFF;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
     }
@@ -572,13 +634,46 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       background: #991B1B;
     }
 
+    /* Quota Exceeded Box */
+    .cs-quota-box {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #E2E8F0;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cs-upgrade-btn {
+      align-self: flex-start;
+      background: #0A66C2;
+      border: none;
+      color: #FFFFFF;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .cs-upgrade-btn:hover {
+      background: #084e96;
+    }
+
     /* Footer */
     .cs-footer {
-      font-size: 11px;
+      font-size: 12px;
       color: #94A3B8;
       text-align: center;
       padding-top: 4px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
   `;
   shadow.appendChild(styleEl);
@@ -620,14 +715,38 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     return false;
   }
 
+  function isKnownJobBoardHost() {
+    const host = window.location.hostname.toLowerCase();
+    const boards = Array.isArray(KNOWN_JOB_BOARDS) ? KNOWN_JOB_BOARDS : [
+      'linkedin', 'indeed', 'naukri', 'glassdoor', 'internshala', 'foundit',
+      'monster', 'shine', 'timesjobs', 'wellfound', 'instahyre', 'apna',
+      'workindia', 'cutshort', 'hirist', 'unstop'
+    ];
+    return boards.some(b => host === b || host.endsWith('.' + b) || host.includes('.' + b + '.') || host.includes(b));
+  }
+
+  function isBoardNameOrHost(name) {
+    if (!name || typeof name !== 'string') return true;
+    const clean = name.trim().toLowerCase();
+    if (!clean) return true;
+    const host = window.location.hostname.toLowerCase();
+    if (clean === host || host.includes(clean) || clean.includes(host)) return true;
+    const boards = Array.isArray(KNOWN_JOB_BOARDS) ? KNOWN_JOB_BOARDS : [
+      'linkedin', 'indeed', 'naukri', 'glassdoor', 'internshala', 'foundit',
+      'monster', 'shine', 'timesjobs', 'wellfound', 'instahyre', 'apna',
+      'workindia', 'cutshort', 'hirist', 'unstop'
+    ];
+    return boards.some(b => clean === b || clean.includes(b) || clean === `${b}.com`);
+  }
+
   function getCleanUrl() {
     try {
       const u = new URL(window.location.href);
       u.hash = '';
-      const SENSITIVE_KEYS = /^(token|key|auth|session|sid|password|pass|secret|code)$/i;
+      const STRIP_KEYS = /^(utm_|ref|refId|trackingId|trk|midToken|tracking_id|source|sessionId|fbclid|gclid|token|key|auth|session|sid|password|pass|secret|code)$/i;
       const toDelete = [];
       for (const k of u.searchParams.keys()) {
-        if (SENSITIVE_KEYS.test(k)) {
+        if (STRIP_KEYS.test(k)) {
           toDelete.push(k);
         }
       }
@@ -640,16 +759,133 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
   }
 
-  function getCompany() {
-    const ogSite = document.querySelector('meta[property="og:site_name"]');
-    if (ogSite && ogSite.content && ogSite.content.trim()) {
-      return ogSite.content.trim().slice(0, 200);
+  function getCompany(selectedText = '') {
+    // (1) Check JSON-LD for JobPosting -> hiringOrganization
+    try {
+      const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+      for (const script of scripts) {
+        try {
+          const json = JSON.parse(script.textContent);
+          const items = Array.isArray(json) ? json : (json['@graph'] && Array.isArray(json['@graph']) ? json['@graph'] : [json]);
+          for (const item of items) {
+            if (item && (item['@type'] === 'JobPosting' || (Array.isArray(item['@type']) && item['@type'].includes('JobPosting')))) {
+              const org = item.hiringOrganization;
+              if (org) {
+                let orgName = '';
+                if (typeof org === 'string') orgName = org.trim();
+                else if (typeof org.name === 'string') orgName = org.name.trim();
+                else if (typeof org.legalName === 'string') orgName = org.legalName.trim();
+
+                if (orgName && !isBoardNameOrHost(orgName)) {
+                  return orgName.slice(0, 200);
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
+
+    // (2) Page structured company element / og tags when clearly a company (NEVER og:site_name, NEVER title, NEVER hostname)
+    try {
+      const metaCompany = document.querySelector('meta[property="og:company_name"], meta[name="company"], meta[property="job:company"]');
+      if (metaCompany && metaCompany.content && metaCompany.content.trim()) {
+        const c = metaCompany.content.trim();
+        if (!isBoardNameOrHost(c)) {
+          return c.slice(0, 200);
+        }
+      }
+
+      const companySelectors = [
+        '[itemprop="hiringOrganization"]',
+        '[itemprop="hiringOrganization"] [itemprop="name"]',
+        '.job-details-jobs-unified-top-card__company-name a',
+        '.job-details-jobs-unified-top-card__company-name',
+        '.jobs-unified-top-card__company-name a',
+        '.jobs-unified-top-card__company-name',
+        '.topcard__flavor--black-link',
+        '[data-testid="inlineHeader-companyName"]',
+        '.companyName',
+        '.jd-header-comp-name a',
+        '.jd-header-comp-name',
+        '.comp-name',
+        '[data-test="employer-name"]',
+        '.company_name'
+      ];
+      for (const sel of companySelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.textContent && el.textContent.trim()) {
+          const c = el.textContent.trim();
+          if (!isBoardNameOrHost(c) && c.length <= 100 && !c.includes('\n')) {
+            return c.slice(0, 200);
+          }
+        }
+      }
+    } catch (e) {}
+
+    // (3) Company named in selected text
+    if (selectedText && typeof selectedText === 'string') {
+      const companyMatch = selectedText.match(/(?:company|hiring organization|employer)\s*:\s*([A-Za-z0-9&.,' -]{2,60})/i)
+        || selectedText.match(/(?:at|with|join)\s+([A-Z][A-Za-z0-9&.,' -]{1,40})\s+(?:is hiring|are hiring|for the role)/);
+      if (companyMatch && companyMatch[1]) {
+        const c = companyMatch[1].trim();
+        if (!isBoardNameOrHost(c)) {
+          return c.slice(0, 200);
+        }
+      }
     }
-    return window.location.hostname.replace(/^www\./i, '').slice(0, 200);
+
+    // Otherwise leave it EMPTY. Never use page title, og:site_name, or hostname!
+    return '';
+  }
+
+  function getPageJobDescription() {
+    const descSelectors = [
+      '#job-details',
+      '.jobs-description__content',
+      '.jobs-box__html-content',
+      '.description__text',
+      '#jobDescriptionText',
+      '.job-desc',
+      '[data-test="jobDescriptionText"]',
+      '[itemprop="description"]',
+      '.job-description'
+    ];
+    for (const sel of descSelectors) {
+      const el = document.querySelector(sel);
+      if (el && el.innerText && el.innerText.trim().length > 50) {
+        return el.innerText.trim().slice(0, 20000);
+      }
+    }
+    return '';
+  }
+
+  function positionBubbleInViewport(bubble, pos) {
+    if (!bubble) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const bubbleWidth = bubble.offsetWidth || Math.min(380, vw - 32);
+    const bubbleHeight = bubble.offsetHeight || Math.min(vh * 0.8, 640);
+
+    let left = pos ? pos.x : 40;
+    let top = pos ? pos.y : 40;
+
+    if (left + bubbleWidth > vw - 16) {
+      left = Math.max(16, vw - bubbleWidth - 16);
+    }
+    if (left < 16) left = 16;
+
+    if (top + bubbleHeight > vh - 16) {
+      top = Math.max(16, vh - bubbleHeight - 16);
+    }
+    if (top < 16) top = 16;
+
+    bubble.style.left = `${Math.round(left)}px`;
+    bubble.style.top = `${Math.round(top)}px`;
   }
 
   function getEmail(text) {
-    const emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+    const emails = (text || '').match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
     if (emails.length === 1) {
       return emails[0].slice(0, 200);
     }
@@ -782,21 +1018,21 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     bubble.setAttribute('role', 'dialog');
     bubble.setAttribute('aria-label', 'Check selected text');
 
-    const bubbleWidth = 360;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    let left = pos.x;
-    let top = pos.y;
-    if (left + bubbleWidth > vw - 16) left = Math.max(16, vw - bubbleWidth - 16);
-    if (top + 340 > vh - 16) top = Math.max(16, vh - 360);
-    if (left < 16) left = 16;
-    if (top < 16) top = 16;
-
-    bubble.style.left = `${Math.round(left)}px`;
-    bubble.style.top = `${Math.round(top)}px`;
+    bubble.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        hideBubble();
+      }
+    });
 
     let currentType = selectedType || 'message';
     let currentText = (text || '').slice(0, 20000);
+
+    const isJobBoard = isKnownJobBoardHost();
+    const pageJobDesc = isJobBoard ? getPageJobDescription() : '';
+    if (currentType === 'job' && currentText.trim().length < 30 && pageJobDesc) {
+      currentText = pageJobDesc;
+    }
 
     bubble.innerHTML = `
       <div class="cs-header">
@@ -812,59 +1048,70 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
       </div>
 
-      <div class="cs-ready-section">
-        <div class="cs-prompt-label">Check this text as:</div>
+      <div class="cs-bubble-body">
+        <div class="cs-ready-section">
+          <div class="cs-prompt-label">Check this text as:</div>
 
-        <div class="cs-segment-control" role="radiogroup" aria-label="Check this text as">
-          <button
-            type="button"
-            role="radio"
-            class="cs-segment-btn"
-            data-value="job"
-            aria-checked="${currentType === 'job'}"
-            tabindex="${currentType === 'job' ? '0' : '-1'}"
-          >
-            Job offer
-          </button>
-          <button
-            type="button"
-            role="radio"
-            class="cs-segment-btn"
-            data-value="upi"
-            aria-checked="${currentType === 'upi'}"
-            tabindex="${currentType === 'upi' ? '0' : '-1'}"
-          >
-            UPI or payment
-          </button>
-          <button
-            type="button"
-            role="radio"
-            class="cs-segment-btn"
-            data-value="message"
-            aria-checked="${currentType === 'message'}"
-            tabindex="${currentType === 'message' ? '0' : '-1'}"
-          >
-            Message
-          </button>
+          <div class="cs-segment-control" role="radiogroup" aria-label="Check this text as">
+            <button
+              type="button"
+              role="radio"
+              class="cs-segment-btn"
+              data-value="job"
+              aria-checked="${currentType === 'job'}"
+              tabindex="${currentType === 'job' ? '0' : '-1'}"
+            >
+              Job offer
+            </button>
+            <button
+              type="button"
+              role="radio"
+              class="cs-segment-btn"
+              data-value="upi"
+              aria-checked="${currentType === 'upi'}"
+              tabindex="${currentType === 'upi' ? '0' : '-1'}"
+            >
+              UPI or payment
+            </button>
+            <button
+              type="button"
+              role="radio"
+              class="cs-segment-btn"
+              data-value="message"
+              aria-checked="${currentType === 'message'}"
+              tabindex="${currentType === 'message' ? '0' : '-1'}"
+            >
+              Message
+            </button>
+          </div>
+
+          <div class="cs-hint-line">Not sure? Message works for any text.</div>
+
+          ${(isJobBoard && pageJobDesc) ? `
+            <div class="cs-use-page-desc-wrap">
+              <button type="button" class="cs-use-page-desc-btn" id="cs-btn-use-pagedesc">
+                Use main job posting text (${pageJobDesc.length > 20000 ? '20,000' : pageJobDesc.length.toLocaleString()} chars)
+              </button>
+            </div>
+          ` : ''}
+
+          <div class="cs-textarea-container">
+            <textarea
+              class="cs-edit-textarea"
+              maxlength="20000"
+              aria-label="Text to check"
+            >${escapeHtml(currentText)}</textarea>
+            <div class="cs-char-counter">${currentText.length.toLocaleString()} / 20,000 characters</div>
+          </div>
         </div>
+      </div>
 
-        <div class="cs-hint-line">Not sure? Message works for any text.</div>
-
-        <div class="cs-textarea-container">
-          <textarea
-            class="cs-edit-textarea"
-            maxlength="20000"
-            aria-label="Text to check"
-          >${escapeHtml(currentText)}</textarea>
-          <div class="cs-char-counter">${currentText.length.toLocaleString()} / 20,000 characters</div>
-        </div>
-
+      <div class="cs-sticky-footer">
         <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-btn-check">
           Check
         </button>
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
       </div>
-
-      <div class="cs-footer">Screening aid, not a legal finding.</div>
     `;
 
     // Close button
@@ -874,6 +1121,16 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     const counter = bubble.querySelector('.cs-char-counter');
     const segmentButtons = Array.from(bubble.querySelectorAll('.cs-segment-btn'));
     const checkBtn = bubble.querySelector('#cs-btn-check');
+    const usePageDescBtn = bubble.querySelector('#cs-btn-use-pagedesc');
+
+    if (usePageDescBtn && pageJobDesc) {
+      usePageDescBtn.addEventListener('click', () => {
+        textarea.value = pageJobDesc.slice(0, 20000);
+        currentText = textarea.value;
+        counter.textContent = `${currentText.length.toLocaleString()} / 20,000 characters`;
+        textarea.focus();
+      });
+    }
 
     // Textarea input event
     textarea.addEventListener('input', () => {
@@ -931,6 +1188,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
     container.appendChild(bubble);
     activeBubble = bubble;
+    positionBubbleInViewport(bubble, pos);
+    requestAnimationFrame(() => positionBubbleInViewport(bubble, pos));
     textarea.focus();
   }
 
@@ -939,8 +1198,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       text,
       desc: text,
       url: getCleanUrl(),
-      company: getCompany(),
-      email: getEmail(text)
+      company: checkType === 'job' ? getCompany(text) : '',
+      email: checkType === 'job' ? getEmail(text) : ''
     };
     lastCheckedPayload = { text, checkType, payload };
 
@@ -950,7 +1209,11 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       chrome.runtime.sendMessage({ type: 'CHECK', checkType, payload }, (res) => {
         if (!activeBubble) return;
         if (!res || !res.ok) {
-          showBubbleError(res ? res.error : 'Could not reach Cyber Shield.');
+          if (res && (res.code === 'quota_exceeded' || res.error === 'quota_exceeded')) {
+            showBubbleQuotaExceeded(res);
+          } else {
+            showBubbleError(res ? res.error : 'Could not reach Cyber Shield.');
+          }
         } else {
           showBubbleResult(res.data, checkType, payload);
         }
@@ -977,18 +1240,24 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
       </div>
 
-      <div class="cs-loading-wrap">
-        <div class="cs-loading-title">
-          <div class="cs-spinner"></div>
-          <span>Checking the evidence...</span>
+      <div class="cs-bubble-body">
+        <div class="cs-loading-wrap">
+          <div class="cs-loading-title">
+            <div class="cs-spinner"></div>
+            <span>Checking the evidence...</span>
+          </div>
+          <p class="cs-loading-note">Checks run in parallel with threat intel and verification services.</p>
         </div>
-        <p class="cs-loading-note">Checks run in parallel with threat intel and verification services.</p>
       </div>
 
-      <div class="cs-footer">Screening aid, not a legal finding.</div>
+      <div class="cs-sticky-footer">
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
+      </div>
     `;
 
     activeBubble.querySelector('.cs-close-btn').addEventListener('click', hideBubble);
+    positionBubbleInViewport(activeBubble, activeBubblePos);
+    requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
   }
 
   function showBubbleError(errorMsg) {
@@ -1008,17 +1277,24 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
       </div>
 
-      <div class="cs-err-box" role="alert">
-        <span>${escapeHtml(errorMsg)}</span>
-        <button type="button" class="cs-retry-btn">Retry</button>
+      <div class="cs-bubble-body">
+        <div class="cs-err-box" role="alert">
+          <span>${escapeHtml(errorMsg)}</span>
+        </div>
       </div>
 
-      <div class="cs-footer">Screening aid, not a legal finding.</div>
+      <div class="cs-sticky-footer">
+        <div class="cs-actions-grid">
+          <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-retry-btn">Retry</button>
+          <button type="button" class="cs-action-btn" id="cs-edit-btn">Edit text</button>
+        </div>
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
+      </div>
     `;
 
     activeBubble.querySelector('.cs-close-btn').addEventListener('click', hideBubble);
 
-    const retryBtn = activeBubble.querySelector('.cs-retry-btn');
+    const retryBtn = activeBubble.querySelector('#cs-retry-btn');
     if (retryBtn) {
       retryBtn.addEventListener('click', () => {
         if (lastCheckedPayload) {
@@ -1029,6 +1305,63 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       });
       retryBtn.focus();
     }
+
+    const editBtn = activeBubble.querySelector('#cs-edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        openReadyBubble(lastCheckedPayload ? lastCheckedPayload.text : '', activeBubblePos);
+      });
+    }
+
+    positionBubbleInViewport(activeBubble, activeBubblePos);
+    requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
+  }
+
+  function showBubbleQuotaExceeded(quotaRes) {
+    if (!activeBubble) return;
+
+    activeBubble.innerHTML = `
+      <div class="cs-header">
+        <div class="cs-brand">
+          <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="25" fill="#0A66C2" />
+            <path d="M 50 20 L 76 28 C 76 54 64 69 50 80 C 36 69 24 54 24 28 Z" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" />
+            <path d="M 50 28 L 68 34 C 68 53 59 63 50 72 C 41 63 32 53 32 34 Z" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" />
+            <path d="M 50 37 L 60 41 C 60 52 55 58 50 63 C 45 58 40 52 40 41 Z" fill="#FFFFFF" />
+          </svg>
+          <span>Cyber Shield</span>
+        </div>
+        <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
+      </div>
+
+      <div class="cs-bubble-body">
+        <div class="cs-quota-box" role="alert">
+          <span>Free checks used for this month. Open Cyber Shield to sign in or upgrade.</span>
+          <button type="button" class="cs-upgrade-btn" id="cs-open-site-btn">Open Cyber Shield &rarr;</button>
+        </div>
+      </div>
+
+      <div class="cs-sticky-footer">
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
+      </div>
+    `;
+
+    activeBubble.querySelector('.cs-close-btn').addEventListener('click', hideBubble);
+
+    const openBtn = activeBubble.querySelector('#cs-open-site-btn');
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        const targetUrl = (quotaRes && quotaRes.action === 'sign_in')
+          ? `${API_BASE}/#/login`
+          : `${API_BASE}/#/pricing`;
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        hideBubble();
+      });
+      openBtn.focus();
+    }
+
+    positionBubbleInViewport(activeBubble, activeBubblePos);
+    requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
   }
 
   function formatScamTypeBadge(rawType) {
@@ -1056,7 +1389,6 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     const rawLevel = String(data.level || o.level || 'unable').toLowerCase();
     const isUnable = rawLevel === 'unable' || data.mode === 'ai_unavailable' || data.reason === 'ai_unavailable';
 
-    // If level is "unable" or mode is "ai_unavailable", display friendly grey card with no score
     if (isUnable) {
       const sentence = data.message ||
         (Array.isArray(data.headline) ? (data.headline[1] || data.headline[0]) : data.headline) ||
@@ -1077,19 +1409,22 @@ import { downloadReceipt } from '../shared/receipt-export.js';
           <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
         </div>
 
-        <div class="cs-verdict-card cs-verdict-unable" style="--cs-risk-color: #64748B; --cs-risk-bg: rgba(100, 116, 139, 0.2)">
-          <div class="cs-level-row">
-            <span class="cs-level-pill">Unable to verify</span>
+        <div class="cs-bubble-body">
+          <div class="cs-verdict-card cs-verdict-unable" style="--cs-risk-color: #64748B; --cs-risk-bg: rgba(100, 116, 139, 0.2)">
+            <div class="cs-level-row">
+              <span class="cs-level-pill">Unable to verify</span>
+            </div>
+            <div class="cs-headline-title">${escapeHtml(sentence)}</div>
           </div>
-          <div class="cs-headline-title">${escapeHtml(sentence)}</div>
         </div>
 
-        <div class="cs-actions-grid">
-          <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-act-tryagain">Try again</button>
-          <button type="button" class="cs-action-btn" id="cs-act-another">Check again</button>
+        <div class="cs-sticky-footer">
+          <div class="cs-actions-grid">
+            <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-act-tryagain">Try again</button>
+            <button type="button" class="cs-action-btn" id="cs-act-another">Check again</button>
+          </div>
+          <div class="cs-footer">Screening aid, not a legal finding.</div>
         </div>
-
-        <div class="cs-footer">Screening aid, not a legal finding.</div>
       `;
 
       activeBubble.querySelector('.cs-close-btn').addEventListener('click', hideBubble);
@@ -1102,6 +1437,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         openReadyBubble(payload.text, activeBubblePos);
       });
 
+      positionBubbleInViewport(activeBubble, activeBubblePos);
+      requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
       return;
     }
 
@@ -1131,6 +1468,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       if (b === 'high') confidenceBandStr = 'High';
       else if (b === 'medium') confidenceBandStr = 'Medium';
       else if (b === 'low') confidenceBandStr = 'Low';
+    } else if (typeof data.confidence === 'number') {
+      confidenceBandStr = `${Math.round(data.confidence * 100)}%`;
     }
 
     // Headline sentence
@@ -1147,8 +1486,9 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     const scamType = data.scamType || (data.report && data.report.scamType);
     const scamTypeBadge = formatScamTypeBadge(scamType);
 
-    // Collect top 3 findings/phrases with clear text labels (not color alone)
+    // Collect top 3 findings ORDERED BY SEVERITY with server labels
     const topFindings = [];
+    const SEV_WEIGHT = { bad: 4, flag: 4, failed: 4, warn: 3, warning: 3, info: 2, unknown: 1, ok: 0, passed: 0 };
 
     if (checkType === 'job') {
       const checks = (data.report && Array.isArray(data.report.checks)) ? data.report.checks : [];
@@ -1162,60 +1502,87 @@ import { downloadReceipt } from '../shared/receipt-export.js';
           });
         });
       });
-      const SEV_WEIGHT = { bad: 3, warn: 2, info: 1, ok: 0 };
       allFindings.sort((a, b) => (SEV_WEIGHT[b.severity] || 0) - (SEV_WEIGHT[a.severity] || 0));
       allFindings.slice(0, 3).forEach(f => {
-        const sev = f.severity === 'bad' ? 'bad' : (f.severity === 'warn' ? 'warn' : 'info');
-        const badgeLabel = sev === 'bad' ? 'High risk' : (sev === 'warn' ? 'Warning' : 'Info');
-        topFindings.push({ sev, badgeLabel, text: f.text });
+        const sevKey = (f.severity === 'bad') ? 'bad' : ((f.severity === 'warn') ? 'warn' : 'info');
+        const badgeLabel = (sevKey === 'bad') ? 'High risk' : ((sevKey === 'warn') ? 'Warning' : 'Info');
+        topFindings.push({ sev: sevKey, badgeLabel, text: f.text });
       });
     } else if (checkType === 'upi') {
       const checks = Array.isArray(data.checks) ? data.checks : (data.report && Array.isArray(data.report.checks) ? data.report.checks : []);
-      const failed = checks.filter(c => c && (c.state === 'failed' || c.failed || c.state === 'warning'));
-      const list = failed.length > 0 ? failed : checks.filter(c => c && c.state !== 'not_applicable');
-      list.slice(0, 3).forEach(c => {
-        const isFail = c.state === 'failed' || c.failed;
-        const sev = isFail ? 'bad' : (c.state === 'warning' ? 'warn' : 'info');
-        const badgeLabel = isFail ? 'Failed' : (c.state === 'warning' ? 'Warning' : 'Passed');
-        topFindings.push({ sev, badgeLabel, text: c.detail || c.label || c.name || '' });
+      const allFindings = [];
+      checks.forEach(c => {
+        if (!c || c.state === 'not_applicable') return;
+        const isFail = c.state === 'failed' || c.failed || c.state === 'flag';
+        const isWarn = c.state === 'warning' || c.state === 'warn';
+        const sev = isFail ? 'bad' : (isWarn ? 'warn' : 'info');
+        const badgeLabel = isFail ? 'Failed' : (isWarn ? 'Warning' : 'Passed');
+        allFindings.push({
+          sev,
+          badgeLabel,
+          text: c.detail || c.summary || c.label || c.name || '',
+          weight: SEV_WEIGHT[sev] || 0
+        });
+      });
+      allFindings.sort((a, b) => b.weight - a.weight);
+      allFindings.slice(0, 3).forEach(f => {
+        topFindings.push({ sev: f.sev, badgeLabel: f.badgeLabel, text: f.text });
       });
     } else {
       // Message
+      const allFindings = [];
       if (Array.isArray(data.flaggedPhrases) && data.flaggedPhrases.length > 0) {
-        data.flaggedPhrases.slice(0, 3).forEach(p => {
-          topFindings.push({
+        data.flaggedPhrases.forEach(p => {
+          allFindings.push({
             sev: 'bad',
             badgeLabel: 'High risk',
-            text: typeof p === 'string' ? p : (p.phrase || p.text || '')
+            text: typeof p === 'string' ? p : (p.phrase || p.text || ''),
+            weight: 4
           });
-        });
-      } else if (Array.isArray(data.signals) && data.signals.length > 0) {
-        data.signals.slice(0, 3).forEach(s => {
-          topFindings.push({
-            sev: 'bad',
-            badgeLabel: 'High risk',
-            text: s.quote || s.label || s.why || ''
-          });
-        });
-      } else if (Array.isArray(data.checks)) {
-        const failed = data.checks.filter(c => c && (c.state === 'failed' || c.failed));
-        const list = failed.length > 0 ? failed : data.checks.filter(c => c && c.state !== 'not_applicable');
-        list.slice(0, 3).forEach(c => {
-          const isFail = c.state === 'failed' || c.failed;
-          const sev = isFail ? 'bad' : 'info';
-          const badgeLabel = isFail ? 'Failed' : 'Passed';
-          topFindings.push({ sev, badgeLabel, text: c.detail || c.label || '' });
         });
       }
+      if (Array.isArray(data.signals) && data.signals.length > 0) {
+        data.signals.forEach(s => {
+          allFindings.push({
+            sev: 'bad',
+            badgeLabel: 'High risk',
+            text: s.quote || s.label || s.why || '',
+            weight: 4
+          });
+        });
+      }
+      if (Array.isArray(data.checks)) {
+        data.checks.forEach(c => {
+          if (!c || c.state === 'not_applicable') return;
+          const isFail = c.state === 'failed' || c.failed || c.state === 'flag';
+          const isWarn = c.state === 'warning' || c.state === 'warn';
+          const sev = isFail ? 'bad' : (isWarn ? 'warn' : 'info');
+          const badgeLabel = isFail ? 'Failed' : (isWarn ? 'Warning' : 'Passed');
+          allFindings.push({
+            sev,
+            badgeLabel,
+            text: c.detail || c.summary || c.label || '',
+            weight: SEV_WEIGHT[sev] || 0
+          });
+        });
+      }
+      allFindings.sort((a, b) => b.weight - a.weight);
+      allFindings.slice(0, 3).forEach(f => {
+        topFindings.push({ sev: f.sev, badgeLabel: f.badgeLabel, text: f.text });
+      });
     }
 
-    // One honest line
+    // Honesty line per tool
     let honestLine = '';
     if (checkType === 'job') {
       const evStatus = data.evidenceStatus || {};
       let sourcesAnswered = 0;
       if (typeof o.sourcesAnswered === 'number') {
         sourcesAnswered = o.sourcesAnswered;
+      } else if (typeof data.live === 'number') {
+        sourcesAnswered = data.live;
+      } else if (typeof o.live === 'number') {
+        sourcesAnswered = o.live;
       } else if (data.report && Array.isArray(data.report.sources)) {
         sourcesAnswered = data.report.sources.length;
       }
@@ -1228,6 +1595,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     } else if (checkType === 'upi') {
       if (data.showUpiSafetyNote === true || (typeof data.explanation === 'string' && data.explanation.toLowerCase().includes('pin'))) {
         honestLine = 'A UPI PIN is only needed to send money, never to receive it.';
+      } else if (data.honestLine || data.note) {
+        honestLine = data.honestLine || data.note;
       }
     } else {
       honestLine = data.senderNote || 'Anyone can fake the sender name or phone number shown on a message. Always verify through an official channel before acting.';
@@ -1264,59 +1633,63 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
       </div>
 
-      <div class="cs-verdict-card" style="--cs-risk-color: ${riskColor}; --cs-risk-bg: ${riskBg}">
-        <div class="cs-level-row">
-          <div class="cs-badges-cluster">
-            <span class="cs-level-pill">${escapeHtml(levelLabel)}</span>
-            ${scamTypeBadge ? `<span class="cs-pill-type">${escapeHtml(scamTypeBadge)}</span>` : ''}
-            ${confidenceBandStr ? `<span class="cs-pill-confidence">Confidence: ${escapeHtml(confidenceBandStr)}</span>` : ''}
+      <div class="cs-bubble-body">
+        <div class="cs-verdict-card" style="--cs-risk-color: ${riskColor}; --cs-risk-bg: ${riskBg}">
+          <div class="cs-level-row">
+            <div class="cs-badges-cluster">
+              <span class="cs-level-pill">${escapeHtml(levelLabel)}</span>
+              ${scamTypeBadge ? `<span class="cs-pill-type">${escapeHtml(scamTypeBadge)}</span>` : ''}
+              ${confidenceBandStr ? `<span class="cs-pill-confidence">Confidence: ${escapeHtml(confidenceBandStr)}</span>` : ''}
+            </div>
+            ${showScore ? `<span class="cs-score-val">Risk score: ${rawScore}/100</span>` : ''}
           </div>
-          ${showScore ? `<span class="cs-score-val">Risk score: ${rawScore}/100</span>` : ''}
+          <div class="cs-headline-title">${escapeHtml(headlineSentence)}</div>
         </div>
-        <div class="cs-headline-title">${escapeHtml(headlineSentence)}</div>
+
+        ${topFindings.length > 0 ? `
+          <div class="cs-findings-section">
+            <span class="cs-section-label">Top findings</span>
+            ${findingsHtml}
+          </div>
+        ` : ''}
+
+        ${honestLine ? `<div class="cs-honest-line">${escapeHtml(honestLine)}</div>` : ''}
+
+        <details class="cs-sent-details">
+          <summary class="cs-sent-summary">What was sent</summary>
+          <div class="cs-sent-content">
+            ${checkType === 'job' ? `
+              <div class="cs-sent-field"><strong>URL:</strong> ${escapeHtml(shortUrl)}</div>
+              <div class="cs-sent-field"><strong>Company:</strong> ${escapeHtml(payload.company || 'None')}</div>
+              <div class="cs-sent-field"><strong>Email:</strong> ${escapeHtml(payload.email || 'None')}</div>
+            ` : `
+              <div class="cs-sent-field"><strong>Check type:</strong> ${checkType === 'upi' ? 'UPI or payment' : 'Message'}</div>
+            `}
+            <div class="cs-sent-field"><strong>Text:</strong> ${escapeHtml(shortText)}</div>
+          </div>
+        </details>
       </div>
 
-      ${topFindings.length > 0 ? `
-        <div class="cs-findings-section">
-          <span class="cs-section-label">Top findings</span>
-          ${findingsHtml}
+      <div class="cs-sticky-footer">
+        ${proofId ? `
+          <div class="cs-proof-row">
+            <span>Proof ID: <span class="cs-proof-id">${escapeHtml(proofId)}</span></span>
+            <button type="button" class="cs-copy-btn" id="cs-copy-proof" aria-label="Copy Proof ID">Copy</button>
+          </div>
+        ` : ''}
+
+        <div class="cs-actions-grid">
+          <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-act-open">Open full report</button>
+          <button type="button" class="cs-action-btn" id="cs-act-receipt">Download receipt</button>
+          ${checkType === 'job'
+            ? `<button type="button" class="cs-action-btn" id="cs-act-pdf">Download PDF</button>`
+            : `<div class="cs-pdf-hint">PDF is available on the full report page.</div>`
+          }
+          <button type="button" class="cs-action-btn" id="cs-act-another">Check again</button>
         </div>
-      ` : ''}
 
-      ${honestLine ? `<div class="cs-honest-line">${escapeHtml(honestLine)}</div>` : ''}
-
-      ${proofId ? `
-        <div class="cs-proof-row">
-          <span>Proof ID: <span class="cs-proof-id">${escapeHtml(proofId)}</span></span>
-          <button type="button" class="cs-copy-btn" id="cs-copy-proof">Copy</button>
-        </div>
-      ` : ''}
-
-      <div class="cs-actions-grid">
-        <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-act-open">Open full report</button>
-        <button type="button" class="cs-action-btn" id="cs-act-receipt">Download receipt</button>
-        ${checkType === 'job'
-          ? `<button type="button" class="cs-action-btn" id="cs-act-pdf">Download PDF</button>`
-          : `<div class="cs-pdf-hint">PDF is available on the full report page.</div>`
-        }
-        <button type="button" class="cs-action-btn" id="cs-act-another">Check again</button>
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
       </div>
-
-      <details class="cs-sent-details">
-        <summary class="cs-sent-summary">What was sent</summary>
-        <div class="cs-sent-content">
-          ${checkType === 'job' ? `
-            <div class="cs-sent-field"><strong>URL:</strong> ${escapeHtml(shortUrl)}</div>
-            <div class="cs-sent-field"><strong>Company:</strong> ${escapeHtml(payload.company || 'None')}</div>
-            <div class="cs-sent-field"><strong>Email:</strong> ${escapeHtml(payload.email || 'None')}</div>
-          ` : `
-            <div class="cs-sent-field"><strong>Check type:</strong> ${checkType === 'upi' ? 'UPI or payment' : 'Message'}</div>
-          `}
-          <div class="cs-sent-field"><strong>Text:</strong> ${escapeHtml(shortText)}</div>
-        </div>
-      </details>
-
-      <div class="cs-footer">Screening aid, not a legal finding.</div>
     `;
 
     // Wire events
@@ -1342,7 +1715,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
             url: payload.url || '',
             company: payload.company || '',
             email: payload.email || '',
-            desc: (payload.text || '').slice(0, 20000)
+            desc: (payload.desc || payload.text || '').slice(0, 20000)
           };
           fullUrl = `${API_BASE}/#/tools/job-scam-check?prefill=${toBase64Url(JSON.stringify(prefillObj))}`;
         } else if (checkType === 'upi') {
@@ -1393,7 +1766,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       });
     }
 
-    // Focus close button initially
+    positionBubbleInViewport(activeBubble, activeBubblePos);
+    requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
     activeBubble.querySelector('.cs-close-btn')?.focus();
   }
 
@@ -1421,6 +1795,12 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
   window.addEventListener('scroll', () => {
     hideChip();
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if (activeBubble) {
+      positionBubbleInViewport(activeBubble, activeBubblePos);
+    }
   }, { passive: true });
 
   document.addEventListener('mousedown', (e) => {

@@ -12,10 +12,12 @@ const L = require('./ledger');
 const DB = require('./db');
 const { analyzeDescription, analyzeDescriptionWithStatus } = require('./llm');
 const { createProof } = require('./detectors/proof');
-const { quotaMiddleware } = require('./detectors/quota');
+const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData } = require('./detectors/quota');
 const createDetectorRouter = require('./detectors/routes');
 const createUpiRouter = require('./upi/routes');
 const createMessageRouter = require('./message/routes');
+const createBillingRouter = require('./billing/routes');
+const { getPaymentsMode, anonymizeUserPaymentOrders, processWebhook } = require('./billing/service');
 
 DB.init().catch(err => {
   console.error('\n[Database] ' + err.message + '\n');
@@ -35,7 +37,12 @@ if (trustProxySetting) app.set('trust proxy', trustProxySetting === true ? 1 : t
 const helmetCfg = JSON.parse(JSON.stringify(RT.security.helmet));
 if (helmetCfg && helmetCfg.contentSecurityPolicy && helmetCfg.contentSecurityPolicy.directives) {
   const sbUrl = env('SUPABASE_URL');
-  helmetCfg.contentSecurityPolicy.directives['connect-src'] = sbUrl ? ["'self'", sbUrl] : ["'self'"];
+  const d = helmetCfg.contentSecurityPolicy.directives;
+  const currentConnect = Array.isArray(d['connect-src']) ? d['connect-src'] : ["'self'"];
+  if (sbUrl && !currentConnect.includes(sbUrl)) {
+    currentConnect.push(sbUrl);
+  }
+  d['connect-src'] = currentConnect;
 }
 app.use(helmet(helmetCfg));
 // Extension origins (chrome-extension://<id>) are permitted on allowed routes (POST /api/verify, POST /api/upi/check, POST /api/message/check).
@@ -77,6 +84,31 @@ app.use(cors((req, cb) => {
 
   return cb(null, { origin: false });
 }));
+
+// Razorpay webhook: express.raw for this route only to verify HMAC signature
+app.post('/api/billing/webhook', express.raw({ type: '*/*' }), async (req, res) => {
+  try {
+    const signatureHeader = req.headers['x-razorpay-signature'];
+    const result = await processWebhook({
+      rawBody: req.body,
+      signatureHeader
+    });
+    return res.status(200).json(result);
+  } catch (err) {
+    if (err.code === 'PAYMENTS_UNAVAILABLE') {
+      return res.status(503).json({ error: 'payments_unavailable' });
+    }
+    if (err.code === 'INVALID_SIGNATURE') {
+      return res.status(400).json({ error: 'invalid_signature' });
+    }
+    if (err.code === 'INVALID_JSON') {
+      return res.status(400).json({ error: 'invalid_json' });
+    }
+    console.error('[billing] webhook processing error:', err.message);
+    return res.status(500).json({ error: 'Webhook processing error' });
+  }
+});
+
 app.use(express.json({ limit: LIM.jsonBody }));
 app.use((err, req, res, next) => {
   if (err && (err.type === 'entity.parse.failed' || (err instanceof SyntaxError && err.status === 400 && 'body' in err))) {
@@ -546,9 +578,13 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
   });
 });
 
+app.get('/api/usage', optionalAuth, usageRoute);
+app.get('/api/quota', optionalAuth, quotaRoute);
+
 app.use(createDetectorRouter(optionalAuth));
 app.use(createUpiRouter(optionalAuth));
 app.use(createMessageRouter(optionalAuth));
+app.use(createBillingRouter(requireAuth));
 
 
 /* ---------- diagnose: open http://localhost:PORT/api/diagnose in the browser (local machine only) ---------- */
@@ -795,7 +831,8 @@ app.get('/api/config-public', (req, res) => {
     etherscanLink: cfg.runtime.etherscanLink,
     authEnabled,
     supabaseUrl: safeUrl,
-    supabasePublishableKey: safePubKey
+    supabasePublishableKey: safePubKey,
+    paymentsMode: getPaymentsMode()
   });
 });
 
@@ -882,6 +919,12 @@ app.delete('/api/me', requireAuth, userLimiter, async (req, res) => {
     if (scansErr) return res.status(503).json({ error: 'Could not delete user scans' });
     const { error: profErr } = await client.from(profilesTable).delete().eq('id', req.user.id);
     if (profErr) return res.status(503).json({ error: 'Could not delete user profile' });
+    try {
+      await deleteUserQuotaData(req.user.id);
+      await anonymizeUserPaymentOrders(req.user.id);
+    } catch (quotaErr) {
+      console.warn('[quota/billing] cleanup on delete user warning:', quotaErr.message);
+    }
     if (!client.auth || !client.auth.admin || typeof client.auth.admin.deleteUser !== 'function') {
       return res.status(503).json({ error: 'Could not delete auth user' });
     }

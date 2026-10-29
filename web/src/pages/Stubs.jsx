@@ -11,32 +11,11 @@ const StubPage = ({ title, description, children, draftNotice = false }) => (
       <Container>
         <Reveal>
           <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-            {draftNotice && (
-              <div
-                style={{
-                  background: 'var(--risk-warn-bg, rgba(183, 121, 31, 0.16))',
-                  border: '1px solid rgba(183, 121, 31, 0.35)',
-                  borderRadius: '8px',
-                  padding: '10px 16px',
-                  marginBottom: '20px',
-                  fontSize: '13px',
-                  color: 'var(--risk-warn-text, #FCD34D)',
-                  fontWeight: 600
-                }}
-              >
-                Draft for review, not legal advice
-              </div>
-            )}
             <h1 style={{ fontSize: '32px', marginBottom: '14px', color: 'var(--ink)' }}>{title}</h1>
             <p className="text-muted" style={{ fontSize: '15.5px', lineHeight: 1.6, marginBottom: '32px' }}>
               {description}
             </p>
             {children}
-            <div style={{ marginTop: '24px' }}>
-              <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>
-                Screening aid, not a legal finding.
-              </p>
-            </div>
           </div>
         </Reveal>
       </Container>

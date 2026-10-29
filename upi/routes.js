@@ -4,6 +4,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { readScreenshot, detectImageMimeAndMagic, MAX_IMAGE_SIZE } = require('./vision');
 const { performUpiCheck } = require('./checker');
+const { quotaMiddleware } = require('../detectors/quota');
 
 const MAX_MULTIPART_BYTES = MAX_IMAGE_SIZE + 65536; // 5MB + 64KB overhead
 
@@ -216,8 +217,8 @@ module.exports = function createUpiRouter(optionalAuthMiddleware) {
   // POST /api/upi/read-screenshot
   router.post('/api/upi/read-screenshot', upiScreenshotLimiter, handleReadScreenshot);
 
-  // POST /api/upi/check (anonymous and signed in via optionalAuth, free scan quota not applied)
-  router.post('/api/upi/check', auth, upiCheckLimiter, handleUpiCheck);
+  // POST /api/upi/check (anonymous and signed in via optionalAuth, metered via quotaMiddleware)
+  router.post('/api/upi/check', auth, quotaMiddleware, upiCheckLimiter, handleUpiCheck);
 
   return router;
 };

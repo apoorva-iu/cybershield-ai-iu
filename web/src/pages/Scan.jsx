@@ -4,6 +4,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { PageTransition, CountUp } from '../components/wow';
 import { motion } from 'framer-motion';
 import { useAuth } from '../auth';
+import { UsagePill } from '../components/UsagePill';
+import { QuotaExceededModal } from '../components/QuotaExceededModal';
+import { triggerUsageRefresh } from '../lib/useUsage';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SL = { ok: 'Looks fine', warn: 'Warning', bad: 'High risk', unknown: 'Unable to verify' };
@@ -43,6 +46,8 @@ export function Scan({ embedded = false }) {
   const [health, setHealth] = useState(null);
   const [isSplit, setIsSplit] = useState(false);
   const [prefillNote, setPrefillNote] = useState('');
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+  const [quotaModalData, setQuotaModalData] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { session } = useAuth();
@@ -122,11 +127,18 @@ export function Scan({ embedded = false }) {
         throw new Error('No data received from verification service.');
       }
       setResult(d);
+      triggerUsageRefresh();
     } catch (x) {
-      const msg = x?.message ? String(x.message) : 'An error occurred while verifying the offer.';
-      const isRateLimit = msg.toLowerCase().includes('too many scans') || msg.toLowerCase().includes('rate limit');
-      setError({ message: msg, isRateLimit });
-      setIsSplit(false);
+      if (x?.status === 429 && (x?.data?.error === 'quota_exceeded' || x?.data?.code === 'QUOTA_EXCEEDED')) {
+        setQuotaModalData(x.data);
+        setIsQuotaModalOpen(true);
+        setIsSplit(false);
+      } else {
+        const msg = x?.message ? String(x.message) : 'An error occurred while verifying the offer.';
+        const isRateLimit = msg.toLowerCase().includes('too many scans') || msg.toLowerCase().includes('rate limit');
+        setError({ message: msg, isRateLimit });
+        setIsSplit(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -168,9 +180,12 @@ export function Scan({ embedded = false }) {
       <div id="verify-layout" className={`layout-container ${layoutModeClass}`.trim()}>
         <div className="col-form">
           <form className="scan-card" id="form" autoComplete="off" onSubmit={handleSubmit}>
-            <div className="card-header">
-              <h1>Is this job offer real?</h1>
-              <p>Instantly scan suspicious emails, links, and job descriptions.</p>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h1>Is this job offer real?</h1>
+                <p>Instantly scan suspicious emails, links, and job descriptions.</p>
+              </div>
+              <UsagePill variant="tool" />
             </div>
             {prefillNote && (
               <div
@@ -301,6 +316,11 @@ export function Scan({ embedded = false }) {
           </div>
         </div>
       </div>
+      <QuotaExceededModal
+        isOpen={isQuotaModalOpen}
+        onClose={() => setIsQuotaModalOpen(false)}
+        data={quotaModalData}
+      />
     </div>
   );
 

@@ -19,6 +19,9 @@ import { useAuth } from '../auth';
 import { Container } from '../components/ui';
 import { PageTransition } from '../components/wow';
 import { ToolResult } from '../components/ToolResult';
+import { UsagePill } from '../components/UsagePill';
+import { QuotaExceededModal } from '../components/QuotaExceededModal';
+import { triggerUsageRefresh } from '../lib/useUsage';
 import '../tools.css';
 
 /**
@@ -250,6 +253,8 @@ export function ToolDetail() {
   const [error, setError] = useState(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
   const [quota, setQuota] = useState(null);
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+  const [quotaModalData, setQuotaModalData] = useState(null);
 
   // Screenshot flow state
   const [screenshotPreview, setScreenshotPreview] = useState(null);
@@ -446,9 +451,14 @@ export function ToolDetail() {
         throw new Error('No data received from analysis service.');
       }
       setResult(data);
+      triggerUsageRefresh();
       fetchQuota();
     } catch (err) {
-      if (err?.code === 'QUOTA_EXCEEDED' || err?.status === 429) {
+      if (err?.code === 'QUOTA_EXCEEDED' || (err?.status === 429 && (err?.data?.error === 'quota_exceeded' || err?.data?.code === 'QUOTA_EXCEEDED'))) {
+        setQuotaExceeded(true);
+        setQuotaModalData(err.data);
+        setIsQuotaModalOpen(true);
+      } else if (err?.code === 'QUOTA_EXCEEDED' || err?.status === 429) {
         setQuotaExceeded(true);
         setError(err.message || 'You have reached the free check limit.');
       } else {
@@ -483,14 +493,7 @@ export function ToolDetail() {
               </p>
             </div>
 
-            {quota && quota.enabled && (
-              <div className="tool-quota-badge" role="status" aria-live="polite">
-                <Shield size={14} aria-hidden="true" />
-                <span>
-                  {quota.remaining} of {quota.limit} free checks left
-                </span>
-              </div>
-            )}
+            <UsagePill variant="tool" />
           </div>
 
           {/* 2-Column Desktop Layout (Left = Input & Examples, Right = Pre-check / Result) */}
@@ -774,6 +777,11 @@ export function ToolDetail() {
             </div>
           </div>
         </Container>
+        <QuotaExceededModal
+          isOpen={isQuotaModalOpen}
+          onClose={() => setIsQuotaModalOpen(false)}
+          data={quotaModalData}
+        />
       </div>
     </PageTransition>
   );

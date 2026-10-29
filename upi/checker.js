@@ -135,11 +135,24 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
   sanitizeBannedClaims(finalAi);
 
   // 6. Structure the report for receipt and ledger proof
+  const reportChecks = (finalAi.checks || []).map(c => ({
+    key: c.key,
+    title: c.title,
+    state: c.state,
+    score: c.state === 'flag' || c.state === 'fail' ? 85 : (c.state === 'warning' || c.state === 'warn' ? 50 : 10),
+    summary: c.summary,
+    reason: c.summary,
+    findings: c.summary ? [{ text: c.summary, severity: c.state === 'flag' || c.state === 'fail' ? 'warn' : (c.state === 'warning' || c.state === 'warn' ? 'warn' : 'info') }] : []
+  }));
+
   const report = {
     version: 1,
     generatedAt: new Date().toISOString(),
     tool: 'upi',
     scamType: finalAi.scamType,
+    primaryConcern: finalAi.primaryConcern,
+    whatToDo: finalAi.whatToDo,
+    evidence: finalAi.evidence,
     evidenceSourceCount: 1 + (linkLookups > 0 ? 1 : 0),
     input: {
       kind: 'upi',
@@ -157,7 +170,7 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
       emails: deterministic.emails,
       handleInfo: deterministic.handleInfo
     },
-    checks: finalAi.checks,
+    checks: reportChecks,
     overall: {
       level: finalAi.level,
       score: finalAi.score,

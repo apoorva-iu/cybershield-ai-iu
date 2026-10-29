@@ -11,6 +11,9 @@ import {
   Plus
 } from 'lucide-react';
 import { apiFetch } from '../api';
+import { UsagePill } from '../components/UsagePill';
+import { QuotaExceededModal } from '../components/QuotaExceededModal';
+import { triggerUsageRefresh } from '../lib/useUsage';
 import { processScreenshotFile } from '../components/message/imageProcessor';
 import { MessageThumbnail, ImageViewerDialog } from '../components/message/MessageCanvasViewer';
 import { MessageResult } from '../components/message/MessageResult';
@@ -85,6 +88,8 @@ export function MessageCheck() {
   const [checkError, setCheckError] = useState(null);
   const [checkErrorCode, setCheckErrorCode] = useState(null);
   const [result, setResult] = useState(null);
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+  const [quotaModalData, setQuotaModalData] = useState(null);
 
   // Layout states
   const [accordionOpen, setAccordionOpen] = useState(false);
@@ -335,6 +340,7 @@ export function MessageCheck() {
 
       setResult(res);
       setAccordionOpen(false);
+      triggerUsageRefresh();
 
       if (window.innerWidth <= 860) {
         setMobileInputCollapsed(true);
@@ -346,7 +352,10 @@ export function MessageCheck() {
     } catch (err) {
       console.error('Message check error:', err);
       setCheckErrorCode(err.status || null);
-      if (err.status === 404 || err.message?.includes('Network error')) {
+      if (err.status === 429 && (err.data?.error === 'quota_exceeded' || err.data?.code === 'QUOTA_EXCEEDED')) {
+        setQuotaModalData(err.data);
+        setIsQuotaModalOpen(true);
+      } else if (err.status === 404 || err.message?.includes('Network error')) {
         setCheckError('This tool is not available yet.');
       } else if (err.status === 429) {
         setCheckError('Too many checks right now. Please try again in a minute.');
@@ -374,9 +383,12 @@ export function MessageCheck() {
         </Link>
       </div>
 
-      <header className="msg-page-header">
-        <h1 className="msg-page-title">Message Scanner</h1>
-        <p className="msg-page-subtitle">SMS, WhatsApp, Telegram or email: paste text or upload a screenshot</p>
+      <header className="msg-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 className="msg-page-title">Message Scanner</h1>
+          <p className="msg-page-subtitle">SMS, WhatsApp, Telegram or email: paste text or upload a screenshot</p>
+        </div>
+        <UsagePill variant="tool" />
       </header>
 
       {/* 2. MOBILE COLLAPSED SUMMARY */}
@@ -691,6 +703,12 @@ export function MessageCheck() {
           }}
         />
       )}
+
+      <QuotaExceededModal
+        isOpen={isQuotaModalOpen}
+        onClose={() => setIsQuotaModalOpen(false)}
+        data={quotaModalData}
+      />
     </div>
   );
 }

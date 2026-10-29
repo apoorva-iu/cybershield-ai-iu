@@ -126,9 +126,11 @@ export function Login({ mode }) {
   } = useAuth();
 
   const resolvedView = (() => {
-    if (mode === 'signup' || location.pathname === '/signup') return 'signup';
-    if (mode === 'forgot-password' || location.pathname === '/forgot-password') return 'forgot';
-    if (mode === 'reset-password' || location.pathname === '/reset-password') return 'reset';
+    const searchParams = new URLSearchParams(location.search);
+    const modeParam = searchParams.get('mode');
+    if (mode === 'signup' || location.pathname === '/signup' || modeParam === 'signup') return 'signup';
+    if (mode === 'forgot-password' || location.pathname === '/forgot-password' || modeParam === 'forgot') return 'forgot';
+    if (mode === 'reset-password' || location.pathname === '/reset-password' || modeParam === 'reset') return 'reset';
     return 'login';
   })();
 
@@ -218,6 +220,20 @@ export function Login({ mode }) {
 
   const isResetFormValid =
     pwEval.isValid && confirmPassword.length > 0 && password === confirmPassword;
+
+  const handleSwitchAuthMode = (targetMode) => {
+    setErrorMsg(null);
+    setInfoMsg(null);
+    setUnconfirmedEmail(false);
+    setSignupConfirmStep(false);
+    setPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    // Keep email intact when switching between sign-in and sign-up
+    const targetUrl = targetMode === 'signup' ? '/login?mode=signup' : '/login';
+    navigate(targetUrl, { replace: true });
+  };
 
   const handleGoogleAuth = async () => {
     if (serviceUnavailable || !supabase || googleSubmitting || submitting) return;
@@ -687,6 +703,34 @@ export function Login({ mode }) {
               )}
             </div>
 
+            {/* Segmented Sign in / Sign up Mode Switcher at top of card */}
+            {(resolvedView === 'login' || resolvedView === 'signup') && !signupConfirmStep && (
+              <div className="auth-tab-switch" role="tablist" aria-label="Sign in or Sign up">
+                <button
+                  type="button"
+                  role="tab"
+                  id="auth-tab-login"
+                  aria-selected={resolvedView === 'login'}
+                  aria-controls="auth-view-content"
+                  className={`auth-tab-btn ${resolvedView === 'login' ? 'active' : ''}`}
+                  onClick={() => handleSwitchAuthMode('login')}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="auth-tab-signup"
+                  aria-selected={resolvedView === 'signup'}
+                  aria-controls="auth-view-content"
+                  className={`auth-tab-btn ${resolvedView === 'signup' ? 'active' : ''}`}
+                  onClick={() => handleSwitchAuthMode('signup')}
+                >
+                  Create account
+                </button>
+              </div>
+            )}
+
             {/* ==================== SIGN UP VIEW ==================== */}
             {resolvedView === 'signup' && !signupConfirmStep && (
               <>
@@ -695,7 +739,7 @@ export function Login({ mode }) {
 
                 <button
                   type="button"
-                  disabled={serviceUnavailable || !isSignupFormValid || googleSubmitting || submitting}
+                  disabled={serviceUnavailable || googleSubmitting || submitting}
                   onClick={handleGoogleAuth}
                   className="login-btn-google"
                 >
@@ -781,8 +825,26 @@ export function Login({ mode }) {
                       disabled={serviceUnavailable || submitting}
                     />
                     <label htmlFor="signup-terms-checkbox" className="auth-checkbox-label">
-                      I agree to the <Link to="/terms">Terms</Link> and{' '}
-                      <Link to="/privacy">Privacy Policy</Link>
+                      I agree to the{' '}
+                      <a
+                        href="#/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="auth-inline-legal-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Terms
+                      </a>{' '}
+                      and{' '}
+                      <a
+                        href="#/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="auth-inline-legal-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Privacy Policy
+                      </a>
                     </label>
                   </div>
 
@@ -797,9 +859,13 @@ export function Login({ mode }) {
 
                 <div className="login-signup-row">
                   <span>Already have an account?</span>{' '}
-                  <Link to="/login" className="login-signup-link">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchAuthMode('login')}
+                    className="login-signup-link login-signup-btn-link"
+                  >
                     Sign in
-                  </Link>
+                  </button>
                 </div>
               </>
             )}
@@ -1070,9 +1136,13 @@ export function Login({ mode }) {
 
                 <div className="login-signup-row">
                   <span>New here?</span>{' '}
-                  <Link to="/signup" className="login-signup-link">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchAuthMode('signup')}
+                    className="login-signup-link login-signup-btn-link"
+                  >
                     Create an account
-                  </Link>
+                  </button>
                 </div>
               </>
             )}
