@@ -102,7 +102,7 @@ export function Home() {
             </h1>
 
             <p className="hero-huge-subtext">
-              Screen job offers, UPI payment requests and messages in seconds, with evidence you can verify later.
+              Screen job offers, payment requests and messages in seconds, with proof you can verify later.
             </p>
 
             <div className="hero-btn-row">
@@ -394,7 +394,7 @@ export function Home() {
 
                 <div className="extension-cta-wrap">
                   <div className="extension-badge-row">
-                    <span className="notify-badge">Free</span>
+                    <span className="notify-badge">Pro</span>
                     <span className="notify-sub">Chrome, Edge &amp; Brave (Desktop)</span>
                   </div>
                   <Link

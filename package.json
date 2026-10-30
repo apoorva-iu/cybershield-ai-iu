@@ -30,7 +30,7 @@
     "test:checkout": "node tests/checkout_ui.test.js",
     "extension:build": "node scripts/build-extension.js",
     "extension:zip": "node scripts/zip-extension.js",
-    "build:all": "npm run extension:zip && npm run web:build && node -e \"const fs=require('fs'); fs.mkdirSync('public/downloads', {recursive:true}); fs.copyFileSync('web/public/downloads/cyber-shield-extension.zip', 'public/downloads/cyber-shield-extension.zip'); fs.copyFileSync('web/public/downloads/extension-info.json', 'public/downloads/extension-info.json');\""
+    "build:all": "npm run extension:zip && npm run web:build && node -e \"const fs=require('fs'); fs.mkdirSync('public/downloads', {recursive:true}); fs.copyFileSync('web/public/downloads/extension-info.json', 'public/downloads/extension-info.json');\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

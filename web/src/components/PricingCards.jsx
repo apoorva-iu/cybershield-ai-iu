@@ -130,19 +130,6 @@ export function PricingCards() {
                       <span>{buttonText}</span>
                       {!isDisabled && <ArrowRight size={15} />}
                     </button>
-                    {paymentsMode === 'test' && (
-                      <p
-                        className="pricing-test-mode-notice"
-                        style={{
-                          fontSize: '12px',
-                          color: 'var(--text-dim, #94A3B8)',
-                          textAlign: 'center',
-                          margin: '10px 0 0'
-                        }}
-                      >
-                        Test mode: no real money is charged.
-                      </p>
-                    )}
                   </div>
                 )}
               </div>

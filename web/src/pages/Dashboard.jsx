@@ -60,7 +60,7 @@ function getFindingSource(text, checkKey) {
 }
 
 function formatScanDate(isoStr) {
-  if (!isoStr) return '\u2014';
+  if (!isoStr) return '—';
   const d = new Date(isoStr);
   if (Number.isNaN(d.getTime())) {
     return String(isoStr).replace('T', ' ').slice(0, 16);
@@ -73,7 +73,7 @@ function formatScanDate(isoStr) {
 }
 
 function formatScanDateTime(isoStr) {
-  if (!isoStr) return '\u2014';
+  if (!isoStr) return '—';
   const d = new Date(isoStr);
   if (Number.isNaN(d.getTime())) {
     return String(isoStr).replace('T', ' ').slice(0, 19);
@@ -83,9 +83,9 @@ function formatScanDateTime(isoStr) {
 
 function shortenProofId(proofId) {
   const s = String(proofId || '').trim();
-  if (!s) return '\u2014';
+  if (!s) return '—';
   if (s.length <= 14) return s;
-  return `${s.slice(0, 8)}\u2026${s.slice(-4)}`;
+  return `${s.slice(0, 8)}…${s.slice(-4)}`;
 }
 
 function formatLevelLabel(level) {
@@ -369,7 +369,7 @@ function DeleteScanConfirmDialog({ onConfirm, onCancel, deleting }) {
             onClick={onConfirm}
             disabled={deleting}
           >
-            {deleting ? 'Deleting\u2026' : 'Delete scan'}
+            {deleting ? 'Deleting…' : 'Delete scan'}
           </button>
         </div>
       </div>
@@ -791,11 +791,6 @@ export function DashboardOverview() {
                   : 'Upgrade for ₹1'}
               </span>
             </button>
-            {paymentsMode === 'test' && (
-              <span className="dash-plan-test-notice">
-                Test mode: no real money is charged.
-              </span>
-            )}
           </div>
         </div>
       </section>
@@ -915,7 +910,7 @@ export function DashboardOverview() {
                         {item.score != null ? (
                           <span className="dash-score-mono">{item.score}/100</span>
                         ) : (
-                          '\u2014'
+                          '—'
                         )}
                       </td>
                       <td data-label="Proof ID" className="dash-cell-proof">
@@ -935,7 +930,7 @@ export function DashboardOverview() {
                             </button>
                           </div>
                         ) : (
-                          '\u2014'
+                          '—'
                         )}
                       </td>
                       <td data-label="Action" className="dash-cell-action">
@@ -1127,7 +1122,7 @@ export function DashboardHistory() {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search company, host, Proof ID\u2026"
+                placeholder="Search company, host, Proof ID…"
                 className="dash-search-input"
               />
             </div>
@@ -1274,7 +1269,7 @@ export function DashboardHistory() {
                           {item.score != null ? (
                             <span className="dash-score-mono">{item.score}/100</span>
                           ) : (
-                            '\u2014'
+                            '—'
                           )}
                         </td>
                         <td data-label="Proof ID" className="dash-cell-proof">
@@ -1294,7 +1289,7 @@ export function DashboardHistory() {
                               </button>
                             </div>
                           ) : (
-                            '\u2014'
+                            '—'
                           )}
                         </td>
                         <td data-label="Actions" className="dash-cell-action">
@@ -1893,7 +1888,7 @@ export function DashboardScanDetail() {
           <div className="proof-item">
             <label>Proof ID</label>
             <div className="val">
-              <span>{scan.proofId || '\u2014'}</span>
+              <span>{scan.proofId || '—'}</span>
               {scan.proofId && (
                 <button
                   type="button"
@@ -2071,7 +2066,25 @@ export function DashboardPlan() {
           </ul>
 
           <div className="dash-tier-cta">
-            <Link to="/dashboard/scan" className="dash-btn-outline" style={{ width: '100%', textAlign: 'center' }}>
+            <Link
+              to="/dashboard/scan"
+              className="dash-btn-primary dash-btn-free"
+              style={{
+                width: '100%',
+                height: '48px',
+                minHeight: '48px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                background: 'var(--brand, #4DA3FF)',
+                color: '#FFFFFF',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                boxSizing: 'border-box'
+              }}
+            >
               Run a check
             </Link>
           </div>
@@ -2111,6 +2124,10 @@ export function DashboardPlan() {
             </li>
             <li>
               <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
+              <span>Browser extension (Chrome, Edge, Brave)</span>
+            </li>
+            <li>
+              <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
               <span>Priority dual-pass AI screening models</span>
             </li>
           </ul>
@@ -2119,7 +2136,22 @@ export function DashboardPlan() {
             <button
               type="button"
               className="dash-btn-primary dash-btn-pro"
-              style={{ width: '100%', textAlign: 'center' }}
+              style={{
+                width: '100%',
+                height: '48px',
+                minHeight: '48px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                background: 'var(--brand, #4DA3FF)',
+                color: '#FFFFFF',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                boxSizing: 'border-box'
+              }}
               onClick={handleUpgrade}
               disabled={upgradeLoading || !isPaymentsAvailable}
             >
@@ -2131,11 +2163,6 @@ export function DashboardPlan() {
                 ? 'Extend pass by 30 days (₹1)'
                 : 'Upgrade for ₹1'}
             </button>
-            {paymentsMode === 'test' && (
-              <p className="dash-plan-test-notice">
-                Test mode: Razorpay test credentials, no real money debited.
-              </p>
-            )}
           </div>
         </div>
       </div>
@@ -2392,7 +2419,7 @@ export function DashboardSettings() {
               disabled={deletingAccount || deleteConfirmText !== 'DELETE'}
             >
               <Trash2 size={15} aria-hidden="true" />
-              <span>{deletingAccount ? 'Deleting account\u2026' : 'Delete my account'}</span>
+              <span>{deletingAccount ? 'Deleting account…' : 'Delete my account'}</span>
             </button>
           </div>
         </form>

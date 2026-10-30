@@ -60,7 +60,7 @@ export function Tools() {
             </div>
             <h1 className="tools-hub-heading">Check any scam in one place</h1>
             <p className="tools-hub-subtitle">
-              Screen suspicious job postings, payment requests, and incoming messages using independent public evidence.
+              Paste a job offer, payment request or message. Get a clear verdict, the reasons, and proof you can verify.
             </p>
           </div>
 

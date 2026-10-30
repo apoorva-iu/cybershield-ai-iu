@@ -12,7 +12,7 @@ const L = require('./ledger');
 const DB = require('./db');
 const { analyzeDescription, analyzeDescriptionWithStatus } = require('./llm');
 const { createProof } = require('./detectors/proof');
-const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData } = require('./detectors/quota');
+const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData, getUserPlan } = require('./detectors/quota');
 const createDetectorRouter = require('./detectors/routes');
 const createUpiRouter = require('./upi/routes');
 const createMessageRouter = require('./message/routes');
@@ -580,6 +580,40 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
 
 app.get('/api/usage', optionalAuth, usageRoute);
 app.get('/api/quota', optionalAuth, quotaRoute);
+
+// Direct URL for static zip must return 404
+app.get('/downloads/cyber-shield-extension.zip', (req, res) => {
+  return res.status(404).json({ error: 'Not found' });
+});
+
+// Pro-gated extension zip download endpoint
+app.get('/api/extension/download', requireAuth, userLimiter, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userPlanRec = await getUserPlan(userId);
+    const plan = userPlanRec.plan || 'free';
+    const now = Date.now();
+    const expiresAt = userPlanRec.expires_at ? new Date(userPlanRec.expires_at) : null;
+    const isProActive = plan === 'pro' && (!expiresAt || now <= expiresAt.getTime());
+
+    if (!isProActive) {
+      return res.status(403).json({ error: 'pro_required' });
+    }
+
+    const zipPath = path.join(__dirname, 'private', 'cyber-shield-extension.zip');
+    if (!fs.existsSync(zipPath)) {
+      return res.status(404).json({ error: 'Extension package not found' });
+    }
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="cyber-shield-extension.zip"');
+    const stream = fs.createReadStream(zipPath);
+    stream.pipe(res);
+  } catch (err) {
+    console.error('[extension/download] Error:', err);
+    return res.status(500).json({ error: 'Failed to download extension package' });
+  }
+});
 
 app.use(createDetectorRouter(optionalAuth));
 app.use(createUpiRouter(optionalAuth));

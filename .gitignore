@@ -14,6 +14,7 @@ tests/temp_ledger*.json
 last_user_input.json
 
 # build outputs (can be rebuilt with npm run build:all)
+private/
 extension/dist/
 public/assets/
 public/downloads/

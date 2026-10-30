@@ -190,6 +190,11 @@
 /* Card Bottom Action */
 .plan-card-action {
   margin-top: auto;
+  width: 100%;
+}
+
+.plan-card-action > div {
+  width: 100%;
 }
 
 .btn-card-primary {
@@ -198,9 +203,11 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 12px 20px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 20px;
   border-radius: 9999px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   background: var(--brand, #4DA3FF);
   color: #FFFFFF !important;
@@ -219,7 +226,7 @@
 }
 
 .btn-pro-action {
-  background: linear-gradient(135deg, var(--brand, #4DA3FF) 0%, #2563EB 100%);
+  background: var(--brand, #4DA3FF);
 }
 
 /* =========================================================================

@@ -71,13 +71,15 @@ async function zipExtension() {
   fs.writeFileSync(tempManifestPath, JSON.stringify(manifest, null, 2), 'utf8');
 
   // Destination directories
+  const privateDir = path.join(rootDir, 'private');
   const webDownloadsDir = path.join(rootDir, 'web', 'public', 'downloads');
   const pubDownloadsDir = path.join(rootDir, 'public', 'downloads');
+  fs.mkdirSync(privateDir, { recursive: true });
   fs.mkdirSync(webDownloadsDir, { recursive: true });
   fs.mkdirSync(pubDownloadsDir, { recursive: true });
 
   const zipFileName = 'cyber-shield-extension.zip';
-  const zipFilePath = path.join(webDownloadsDir, zipFileName);
+  const zipFilePath = path.join(privateDir, zipFileName);
   const outStream = fs.createWriteStream(zipFilePath);
   
   const archive = typeof archiver === 'function'
@@ -105,9 +107,18 @@ async function zipExtension() {
   const infoFilePath = path.join(webDownloadsDir, infoFileName);
   fs.writeFileSync(infoFilePath, JSON.stringify(infoData, null, 2), 'utf8');
 
-  // Also mirror to public/downloads/ for immediate serving
-  fs.copyFileSync(zipFilePath, path.join(pubDownloadsDir, zipFileName));
+  // Keep extension-info.json public for version / size metadata
   fs.copyFileSync(infoFilePath, path.join(pubDownloadsDir, infoFileName));
+
+  // Remove any legacy static zip in public folders to enforce download gate
+  try {
+    if (fs.existsSync(path.join(webDownloadsDir, zipFileName))) {
+      fs.unlinkSync(path.join(webDownloadsDir, zipFileName));
+    }
+    if (fs.existsSync(path.join(pubDownloadsDir, zipFileName))) {
+      fs.unlinkSync(path.join(pubDownloadsDir, zipFileName));
+    }
+  } catch (e) {}
 
   // Clean up temp folder
   try {

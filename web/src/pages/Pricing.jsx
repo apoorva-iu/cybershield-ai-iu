@@ -47,9 +47,9 @@ export function Pricing() {
               <Sparkles size={14} />
               Transparent Screening Plans
             </span>
-            <h1>Simple, honest plans for every check</h1>
+            <h1>Simple plans for every check</h1>
             <p>
-              Screen job offers, payment requests, and incoming messages with verifiable evidence.
+              Start free. Upgrade for Rs 1 when you need more checks and the browser extension.
             </p>
           </div>
 
@@ -160,19 +160,6 @@ export function Pricing() {
                           <span>{buttonText}</span>
                           {!isDisabled && <ArrowRight size={15} />}
                         </button>
-                        {paymentsMode === 'test' && (
-                          <p
-                            className="pricing-test-mode-notice"
-                            style={{
-                              fontSize: '12px',
-                              color: 'var(--text-dim, #94A3B8)',
-                              textAlign: 'center',
-                              margin: '10px 0 0'
-                            }}
-                          >
-                            Test mode: no real money is charged.
-                          </p>
-                        )}
                       </div>
                     )}
                   </div>

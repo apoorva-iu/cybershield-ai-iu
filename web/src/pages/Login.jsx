@@ -588,7 +588,7 @@ export function Login({ mode }) {
         return;
       }
 
-      setInfoMsg('Your password has been updated. Redirecting\u2026');
+      setInfoMsg('Your password has been updated. Redirecting…');
       setTimeout(() => {
         navigate('/dashboard', { replace: true });
       }, 900);
@@ -656,11 +656,7 @@ export function Login({ mode }) {
             </ol>
           </div>
 
-          <div className="auth-left-bottom">
-            <p className="auth-left-disclaimer">
-              Screening aid, not a legal finding.
-            </p>
-          </div>
+          <div className="auth-left-bottom" />
         </aside>
 
         {/* RIGHT COLUMN (Form centered, max-width 420px) */}
@@ -688,7 +684,7 @@ export function Login({ mode }) {
                         {resendCooldown > 0
                           ? `Resend confirmation in ${resendCooldown}s`
                           : resending
-                            ? 'Sending\u2026'
+                            ? 'Sending…'
                             : 'Resend confirmation email'}
                       </button>
                     </div>
@@ -744,7 +740,7 @@ export function Login({ mode }) {
                   className="login-btn-google"
                 >
                   <GoogleIcon />
-                  <span>{googleSubmitting ? 'Redirecting\u2026' : 'Sign up with Google'}</span>
+                  <span>{googleSubmitting ? 'Redirecting…' : 'Sign up with Google'}</span>
                 </button>
 
                 <div className="login-or-divider">
@@ -853,7 +849,7 @@ export function Login({ mode }) {
                     disabled={serviceUnavailable || !isSignupFormValid || submitting || googleSubmitting}
                     className="login-btn-magic"
                   >
-                    {submitting ? 'Creating account\u2026' : 'Create your account'}
+                    {submitting ? 'Creating account…' : 'Create your account'}
                   </button>
                 </form>
 
@@ -906,7 +902,7 @@ export function Login({ mode }) {
                     disabled={submitting || otpCode.trim().length !== 6}
                     className="login-btn-magic"
                   >
-                    {submitting ? 'Verifying\u2026' : 'Verify code'}
+                    {submitting ? 'Verifying…' : 'Verify code'}
                   </button>
                 </form>
 
@@ -920,7 +916,7 @@ export function Login({ mode }) {
                     {resendCooldown > 0
                       ? `Resend (${resendCooldown}s)`
                       : resending
-                        ? 'Resending\u2026'
+                        ? 'Resending…'
                         : 'Resend'}
                   </button>
                   <button
@@ -952,7 +948,7 @@ export function Login({ mode }) {
                   className="login-btn-google"
                 >
                   <GoogleIcon />
-                  <span>{googleSubmitting ? 'Redirecting\u2026' : 'Continue with Google'}</span>
+                  <span>{googleSubmitting ? 'Redirecting…' : 'Continue with Google'}</span>
                 </button>
 
                 <div className="login-or-divider">
@@ -1016,7 +1012,7 @@ export function Login({ mode }) {
                       disabled={serviceUnavailable || submitting || googleSubmitting}
                       className="login-btn-magic"
                     >
-                      {submitting ? 'Signing in\u2026' : 'Sign in'}
+                      {submitting ? 'Signing in…' : 'Sign in'}
                     </button>
 
                     <div className="auth-center-links">
@@ -1062,7 +1058,7 @@ export function Login({ mode }) {
                       disabled={serviceUnavailable || submitting || !isEmailValid}
                       className="login-btn-magic"
                     >
-                      {submitting ? 'Sending code\u2026' : 'Send sign-in code'}
+                      {submitting ? 'Sending code…' : 'Send sign-in code'}
                     </button>
 
                     <div className="auth-center-links">
@@ -1106,7 +1102,7 @@ export function Login({ mode }) {
                       disabled={submitting || otpCode.trim().length !== 6}
                       className="login-btn-magic"
                     >
-                      {submitting ? 'Verifying\u2026' : 'Verify & sign in'}
+                      {submitting ? 'Verifying…' : 'Verify & sign in'}
                     </button>
 
                     <div className="auth-secondary-actions">
@@ -1178,7 +1174,7 @@ export function Login({ mode }) {
                     disabled={serviceUnavailable || submitting || !isEmailValid}
                     className="login-btn-magic"
                   >
-                    {submitting ? 'Sending\u2026' : 'Send reset link'}
+                    {submitting ? 'Sending…' : 'Send reset link'}
                   </button>
                 </form>
 
@@ -1262,7 +1258,7 @@ export function Login({ mode }) {
                     disabled={serviceUnavailable || submitting || !isResetFormValid}
                     className="login-btn-magic"
                   >
-                    {submitting ? 'Updating\u2026' : 'Update password'}
+                    {submitting ? 'Updating…' : 'Update password'}
                   </button>
                 </form>
 
@@ -1281,9 +1277,6 @@ export function Login({ mode }) {
                 <span aria-hidden="true">&bull;</span>
                 <Link to="/terms">Terms</Link>
               </div>
-              <p className="login-screen-aid-note">
-                Screening aid, not a legal finding
-              </p>
             </div>
           </div>
         </div>

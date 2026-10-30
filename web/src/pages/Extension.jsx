@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from '../components/ui';
 import { PageTransition } from '../components/wow';
+import { useAuth } from '../auth';
+import { useBillingStatus, startUpgrade } from '../lib/billing';
 import {
   Download,
   CheckCircle2,
@@ -16,12 +18,18 @@ import {
   Lock,
   Layers,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react';
 
 export function Extension() {
+  const { session } = useAuth();
+  const { isPro, isPaymentsAvailable } = useBillingStatus(session);
   const [info, setInfo] = useState(null);
   const [activeTabMock, setActiveTabMock] = useState('message');
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
   const isMobile = typeof navigator !== 'undefined' &&
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
 
@@ -31,6 +39,58 @@ export function Extension() {
       .then(setInfo)
       .catch(() => setInfo(null));
   }, []);
+
+  const handleUpgradeClick = async () => {
+    try {
+      setUpgradeLoading(true);
+      await startUpgrade({
+        session,
+        onSuccess: () => {
+          window.location.reload();
+        }
+      });
+    } catch (err) {
+      console.error('Upgrade error:', err);
+    } finally {
+      setUpgradeLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      setDownloadError(null);
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error('Please sign in to download the extension.');
+      }
+      const res = await fetch('/api/extension/download', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (res.status === 403 || errData.error === 'pro_required') {
+          throw new Error('The browser extension is part of Pro.');
+        }
+        throw new Error(errData.error || 'Failed to download extension');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cyber-shield-extension.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setDownloadError(err.message);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const formattedSize = info && typeof info.sizeBytes === 'number'
     ? (info.sizeBytes / 1024).toFixed(1) + ' KB'
@@ -45,16 +105,16 @@ export function Extension() {
             <div style={{ display: 'inline-flex', gap: '8px', marginBottom: '16px' }}>
               <span
                 style={{
-                  background: 'rgba(18, 128, 92, 0.2)',
-                  color: '#34D399',
-                  border: '1px solid rgba(18, 128, 92, 0.4)',
+                  background: 'rgba(77, 163, 255, 0.18)',
+                  color: 'var(--brand, #4DA3FF)',
+                  border: '1px solid rgba(77, 163, 255, 0.4)',
                   padding: '4px 12px',
                   borderRadius: '9999px',
                   fontSize: '13px',
                   fontWeight: 600
                 }}
               >
-                Free
+                Pro
               </span>
               <span
                 style={{
@@ -67,7 +127,7 @@ export function Extension() {
                   fontWeight: 600
                 }}
               >
-                Developer preview (v{info?.version || '0.2.0'})
+                Developer preview (v{info?.version || '0.2.1'})
               </span>
             </div>
 
@@ -93,24 +153,8 @@ export function Extension() {
                 lineHeight: 1.45
               }}
             >
-              Select text on any page and check it as a job offer, a UPI or payment request, or a message.
+              Select text on any page and check it as a job offer, a payment request or a message, without leaving the page.
             </p>
-
-            <div style={{ marginBottom: '28px' }}>
-              <span
-                style={{
-                  fontSize: '13px',
-                  color: '#94A3B8',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  display: 'inline-block'
-                }}
-              >
-                Screening aid, not a legal finding.
-              </span>
-            </div>
 
             {isMobile ? (
               <div
@@ -143,11 +187,12 @@ export function Extension() {
                   Explore web tools
                 </Link>
               </div>
-            ) : (
+            ) : isPro ? (
               <div>
-                <a
-                  href="/downloads/cyber-shield-extension.zip"
-                  download="cyber-shield-extension.zip"
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={downloading}
                   className="btn-primary"
                   style={{
                     display: 'inline-flex',
@@ -157,13 +202,20 @@ export function Extension() {
                     fontSize: '16px',
                     fontWeight: 600,
                     borderRadius: '10px',
-                    textDecoration: 'none',
+                    border: 'none',
+                    cursor: downloading ? 'wait' : 'pointer',
                     boxShadow: '0 4px 20px rgba(10, 102, 194, 0.4)'
                   }}
                 >
                   <Download size={20} />
-                  <span>Download for Chrome, Edge and Brave</span>
-                </a>
+                  <span>{downloading ? 'Downloading...' : 'Download for Chrome, Edge and Brave'}</span>
+                </button>
+
+                {downloadError && (
+                  <p style={{ fontSize: '13px', color: '#F87171', marginTop: '10px' }}>
+                    {downloadError}
+                  </p>
+                )}
 
                 {info && (
                   <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '10px' }}>
@@ -174,6 +226,97 @@ export function Extension() {
                 <p style={{ fontSize: '13px', color: '#94A3B8', marginTop: '14px' }}>
                   Firefox and Safari: Coming soon.
                 </p>
+              </div>
+            ) : (
+              <div
+                className="extension-pro-locked-card"
+                style={{
+                  background: 'var(--surface, #0B1220)',
+                  border: '1px solid rgba(77, 163, 255, 0.35)',
+                  borderRadius: '14px',
+                  padding: '32px 28px',
+                  maxWidth: '500px',
+                  margin: '0 auto',
+                  textAlign: 'center',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                }}
+              >
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: 'rgba(77, 163, 255, 0.15)',
+                    border: '1px solid rgba(77, 163, 255, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    color: 'var(--brand, #4DA3FF)'
+                  }}
+                >
+                  <Lock size={22} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#FFFFFF', margin: '0 0 8px' }}>
+                  The browser extension is part of Pro.
+                </h3>
+                <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 24px', lineHeight: 1.5 }}>
+                  Screen job offers, payment requests, and messages right on any webpage with 100 checks every 30 days.
+                </p>
+                {session ? (
+                  <button
+                    type="button"
+                    className="btn-card-primary"
+                    onClick={handleUpgradeClick}
+                    disabled={upgradeLoading || !isPaymentsAvailable}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      height: '48px',
+                      borderRadius: '9999px',
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      background: 'var(--brand, #4DA3FF)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>{upgradeLoading ? 'Opening checkout...' : 'Upgrade for ₹1'}</span>
+                    <ArrowRight size={16} />
+                  </button>
+                ) : (
+                  <Link
+                    to="/login?from=/extension"
+                    className="btn-card-primary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      height: '48px',
+                      borderRadius: '9999px',
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      background: 'var(--brand, #4DA3FF)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <span>Sign in</span>
+                    <ArrowRight size={16} />
+                  </Link>
+                )}
+                {info && (
+                  <p style={{ fontSize: '12px', color: '#64748B', marginTop: '14px', marginBottom: 0 }}>
+                    Version {info.version}{formattedSize ? ` • ${formattedSize}` : ''} • Chrome, Edge &amp; Brave
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -439,7 +582,6 @@ export function Extension() {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748B' }}>
                 <span>Proof ID: CS-EXAMPLE-01</span>
-                <span>Screening aid, not a legal finding.</span>
               </div>
             </div>
           </div>
@@ -804,10 +946,10 @@ export function Extension() {
                 }}
               >
                 <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
-                  Is it free?
+                  Which plan includes the extension?
                 </h3>
                 <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
-                  Yes, the extension is free to use. Standard per-IP rate limits apply (Job: 6/min, 60/day; UPI: 120/min; Message: 120/min) to prevent abuse and keep verification fast.
+                  The browser extension is included with the Pro plan. Pro gives you 100 checks every 30 days and access to the extension for Chrome, Edge, and Brave.
                 </p>
               </div>
 
