@@ -2,12 +2,21 @@
   --bg: #05080F;
   --surface: #0B1220;
   --surface-hover: #101B2E;
+  --surface-active: #162640;
   --border: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(77, 163, 255, 0.5);
   --text: #FFFFFF;
   --text-muted: #C9D3E3;
+  --text-faint: #8E9BAE;
   --primary: #0A66C2;
   --primary-hover: #095196;
   --accent: #4DA3FF;
+  --ok-text: #4ADE80;
+  --ok-bg: rgba(18, 128, 92, 0.22);
+  --warn-text: #FCD34D;
+  --warn-bg: rgba(183, 121, 31, 0.22);
+  --bad-text: #FCA5A5;
+  --bad-bg: rgba(198, 40, 40, 0.22);
 }
 
 * {
@@ -17,21 +26,20 @@
 }
 
 body {
-  width: 340px;
+  width: 350px;
   background-color: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
   line-height: 1.5;
-  user-select: none;
 }
 
 .popup-container {
-  padding: 18px;
+  padding: 16px;
 }
 
 .popup-header {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
@@ -57,18 +65,313 @@ body {
 .popup-main {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-.instruction {
-  font-size: 13px;
+/* Plan & Usage Status Card */
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.status-card.is-pro {
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.status-card.is-warn {
+  border-color: rgba(252, 211, 77, 0.35);
+}
+
+.status-card.is-error {
+  border-color: rgba(252, 165, 165, 0.35);
+}
+
+.status-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.status-plan {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: capitalize;
+}
+
+.status-badge.pro {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.status-badge.free {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border: 1px solid rgba(252, 211, 77, 0.3);
+}
+
+.status-badge.err {
+  background: var(--bad-bg);
+  color: var(--bad-text);
+  border: 1px solid rgba(252, 165, 165, 0.3);
+}
+
+.status-detail {
+  font-size: 12.5px;
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-.instruction strong {
-  color: var(--text);
+/* Progress Bar */
+.progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #34D399);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.progress-label-text {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.progress-label-percent {
   font-weight: 600;
+  color: var(--ok-text);
+}
+
+.status-actions {
+  margin-top: 2px;
+}
+
+.status-link {
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.status-link:hover {
+  text-decoration: underline;
+}
+
+/* Linked Key Row (Active State) */
+.linked-key-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.linked-key-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.linked-key-icon {
+  color: var(--ok-text);
+  flex-shrink: 0;
+}
+
+.linked-key-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+}
+
+.linked-key-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.key-btn-secondary {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface-hover);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.key-btn-secondary:hover {
+  background: var(--surface-active);
+  border-color: var(--accent);
+}
+
+.key-btn-danger {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bad-text);
+  background: transparent;
+  border: 1px solid rgba(252, 165, 165, 0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.key-btn-danger:hover {
+  background: var(--bad-bg);
+  border-color: var(--bad-text);
+}
+
+/* Key Form Card (Entry / Replace State) */
+.key-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.key-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.key-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.key-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.key-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(77, 163, 255, 0.2);
+}
+
+.key-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.key-save-btn {
+  flex: 1;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.key-save-btn:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.key-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.key-cancel-btn {
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.key-cancel-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.key-feedback {
+  font-size: 12px;
+  color: var(--ok-text);
+  line-height: 1.4;
+}
+
+.key-feedback.is-error {
+  color: var(--bad-text);
+}
+
+/* Security Note */
+.key-security-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  line-height: 1.35;
+  text-align: center;
+}
+
+.instruction {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .toggle-card {
@@ -172,8 +475,7 @@ body {
 
 .privacy-note {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-faint);
   text-align: center;
   line-height: 1.3;
 }
-

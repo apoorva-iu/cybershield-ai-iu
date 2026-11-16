@@ -149,11 +149,20 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
     version: 1,
     generatedAt: new Date().toISOString(),
     tool: 'upi',
-    scamType: finalAi.scamType,
-    primaryConcern: finalAi.primaryConcern,
-    whatToDo: finalAi.whatToDo,
-    evidence: finalAi.evidence,
+    scamType: finalAi.scamType || null,
+    primaryConcern: finalAi.primaryConcern || null,
+    headline: finalAi.primaryConcern || finalAi.headline || 'Payment check complete.',
+    whatToDo: finalAi.whatToDo || [],
+    evidence: finalAi.evidence || [],
+    ...(finalAi.flaggedPhrases ? { flaggedPhrases: finalAi.flaggedPhrases } : {}),
+    evidenceSources: {
+      aiPasses: successfulPasses,
+      linkLookups
+    },
     evidenceSourceCount: 1 + (linkLookups > 0 ? 1 : 0),
+    confidenceBand: finalAi.confidenceBand || null,
+    confidenceFactors: finalAi.confidenceFactors || [],
+    scoreBreakdown: finalAi.scoreBreakdown || [],
     input: {
       kind: 'upi',
       source: source || 'pasted',
@@ -208,9 +217,11 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
       const scanRow = {
         proof_id: proofResult.proofId,
         proof_key: proofResult.proofKey,
-        level: finalAi.level,
+        level: finalAi.level === 'unable' ? 'unknown' : finalAi.level,
         score: finalAi.score != null ? finalAi.score : null,
-        confidence: finalAi.confidence != null ? finalAi.confidence : null,
+        confidence: typeof finalAi.confidence === 'number'
+          ? (finalAi.confidence <= 1 ? Math.round(finalAi.confidence * 100) : Math.round(finalAi.confidence))
+          : null,
         report,
         limited_evidence: finalAi.level === 'unable',
         user_id: userId,
@@ -256,6 +267,7 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
         aiPasses: successfulPasses,
         linkLookups
       },
+      proofId: proofResult.proofId,
       receipt: proofResult.receipt,
       ledgerProof: proofResult.receipt,
       saved,

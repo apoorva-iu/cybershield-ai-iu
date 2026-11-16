@@ -75,12 +75,28 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     const runRequest = async () => {
       try {
+        const stored = await chrome.storage.local.get(['extensionKey']);
+        const extensionKey = typeof stored?.extensionKey === 'string' ? stored.extensionKey.trim() : '';
+
+        if (!extensionKey) {
+          sendResponse({
+            ok: false,
+            status: 401,
+            code: 'missing_key',
+            error: 'Add your key in the Cyber Shield extension popup to run checks.'
+          });
+          return;
+        }
+
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Client': 'extension',
+          Authorization: `Bearer ${extensionKey}`
+        };
+
         let res = await fetch(endpoint, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Client': 'extension'
-          },
+          headers,
           body: JSON.stringify(reqBody)
         });
 
@@ -92,10 +108,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               reqBody.source = 'pasted';
               res = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-Client': 'extension'
-                },
+                headers,
                 body: JSON.stringify(reqBody)
               });
             }
@@ -107,6 +120,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           json = await res.json();
         } catch (e) {
           json = null;
+        }
+
+        if (res.status === 401) {
+          try {
+            await chrome.storage.local.remove(['extensionKey', 'extensionKeyLast4']);
+          } catch (e) {}
+          sendResponse({
+            ok: false,
+            status: 401,
+            code: 'key_revoked',
+            error: 'Key was revoked. Add a new key'
+          });
+          return;
+        }
+
+        if (res.status === 403) {
+          sendResponse({
+            ok: false,
+            status: 403,
+            code: (json && json.error) || 'pro_required',
+            error: (json && (json.message || json.error)) || 'Extension is a Pro feature',
+            upgradeUrl: (json && json.upgradeUrl) || '/#/pricing'
+          });
+          return;
         }
 
         if (res.status === 429) {
@@ -177,14 +214,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     sendResponse({ ok: true });
     return false;
-  }
-
-  if (msg.type === 'OPEN_REPORT_HTML') {
-    chrome.storage.local.set({ pendingReport: msg.data }, () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL('report.html') });
-      sendResponse({ ok: true });
-    });
-    return true;
   }
 
   return false;

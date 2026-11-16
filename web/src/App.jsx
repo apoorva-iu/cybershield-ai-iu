@@ -162,6 +162,13 @@ function ProtectedRoute({ children }) {
     return children;
   }
 
+  const searchParams = new URLSearchParams(location.search || '');
+  const keyParam = searchParams.get('key');
+  const isReportDownload = searchParams.get('autoPrint') === '1' || searchParams.get('download') === 'pdf';
+  if ((keyParam && keyParam.startsWith('cs_ext_')) || (isReportDownload && location.pathname.startsWith('/dashboard/history/'))) {
+    return children;
+  }
+
   if (!session) {
     const intended = location.pathname + (location.search || '');
     setReturnTo(intended);

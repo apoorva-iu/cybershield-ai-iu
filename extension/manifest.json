@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cyber Shield",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Check job offers, UPI payment requests and messages from selected text.",
   "permissions": [
     "contextMenus",
@@ -44,7 +44,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "report.html",
         "icons/*"
       ],
       "matches": [

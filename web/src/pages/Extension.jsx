@@ -19,7 +19,11 @@ import {
   Layers,
   FileText,
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Key,
+  Copy,
+  Check,
+  Trash2
 } from 'lucide-react';
 
 export function Extension() {
@@ -30,6 +34,19 @@ export function Extension() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState(null);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+
+  // Extension key state (Pro users only)
+  const [hasExtKey, setHasExtKey] = useState(false);
+  const [extKeyLast4, setExtKeyLast4] = useState(null);
+  const [extKeyCreatedAt, setExtKeyCreatedAt] = useState(null);
+  const [generatedKey, setGeneratedKey] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const [clipboardBlocked, setClipboardBlocked] = useState(false);
+  const [copiedKeyNotice, setCopiedKeyNotice] = useState(null);
+  const [keyLoading, setKeyLoading] = useState(false);
+  const [keyError, setKeyError] = useState(null);
+  const [keyNotice, setKeyNotice] = useState(null);
+
   const isMobile = typeof navigator !== 'undefined' &&
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
 
@@ -39,6 +56,155 @@ export function Extension() {
       .then(setInfo)
       .catch(() => setInfo(null));
   }, []);
+
+  useEffect(() => {
+    if (!isPro || !session?.access_token) {
+      setHasExtKey(false);
+      setExtKeyLast4(null);
+      setExtKeyCreatedAt(null);
+      setGeneratedKey(null);
+      return;
+    }
+    let mounted = true;
+    fetch('/api/extension/key', {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (!mounted || !data) return;
+        setHasExtKey(Boolean(data.hasKey));
+        setExtKeyLast4(data.last4 || null);
+        setExtKeyCreatedAt(data.createdAt || null);
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [isPro, session?.access_token]);
+
+  // Automatic countdown & cleanup when user leaves page, switches tabs, or unmounts
+  useEffect(() => {
+    if (!generatedKey) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev == null || prev <= 1) {
+          setGeneratedKey(null);
+          setClipboardBlocked(false);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setGeneratedKey(null);
+        setClipboardBlocked(false);
+        setCountdown(null);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      setGeneratedKey(null);
+    };
+  }, [generatedKey]);
+
+  const handleGenerateKey = async () => {
+    if (!session?.access_token || keyLoading) return;
+    try {
+      setKeyLoading(true);
+      setKeyError(null);
+      setKeyNotice(null);
+      setCopiedKeyNotice(null);
+      setClipboardBlocked(false);
+      const res = await fetch('/api/extension/key', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Could not generate extension key');
+      }
+      const fullKey = data.key || null;
+      const last4 = data.last4 || (fullKey ? fullKey.slice(-4) : '');
+      setGeneratedKey(fullKey);
+      setExtKeyLast4(last4);
+      setHasExtKey(true);
+      setExtKeyCreatedAt(data.createdAt || new Date().toISOString());
+      setCountdown(60);
+    } catch (err) {
+      setKeyError(err.message);
+    } finally {
+      setKeyLoading(false);
+    }
+  };
+
+  const handleCopyKey = async () => {
+    if (!generatedKey) return;
+    const keyToCopy = generatedKey;
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable');
+      }
+      await navigator.clipboard.writeText(keyToCopy);
+
+      // Immediately remove key from page and React state
+      setGeneratedKey(null);
+      setCountdown(null);
+      setClipboardBlocked(false);
+      setCopiedKeyNotice(
+        'Key copied. Paste it in the extension popup now. It is hidden for your security and cannot be shown again.'
+      );
+
+      // Best effort: clear clipboard after 60 seconds if page is focused
+      setTimeout(() => {
+        if (typeof document !== 'undefined' && document.hasFocus && document.hasFocus()) {
+          try {
+            navigator.clipboard?.writeText?.('');
+          } catch (e) {}
+        }
+      }, 60000);
+    } catch (err) {
+      // If copy fails (clipboard blocked), show the key in a box for 30 seconds with a message, then hide it
+      setClipboardBlocked(true);
+      setCountdown(30);
+    }
+  };
+
+  const handleRevokeKey = async () => {
+    if (!session?.access_token || keyLoading) return;
+    try {
+      setKeyLoading(true);
+      setKeyError(null);
+      setCopiedKeyNotice(null);
+      setClipboardBlocked(false);
+      const res = await fetch('/api/extension/key', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Could not revoke extension key');
+      }
+      setGeneratedKey(null);
+      setCountdown(null);
+      setHasExtKey(false);
+      setExtKeyLast4(null);
+      setExtKeyCreatedAt(null);
+      setKeyNotice('Extension key revoked. Generate a new one whenever you need it.');
+    } catch (err) {
+      setKeyError(err.message);
+    } finally {
+      setKeyLoading(false);
+    }
+  };
 
   const handleUpgradeClick = async () => {
     try {
@@ -74,7 +240,10 @@ export function Extension() {
         if (res.status === 403 || errData.error === 'pro_required') {
           throw new Error('The browser extension is part of Pro.');
         }
-        throw new Error(errData.error || 'Failed to download extension');
+        if (res.status === 401 || errData.error === 'Authentication required' || errData.error === 'Invalid or expired token') {
+          throw new Error('Please sign in to download the extension.');
+        }
+        throw new Error(errData.error || errData.message || 'Failed to download extension');
       }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -127,7 +296,7 @@ export function Extension() {
                   fontWeight: 600
                 }}
               >
-                Developer preview (v{info?.version || '0.2.1'})
+                Developer preview (v{info?.version || '0.3.0'})
               </span>
             </div>
 
@@ -223,9 +392,300 @@ export function Extension() {
                   </p>
                 )}
 
-                <p style={{ fontSize: '13px', color: '#94A3B8', marginTop: '14px' }}>
-                  Firefox and Safari: Coming soon.
-                </p>
+                {/* Pro-only Extension Account Link Key Card */}
+                <div
+                  className="extension-key-card"
+                  style={{
+                    background: 'var(--surface, #0B1220)',
+                    border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                    borderRadius: '14px',
+                    padding: '24px',
+                    maxWidth: '540px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    margin: '24px auto 0',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 28px rgba(0, 0, 0, 0.35)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Key size={18} color="var(--brand, #4DA3FF)" />
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text, #E6EDF7)', margin: 0, textAlign: 'center' }}>
+                      Link your extension
+                    </h3>
+                  </div>
+
+                  {hasExtKey && !generatedKey && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                      <span
+                        style={{
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          color: 'var(--risk-ok-text, #4ADE80)',
+                          background: 'var(--risk-ok-bg, rgba(18, 128, 92, 0.16))',
+                          border: '1px solid rgba(18, 128, 92, 0.3)',
+                          padding: '3px 12px',
+                          borderRadius: '9999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <CheckCircle2 size={13} />
+                        Active key linked ••••{extKeyLast4 || ''}
+                      </span>
+                    </div>
+                  )}
+
+                  {copiedKeyNotice && (
+                    <div
+                      style={{
+                        background: 'rgba(74, 222, 128, 0.12)',
+                        border: '1px solid rgba(74, 222, 128, 0.35)',
+                        borderRadius: '8px',
+                        padding: '12px 14px',
+                        margin: '0 auto 16px',
+                        maxWidth: '460px',
+                        textAlign: 'center',
+                        fontSize: '13px',
+                        color: 'var(--risk-ok-text, #4ADE80)',
+                        lineHeight: 1.45
+                      }}
+                      role="status"
+                    >
+                      <div style={{ fontWeight: 600, marginBottom: '4px' }}>Key copied. Paste it in the extension popup now.</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-dim, #9AA8BF)' }}>
+                        It is hidden for your security and cannot be shown again.
+                      </div>
+                    </div>
+                  )}
+
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-dim, #9AA8BF)', margin: '0 auto 16px', lineHeight: 1.45, textAlign: 'center', maxWidth: '460px' }}>
+                    {hasExtKey
+                      ? 'Your browser extension shares your Pro quota and saves check reports directly to your dashboard history.'
+                      : 'Generate a personal key to share your Pro quota and save extension reports to your dashboard history.'}
+                  </p>
+
+                  {/* Masked generated key state */}
+                  {generatedKey && !clipboardBlocked && (
+                    <div
+                      style={{
+                        background: 'var(--bg, #05080F)',
+                        border: '1px solid rgba(77, 163, 255, 0.35)',
+                        borderRadius: '8px',
+                        padding: '14px',
+                        margin: '0 auto 16px',
+                        maxWidth: '460px',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--risk-warn-text, #FCD34D)', marginBottom: '8px', textAlign: 'center' }}>
+                        One-time key masked for your security:
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '10px',
+                          width: '100%'
+                        }}
+                      >
+                        <code
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            maxWidth: '100%',
+                            fontSize: '12.5px',
+                            color: 'var(--text, #E6EDF7)',
+                            wordBreak: 'break-all',
+                            overflowWrap: 'anywhere',
+                            whiteSpace: 'pre-wrap',
+                            textAlign: 'center',
+                            padding: '8px 10px',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                            boxSizing: 'border-box',
+                            letterSpacing: '0.04em'
+                          }}
+                        >
+                          cs_ext_••••••••••••••••{extKeyLast4 || generatedKey.slice(-4)}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={handleCopyKey}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '8px 20px',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            borderRadius: '6px',
+                            background: 'rgba(77, 163, 255, 0.16)',
+                            border: '1px solid rgba(77, 163, 255, 0.4)',
+                            color: 'var(--text, #E6EDF7)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Copy size={14} />
+                          <span>Copy key</span>
+                        </button>
+                        {countdown != null && (
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-dim, #9AA8BF)', marginTop: '2px' }}>
+                            Disappears in {countdown}s
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback if clipboard was blocked by browser permissions */}
+                  {generatedKey && clipboardBlocked && (
+                    <div
+                      style={{
+                        background: 'var(--bg, #05080F)',
+                        border: '1px solid rgba(248, 113, 113, 0.4)',
+                        borderRadius: '8px',
+                        padding: '14px',
+                        margin: '0 auto 16px',
+                        maxWidth: '460px',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--risk-bad-text, #FCA5A5)', marginBottom: '8px', textAlign: 'center' }}>
+                        Clipboard write blocked by browser. Copy manually now:
+                      </div>
+                      <code
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          maxWidth: '100%',
+                          fontSize: '12px',
+                          color: 'var(--text, #E6EDF7)',
+                          wordBreak: 'break-all',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'pre-wrap',
+                          textAlign: 'center',
+                          padding: '8px 10px',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                          boxSizing: 'border-box',
+                          userSelect: 'all'
+                        }}
+                      >
+                        {generatedKey}
+                      </code>
+                      {countdown != null && (
+                        <span style={{ fontSize: '11.5px', color: 'var(--risk-bad-text, #FCA5A5)', marginTop: '8px' }}>
+                          Disappears automatically in {countdown}s
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {!generatedKey && hasExtKey && extKeyCreatedAt && (
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-dim, #9AA8BF)', margin: '0 auto 14px', textAlign: 'center', maxWidth: '440px' }}>
+                      Active key created on {new Date(extKeyCreatedAt).toLocaleDateString()}. Plain keys are never stored — generate a new one if you lost it.
+                    </p>
+                  )}
+
+                  {keyError && (
+                    <p style={{ fontSize: '13px', color: 'var(--risk-bad-text, #FCA5A5)', margin: '0 auto 12px', textAlign: 'center' }} role="alert">
+                      {keyError}
+                    </p>
+                  )}
+
+                  {keyNotice && (
+                    <p style={{ fontSize: '13px', color: 'var(--text-dim, #9AA8BF)', margin: '0 auto 12px', textAlign: 'center' }} role="status">
+                      {keyNotice}
+                    </p>
+                  )}
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%'
+                    }}
+                  >
+                    {!generatedKey && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleGenerateKey}
+                          disabled={keyLoading}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            background: 'var(--brand, #0A66C2)',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            cursor: keyLoading ? 'wait' : 'pointer'
+                          }}
+                        >
+                          <Key size={15} />
+                          <span>{keyLoading ? 'Generating...' : (hasExtKey ? 'Generate new key' : 'Generate extension key')}</span>
+                        </button>
+
+                        {hasExtKey && (
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-dim, #9AA8BF)', textAlign: 'center' }}>
+                            Generating a new key revokes the active key.
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {hasExtKey && !generatedKey && (
+                      <button
+                        type="button"
+                        onClick={handleRevokeKey}
+                        disabled={keyLoading}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          padding: '8px 16px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          background: 'transparent',
+                          color: 'var(--risk-bad-text, #FCA5A5)',
+                          border: '1px solid rgba(248, 113, 113, 0.4)',
+                          cursor: keyLoading ? 'wait' : 'pointer',
+                          marginTop: '4px'
+                        }}
+                      >
+                        <Trash2 size={14} />
+                        <span>Revoke key</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
               <div

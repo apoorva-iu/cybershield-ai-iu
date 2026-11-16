@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const cfg = require('./config');
 const C = require('./checks');
@@ -13,6 +14,14 @@ const DB = require('./db');
 const { analyzeDescription, analyzeDescriptionWithStatus } = require('./llm');
 const { createProof } = require('./detectors/proof');
 const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData, getUserPlan } = require('./detectors/quota');
+const {
+  hasExtensionKeyPrefix,
+  createExtensionKey,
+  getExtensionKeyStatus,
+  revokeExtensionKeys,
+  findActiveExtensionKey,
+  deleteUserExtensionKeys
+} = require('./detectors/extensionKeys');
 const createDetectorRouter = require('./detectors/routes');
 const createUpiRouter = require('./upi/routes');
 const createMessageRouter = require('./message/routes');
@@ -34,7 +43,10 @@ const trustProxySetting = trustProxyEnv === '1' || trustProxyEnv === 'true'
   ? 1
   : (trustProxyEnv === '0' || trustProxyEnv === 'false' ? false : RT.security.trustProxy);
 if (trustProxySetting) app.set('trust proxy', trustProxySetting === true ? 1 : trustProxySetting);
-const helmetCfg = JSON.parse(JSON.stringify(RT.security.helmet));
+const helmetCfg = JSON.parse(JSON.stringify(RT.security.helmet || {}));
+if (!helmetCfg.crossOriginOpenerPolicy) {
+  helmetCfg.crossOriginOpenerPolicy = { policy: 'same-origin-allow-popups' };
+}
 if (helmetCfg && helmetCfg.contentSecurityPolicy && helmetCfg.contentSecurityPolicy.directives) {
   const sbUrl = env('SUPABASE_URL');
   const d = helmetCfg.contentSecurityPolicy.directives;
@@ -60,23 +72,27 @@ app.use(cors((req, cb) => {
   }
 
   // Extension origins (chrome-extension://<id>) are allowed ONLY for configured extension routes
-  // (POST /api/verify, POST /api/upi/check, POST /api/message/check)
-  // (no credentials, no cookies, no custom auth; never on /api/me, /api/scans, /api/proof/verify,
-  // /api/upi/read-screenshot, /api/message/read-screenshot, etc.)
+  // (POST /api/verify, POST /api/upi/check, POST /api/message/check, GET /api/usage)
+  // (no credentials, no cookies; never on /api/me, /api/scans, /api/proof/verify,
+  // /api/upi/read-screenshot, /api/message/read-screenshot, /api/extension/key, /api/extension/download)
   if (typeof origin === 'string' && EXTENSION_ORIGIN_RE.test(origin)) {
     const reqPath = (req.path || '').replace(/\/+$/, '') || '/';
     const isPreflight = req.method === 'OPTIONS';
-    const requestedMethod = (req.header('access-control-request-method') || 'POST').toUpperCase();
+    const requestedMethod = (req.header('access-control-request-method') || req.method || 'POST').toUpperCase();
     const extensionRoutes = Array.isArray(RT.security.extensionAllowedRoutes)
       ? RT.security.extensionAllowedRoutes
       : ['/api/verify', '/api/upi/check', '/api/message/check'];
-    const isAllowedExtensionRoute = extensionRoutes.includes(reqPath) && (
+    const isAllowedPostRoute = extensionRoutes.includes(reqPath) && (
       req.method === 'POST' || (isPreflight && requestedMethod === 'POST')
     );
-    if (isAllowedExtensionRoute) {
+    const isAllowedUsageRoute = reqPath === '/api/usage' && (
+      req.method === 'GET' || (isPreflight && requestedMethod === 'GET')
+    );
+    if (isAllowedPostRoute || isAllowedUsageRoute) {
       return cb(null, {
         origin,
-        methods: ['POST'],
+        methods: isAllowedUsageRoute ? ['GET'] : ['POST'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Client'],
         credentials: false
       });
     }
@@ -322,6 +338,27 @@ async function verifyBearerToken(authHeader) {
   const token = m[1];
   const maxTokenLen = (RT.security && RT.security.maxLengths && RT.security.maxLengths.token) || 4096;
   if (!token || token.length > maxTokenLen) return { ok: false };
+
+  if (hasExtensionKeyPrefix(token)) {
+    try {
+      const lookup = await findActiveExtensionKey(token);
+      if (!lookup.active || !lookup.userId || isUserDeleted(lookup.userId)) {
+        return { ok: false, error: 'invalid_extension_key' };
+      }
+      const proActive = await isUserProActive(lookup.userId);
+      return {
+        ok: true,
+        user: {
+          id: lookup.userId,
+          authType: 'extension_key',
+          isProActive: proActive
+        }
+      };
+    } catch (err) {
+      return { ok: false };
+    }
+  }
+
   const client = DB.getClient();
   if (!client || !client.auth || typeof client.auth.getUser !== 'function') {
     return { ok: false };
@@ -361,13 +398,55 @@ async function requireAuth(req, res, next) {
   return next();
 }
 
+async function isUserProActive(userId) {
+  if (!userId) return false;
+  const userPlanRec = await getUserPlan(userId);
+  const plan = (userPlanRec && userPlanRec.plan) || 'free';
+  const expiresAt = userPlanRec && userPlanRec.expires_at ? new Date(userPlanRec.expires_at) : null;
+  return plan === 'pro' && (!expiresAt || Date.now() <= expiresAt.getTime());
+}
+
 async function optionalAuth(req, res, next) {
+  const authHeader = req.headers && req.headers.authorization;
+  if (typeof authHeader === 'string') {
+    const m = authHeader.match(/^Bearer\s+(\S+)$/i);
+    const token = m ? m[1] : '';
+    if (hasExtensionKeyPrefix(token)) {
+      try {
+        const lookup = await findActiveExtensionKey(token);
+        if (!lookup.active || !lookup.userId || isUserDeleted(lookup.userId)) {
+          return res.status(401).json({
+            error: 'invalid_extension_key',
+            message: 'Key not valid, generate a new one'
+          });
+        }
+        const proActive = await isUserProActive(lookup.userId);
+        const reqPath = (req.path || '').replace(/\/+$/, '') || '/';
+        const isUsageCheck = reqPath === '/api/usage' || reqPath === '/api/quota';
+        if (!proActive && !isUsageCheck) {
+          return res.status(403).json({
+            error: 'pro_required',
+            message: 'Extension is a Pro feature',
+            upgradeUrl: '/#/pricing'
+          });
+        }
+        req.user = {
+          id: lookup.userId,
+          authType: 'extension_key',
+          isProActive: proActive
+        };
+        return next();
+      } catch (err) {
+        return res.status(503).json({ error: 'Could not verify extension key' });
+      }
+    }
+  }
+
   const origin = req.header('Origin');
   if (typeof origin === 'string' && EXTENSION_ORIGIN_RE.test(origin)) {
     req.user = null;
     return next();
   }
-  const authHeader = req.headers && req.headers.authorization;
   if (!authHeader) {
     req.user = null;
     return next();
@@ -485,15 +564,37 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
   if (numLive < RT.evidence.minLiveSources) overall.limitedEvidence = true;
   evidenceStatus.ai = ai ? 'ok' : ((aiOut && aiOut.status) || (inp.desc.trim() ? 'no key' : 'no description'));
 
+  const isHighRisk = overall.level === 'high' || overall.level === 'bad' || overall.level === 'medium' || overall.level === 'warn';
+  const jobWhatToDo = isHighRisk ? [
+    'Do not transfer money for equipment, registration, training, or background checks. Legitimate employers never charge candidates.',
+    'Verify the opening directly on the organization\'s official careers portal, not through messaging apps.',
+    'Never download unverified remote-access tools or executable task files from recruiters.',
+    'Report suspected fraudulent postings to cybercrime.gov.in.'
+  ] : [
+    'Confirm job openings directly on the employer\'s official career portal.',
+    'Verify recruiter email addresses match the official corporate domain.'
+  ];
+
   const report = {
     version: 1,
     generatedAt: new Date().toISOString(),
+    tool: 'job',
+    scamType: (ai && ai.scamType && ai.scamType !== 'none') ? ai.scamType : (isHighRisk ? 'job_task_scam' : null),
+    headline: C.LV[overall.level],
+    primaryConcern: Array.isArray(C.LV[overall.level]) ? (C.LV[overall.level][1] || C.LV[overall.level][0]) : C.LV[overall.level],
+    whatToDo: jobWhatToDo,
+    evidence: (ai && Array.isArray(ai.reasons)) ? ai.reasons.map(r => ({ quote: r, interpretation: 'AI reading' })) : [],
+    evidenceSources: Object.fromEntries(Object.entries({ rdap: rd.checked, urlhaus: uh.checked, virustotal: vt.checked, places: pl.checked, wikidata: wd.checked, ai: Boolean(ai) }).filter(([_, v]) => v)),
+    evidenceSourceCount: numLive,
+    confidenceBand: overall.confidence >= 75 ? 'High' : (overall.confidence >= 45 ? 'Medium' : 'Low'),
     input: { url: inp.url, company: inp.company, recruiterEmail: inp.email, descriptionSha256: inp.desc.trim() ? L.sha(inp.desc.trim()) : null },
     checks: checks.map(c => ({ key: c.key, title: c.title, state: c.state, score: c.score, findings: c.notes.map(n => ({ severity: n.s, text: n.t })) })),
     overall: {
       level: overall.level,
       score: overall.score,
       confidence: overall.confidence,
+      confidenceBand: overall.confidence >= 75 ? 'High' : (overall.confidence >= 45 ? 'Medium' : 'Low'),
+      headline: C.LV[overall.level],
       limitedEvidence: !!overall.limitedEvidence,
       sourcesAnswered: overall.sourcesAnswered,
       sourcesExpected: overall.sourcesExpected
@@ -612,6 +713,51 @@ app.get('/api/extension/download', requireAuth, userLimiter, async (req, res) =>
   } catch (err) {
     console.error('[extension/download] Error:', err);
     return res.status(500).json({ error: 'Failed to download extension package' });
+  }
+});
+
+// Pro-only extension API key management (website signed-in users)
+app.get('/api/extension/key', requireAuth, userLimiter, async (req, res) => {
+  try {
+    const proActive = await isUserProActive(req.user.id);
+    if (!proActive) {
+      return res.json({ isPro: false, hasKey: false, last4: null, createdAt: null });
+    }
+    const status = await getExtensionKeyStatus(req.user.id);
+    return res.json({
+      isPro: true,
+      hasKey: status.hasKey,
+      last4: status.hasKey ? (status.last4 || null) : null,
+      createdAt: status.createdAt
+    });
+  } catch (err) {
+    return res.status(503).json({ error: err.message || 'Could not load extension key status' });
+  }
+});
+
+app.post('/api/extension/key', requireAuth, userLimiter, async (req, res) => {
+  try {
+    const proActive = await isUserProActive(req.user.id);
+    if (!proActive) {
+      return res.status(403).json({ error: 'pro_required', message: 'Extension is a Pro feature' });
+    }
+    const created = await createExtensionKey(req.user.id);
+    return res.json({
+      key: created.key,
+      last4: created.last4 || created.key.slice(-4),
+      createdAt: created.createdAt
+    });
+  } catch (err) {
+    return res.status(503).json({ error: err.message || 'Could not generate extension key' });
+  }
+});
+
+app.delete('/api/extension/key', requireAuth, userLimiter, async (req, res) => {
+  try {
+    await revokeExtensionKeys(req.user.id);
+    return res.json({ ok: true, revoked: true });
+  } catch (err) {
+    return res.status(503).json({ error: err.message || 'Could not revoke extension key' });
   }
 });
 
@@ -956,6 +1102,7 @@ app.delete('/api/me', requireAuth, userLimiter, async (req, res) => {
     try {
       await deleteUserQuotaData(req.user.id);
       await anonymizeUserPaymentOrders(req.user.id);
+      await deleteUserExtensionKeys(req.user.id);
     } catch (quotaErr) {
       console.warn('[quota/billing] cleanup on delete user warning:', quotaErr.message);
     }
@@ -1048,11 +1195,13 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
   const client = DB.getClient();
   if (!client) return res.status(503).json({ error: 'Database unavailable' });
   const scansTable = cfg.runtime.database.tables.scans;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
+  const matchCol = isUuid ? 'id' : 'proof_id';
   try {
     const { data, error } = await client
       .from(scansTable)
       .select('id, created_at, user_id, proof_id, level, score, confidence, report, limited_evidence')
-      .eq('id', scanId)
+      .eq(matchCol, scanId)
       .eq('user_id', req.user.id)
       .limit(1);
     if (error) return res.status(503).json({ error: 'Could not load scan' });
@@ -1060,6 +1209,9 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
     if (!row || row.user_id !== req.user.id) {
       return res.status(404).json({ error: 'Scan not found' });
     }
+    const rep = row.report || {};
+    const o = rep.overall || {};
+    const defaultHeadline = rep.headline || o.headline || rep.primaryConcern || o.primaryConcern || C.LV[row.level] || null;
     return res.json({
       id: row.id,
       createdAt: row.created_at,
@@ -1068,7 +1220,18 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
       confidence: row.confidence != null ? row.confidence : null,
       limitedEvidence: !!row.limited_evidence,
       proofId: row.proof_id,
-      headline: C.LV[row.level] || null,
+      tool: rep.tool || rep.input?.kind || 'job',
+      headline: defaultHeadline,
+      scamType: rep.scamType || null,
+      primaryConcern: rep.primaryConcern || o.primaryConcern || null,
+      whatToDo: rep.whatToDo || null,
+      evidence: rep.evidence || null,
+      evidenceSources: rep.evidenceSources || null,
+      checks: rep.checks || null,
+      extractedItems: rep.extractedItems || null,
+      confidenceBand: rep.confidenceBand || o.confidenceBand || (row.confidence != null ? (row.confidence >= 75 ? 'High' : (row.confidence >= 45 ? 'Medium' : 'Low')) : null),
+      confidenceFactors: rep.confidenceFactors || o.confidenceFactors || null,
+      scoreBreakdown: rep.scoreBreakdown || o.scoreBreakdown || null,
       report: row.report
     });
   } catch (err) {

@@ -91,8 +91,8 @@ async function zipExtension() {
     archive.on('error', reject);
     archive.pipe(outStream);
 
-    // Archive cyber-shield-extension as top-level folder
-    archive.directory(tempExtDir, 'cyber-shield-extension');
+    // Archive contents directly at top level so manifest.json is at root of zip
+    archive.directory(tempExtDir, false);
     archive.finalize();
   });
 

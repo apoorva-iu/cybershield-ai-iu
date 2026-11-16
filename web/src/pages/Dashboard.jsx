@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, NavLink, Outlet, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -31,6 +31,7 @@ import { addToast } from '../components/Toast';
 import { useBillingStatus, startUpgrade, formatExpiryDate } from '../lib/billing';
 import { useUsage } from '../lib/useUsage';
 import { Scan } from './Scan';
+import { UnifiedScanResult } from '../components/UnifiedScanResult';
 import '../tools.css';
 
 const SL = {
@@ -1366,6 +1367,11 @@ export function DashboardHistory() {
 export function DashboardScanDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const searchParams = useMemo(() => new URLSearchParams(location.search || ''), [location.search]);
+  const autoPrint = searchParams.get('autoPrint') === '1' || searchParams.get('download') === 'pdf';
+  const keyParam = searchParams.get('key');
 
   const [scan, setScan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1379,27 +1385,70 @@ export function DashboardScanDetail() {
     setLoading(true);
     setErrorMsg(null);
 
-    apiFetch(`/api/scans/${encodeURIComponent(id || '')}`)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+
+    const headers = {};
+    if (keyParam) {
+      headers['Authorization'] = `Bearer ${keyParam}`;
+    }
+
+    apiFetch(`/api/scans/${encodeURIComponent(id || '')}`, {
+      headers,
+      signal: controller.signal
+    })
       .then((data) => {
         if (!mounted) return;
         setScan(data);
       })
       .catch((err) => {
         if (!mounted) return;
-        if (err?.status === 404) {
+        if (err?.name === 'AbortError') {
+          setErrorMsg("Couldn't load the report, try again");
+        } else if (err?.status === 401) {
+          setErrorMsg('Add your key in the extension popup');
+        } else if (err?.status === 404) {
           setErrorMsg('This scan could not be found or no longer exists.');
-        } else if (err?.status !== 401) {
-          setErrorMsg(err?.message || 'Could not load scan details.');
+        } else {
+          setErrorMsg("Couldn't load the report, try again");
         }
       })
       .finally(() => {
+        clearTimeout(timeoutId);
         if (mounted) setLoading(false);
       });
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
+      controller.abort();
     };
-  }, [id]);
+  }, [id, keyParam]);
+
+  useEffect(() => {
+    if (!scan) return;
+    const proofId = scan.proofId || id;
+    const originalTitle = document.title;
+    if (proofId) {
+      document.title = `CyberShield-Report-${proofId}`;
+    }
+
+    if (autoPrint) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 400);
+      return () => {
+        clearTimeout(timer);
+        document.title = originalTitle;
+      };
+    }
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [scan, autoPrint, id]);
 
   const handleCopyProof = async () => {
     if (!scan?.proofId) return;
@@ -1468,40 +1517,22 @@ export function DashboardScanDetail() {
   const r = scan.report || {};
   const o = r.overall || {};
   const inp = r.input || {};
-  const checks = Array.isArray(r.checks) ? r.checks : [];
-  const sources = Array.isArray(r.sources) ? r.sources : [];
 
-  let headlineTitle = 'Verification result';
-  let headlineSub = '';
-  if (Array.isArray(scan.headline)) {
-    headlineTitle = scan.headline[0] || headlineTitle;
-    headlineSub = scan.headline[1] || '';
-  } else if (typeof scan.headline === 'string') {
-    headlineTitle = scan.headline;
-  } else if (scan.level || o.level) {
-    const lv = scan.level || o.level;
-    headlineTitle = String(lv).charAt(0).toUpperCase() + String(lv).slice(1) + ' risk';
-  }
+  const resolvedToolKind = (
+    scan.tool ||
+    r.tool ||
+    inp.kind ||
+    (inp.url || inp.company || inp.recruiterEmail ? 'job' : 'message')
+  ).toLowerCase();
 
-  const score = typeof scan.score === 'number' ? scan.score : (typeof o.score === 'number' ? o.score : null);
-  const level = String(scan.level || o.level || 'unknown').toLowerCase();
-  const confidence =
-    typeof scan.confidence === 'number'
-      ? scan.confidence
-      : typeof o.confidence === 'number'
-      ? o.confidence
-      : typeof r.confidence === 'number'
-      ? r.confidence
-      : 85;
-  const checksWithEvidence = checks.filter(
-    (c) => c && (c.score != null || (c.state && c.state !== 'not_applicable'))
-  ).length;
-  const gaugeDashOffset =
-    score == null ? 125.6 : 125.6 - (125.6 * Math.min(100, Math.max(0, score))) / 100;
+  const rawInputText = inp.desc || inp.description || (typeof inp === 'string' ? inp : '');
+  const inputLength =
+    inp.inputLength ||
+    (rawInputText ? rawInputText.length : 0);
 
   return (
     <div className="scan-page dash-detail-page dash-page-stack">
-      {/* Top Action Bar (Hidden in Print) */}
+      {/* Top Action Bar (Single location on History page, hidden in print) */}
       <div className="dash-detail-topbar no-print">
         <Link to="/dashboard/history" className="dash-back-link">
           <ArrowLeft size={16} />
@@ -1521,7 +1552,11 @@ export function DashboardScanDetail() {
           <button
             type="button"
             className="dash-btn-primary"
-            onClick={() => window.print()}
+            onClick={() => {
+              const proofId = scan.proofId || id;
+              if (proofId) document.title = `CyberShield-Report-${proofId}`;
+              window.print();
+            }}
           >
             <Printer size={14} />
             <span>Download PDF</span>
@@ -1537,404 +1572,40 @@ export function DashboardScanDetail() {
         </div>
       </div>
 
-      {/* Print-only Header */}
-      <div className="print-only">
-        Cyber Shield &mdash; Job Offer Screening Report ({formatScanDateTime(scan.createdAt)})
+      {/* History metadata card (Tool, input length, scanned on, Proof ID) */}
+      <div className="dash-offer-meta-card">
+        <div className="dash-offer-meta-item">
+          <span className="dash-offer-meta-label">Tool</span>
+          <span className={`dash-tool-tag dash-tool-${resolvedToolKind}`}>
+            {resolvedToolKind === 'upi' ? 'UPI' : resolvedToolKind === 'message' ? 'Message' : 'Job Check'}
+          </span>
+          <strong className="dash-offer-meta-val" style={{ marginLeft: '6px' }}>
+            {resolvedToolKind === 'upi' ? 'UPI and Payment Check' : resolvedToolKind === 'message' ? 'Message Scanner' : 'Job Offer Verification'}
+          </strong>
+        </div>
+        <div className="dash-offer-meta-item">
+          <span className="dash-offer-meta-label">Input length</span>
+          <span className="dash-offer-meta-val">{inputLength} characters</span>
+        </div>
+        <div className="dash-offer-meta-item">
+          <span className="dash-offer-meta-label">Scanned on</span>
+          <span className="dash-offer-meta-val">{formatScanDateTime(scan.createdAt || scan.created_at)}</span>
+        </div>
+        {scan.proofId && (
+          <div className="dash-offer-meta-item">
+            <span className="dash-offer-meta-label">Proof ID</span>
+            <span className="dash-offer-meta-val mono">{scan.proofId}</span>
+          </div>
+        )}
       </div>
 
-      {/* Offer / Tool Input Summary */}
-      {inp.kind ? (
-        <div className="dash-offer-meta-card">
-          <div className="dash-offer-meta-item">
-            <span className="dash-offer-meta-label">Tool</span>
-            <span className={`dash-tool-tag dash-tool-${inp.kind}`}>
-              {inp.kind === 'upi' ? 'UPI' : 'Message'}
-            </span>
-            <strong className="dash-offer-meta-val" style={{ marginLeft: '6px' }}>
-              {inp.kind === 'upi' ? 'UPI and Payment Check' : 'Message Scanner'}
-            </strong>
-          </div>
-          <div className="dash-offer-meta-item">
-            <span className="dash-offer-meta-label">Input length</span>
-            <span className="dash-offer-meta-val">{inp.inputLength || 0} characters</span>
-          </div>
-          {inp.linksCount > 0 && (
-            <div className="dash-offer-meta-item">
-              <span className="dash-offer-meta-label">Links detected</span>
-              <span className="dash-offer-meta-val">{inp.linksCount}</span>
-            </div>
-          )}
-          <div className="dash-offer-meta-item">
-            <span className="dash-offer-meta-label">Scanned on</span>
-            <span className="dash-offer-meta-val">{formatScanDateTime(scan.createdAt)}</span>
-          </div>
-        </div>
-      ) : (inp.company || inp.url || inp.recruiterEmail) ? (
-        <div className="dash-offer-meta-card">
-          {inp.company && (
-            <div className="dash-offer-meta-item">
-              <span className="dash-offer-meta-label">Company</span>
-              <strong className="dash-offer-meta-val">{inp.company}</strong>
-            </div>
-          )}
-          {inp.url && (
-            <div className="dash-offer-meta-item">
-              <span className="dash-offer-meta-label">Job URL</span>
-              <span className="dash-offer-meta-val mono">{inp.url}</span>
-            </div>
-          )}
-          {inp.recruiterEmail && (
-            <div className="dash-offer-meta-item">
-              <span className="dash-offer-meta-label">Recruiter email</span>
-              <span className="dash-offer-meta-val mono">{inp.recruiterEmail}</span>
-            </div>
-          )}
-          <div className="dash-offer-meta-item">
-            <span className="dash-offer-meta-label">Scanned on</span>
-            <span className="dash-offer-meta-val">{formatScanDateTime(scan.createdAt)}</span>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Verdict Card (same style as /scan) */}
-      <motion.div
-        className={`verdict v-${level}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="v-left">
-          <h1 className="lvl">{headlineTitle}</h1>
-          {headlineSub && <p>{headlineSub}</p>}
-          {(scan.limitedEvidence || o.limitedEvidence) && (
-            <p className="v-amber-note">
-              Limited live evidence was available when this scan ran.
-            </p>
-          )}
-          <div className="v-chips">
-            <span className="v-chip">{checksWithEvidence} of 5 checks had evidence</span>
-            <span
-              className="v-chip v-chip-tooltip"
-              tabIndex={0}
-              role="note"
-              aria-label="Confidence: how much live evidence answered for this scan"
-              title="How much live evidence answered for this scan."
-            >
-              Confidence <CountUp value={confidence} />%
-              <span className="tooltip-bubble" role="tooltip">
-                How much live evidence answered for this scan.
-              </span>
-            </span>
-          </div>
-        </div>
-
-        <div className="v-right">
-          <div
-            className="gauge-wrap"
-            role="img"
-            aria-label={score == null ? 'No score' : 'Risk score of ' + score}
-          >
-            <svg className="gauge" viewBox="0 0 100 50" aria-hidden="true">
-              <path
-                className="gauge-bg"
-                d="M 10 50 A 40 40 0 0 1 90 50"
-                fill="none"
-                strokeWidth="12"
-                strokeLinecap="round"
-              />
-              {score != null && (
-                <motion.path
-                  className="gauge-val"
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  strokeDasharray="125.6"
-                  initial={{ strokeDashoffset: 125.6 }}
-                  animate={{ strokeDashoffset: gaugeDashOffset }}
-                  transition={{ duration: 1.1, ease: 'easeOut' }}
-                />
-              )}
-            </svg>
-            <div className="score-num">
-              <CountUp value={score} />
-            </div>
-          </div>
-          <div className="score-cap">Risk score of 100</div>
-        </div>
-      </motion.div>
-
-      {/* Primary Concern Banner if present */}
-      {(r.primaryConcern || o.primaryConcern) && (
-        <div className="dash-concern-card" role="region" aria-label="Primary risk concern">
-          <div className="dash-concern-icon-wrap" aria-hidden="true">
-            <AlertTriangle size={20} color="#F59E0B" />
-          </div>
-          <div className="dash-concern-text">
-            <strong>Key Assessment:</strong>
-            <p>{r.primaryConcern || o.primaryConcern}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Extracted Artifacts Bar (UPI IDs, amounts, phones, links) */}
-      {r.extractedItems && (
-        (r.extractedItems.upiIds?.length > 0 ||
-         r.extractedItems.amounts?.length > 0 ||
-         r.extractedItems.phones?.length > 0 ||
-         r.extractedItems.links?.length > 0 ||
-         r.extractedItems.emails?.length > 0) && (
-          <div className="dash-extracted-card">
-            <h3 className="dash-card-subtitle">Extracted Payment &amp; Identity Signals</h3>
-            <div className="dash-extracted-grid">
-              {r.extractedItems.upiIds?.length > 0 && (
-                <div className="dash-extracted-item">
-                  <span className="dash-extracted-label">UPI Handles:</span>
-                  <div className="dash-extracted-tags">
-                    {r.extractedItems.upiIds.map((u, i) => (
-                      <span key={i} className="dash-tag-pill mono">{typeof u === 'string' ? u : u.upiId || u}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {r.extractedItems.amounts?.length > 0 && (
-                <div className="dash-extracted-item">
-                  <span className="dash-extracted-label">Amounts:</span>
-                  <div className="dash-extracted-tags">
-                    {r.extractedItems.amounts.map((a, i) => (
-                      <span key={i} className="dash-tag-pill mono">{typeof a === 'string' ? a : (a.formatted || a.raw || a)}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {r.extractedItems.phones?.length > 0 && (
-                <div className="dash-extracted-item">
-                  <span className="dash-extracted-label">Phones:</span>
-                  <div className="dash-extracted-tags">
-                    {r.extractedItems.phones.map((p, i) => (
-                      <span key={i} className="dash-tag-pill mono">{typeof p === 'string' ? p : p.normalized || p}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {r.extractedItems.links?.length > 0 && (
-                <div className="dash-extracted-item">
-                  <span className="dash-extracted-label">Links:</span>
-                  <div className="dash-extracted-tags">
-                    {r.extractedItems.links.map((l, i) => (
-                      <span key={i} className="dash-tag-pill mono">{typeof l === 'string' ? l : l.url || l}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {r.extractedItems.emails?.length > 0 && (
-                <div className="dash-extracted-item">
-                  <span className="dash-extracted-label">Emails:</span>
-                  <div className="dash-extracted-tags">
-                    {r.extractedItems.emails.map((e, i) => (
-                      <span key={i} className="dash-tag-pill mono">{typeof e === 'string' ? e : e.email || e}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      )}
-
-      {/* Check Summary Row (same style as /scan, without overwriting HashRouter URL) */}
-      {checks.length > 0 && (
-        <div className="check-summary-row no-print">
-          {checks.map((c, i) => (
-            <a
-              key={i}
-              href={`#detail-check-${i}`}
-              className={`check-pill s-${c?.state || 'unknown'}`}
-              onClick={(e) => {
-                e.preventDefault();
-                const el = document.getElementById(`detail-check-${i}`);
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-            >
-              <b></b>
-              {c?.title || c?.key || `Check ${i + 1}`}
-            </a>
-          ))}
-        </div>
-      )}
-
-      {/* Five Check Cards (same style as /scan) */}
-      {checks.length > 0 && (
-        <div className="report-grid">
-          {checks.map((c, i) => {
-            if (!c) return null;
-            let findings = [];
-            if (Array.isArray(c.findings) && c.findings.length > 0) {
-              findings = c.findings.map(f => typeof f === 'string' ? { text: f, severity: c.state || 'info' } : f);
-            } else if (typeof c.findings === 'string' && c.findings.trim()) {
-              findings = [{ text: c.findings.trim(), severity: c.state || 'info' }];
-            } else if (typeof c.summary === 'string' && c.summary.trim()) {
-              findings = [{ text: c.summary.trim(), severity: c.state || 'info' }];
-            } else if (typeof c.reason === 'string' && c.reason.trim()) {
-              findings = [{ text: c.reason.trim(), severity: c.state || 'info' }];
-            }
-
-            if (findings.length === 0) {
-              const fallbackMap = {
-                payment_direction: c.state === 'flag' || c.state === 'fail'
-                  ? 'Deceptive collect request pattern or reverse-transfer trap detected.'
-                  : 'Evaluated sender vs. receiver collect flow and authorization requests.',
-                proof_authenticity: c.state === 'not_applicable'
-                  ? 'No payment receipt or transaction screenshot attached for authenticity analysis.'
-                  : 'Evaluated payment receipt markers, reference numbers, and visual authenticity.',
-                urgency_and_pressure: c.state === 'warning' || c.state === 'warn'
-                  ? 'Pressure tactics detected, urging immediate action before verifying.'
-                  : 'Evaluated message tone for coercive urgency, artificial deadlines, or countdowns.',
-                channel_and_identity: c.state === 'flag' || c.state === 'fail'
-                  ? 'Unverified contact handle or suspicious communication channel detected.'
-                  : 'Evaluated contact identity, sender handle credibility, and registry history.',
-                job_offer: 'Evaluated employment claims, salary plausibility, and recruiter credibility.'
-              };
-              const desc = fallbackMap[c.key] || (c.state === 'ok' || c.state === 'safe' ? 'Normal pattern observed with no warning signs.' : 'Detailed evaluation performed for this check.');
-              findings = [{ text: desc, severity: c.state || 'info' }];
-            }
-
-            const state = c.state || 'unknown';
-            const stateLabel = SL[state] || state;
-            const scoreVal =
-              typeof c.score === 'number'
-                ? Math.min(100, Math.max(0, c.score))
-                : (state === 'flag' || state === 'fail' || state === 'bad' ? 88
-                   : (state === 'warning' || state === 'warn' ? 55
-                   : (state === 'ok' || state === 'safe' || state === 'pass' ? 12 : 20)));
-            const fillWidth = Math.max(10, scoreVal);
-
-            return (
-              <div className="check" id={`detail-check-${i}`} key={i}>
-                <div className="chead">
-                  <h3>{c.title || c.key || `Check ${i + 1}`}</h3>
-                  <span className={`pill s-${state}`}>{stateLabel}</span>
-                </div>
-                <div
-                  className={`meter m-${state}`}
-                  role="progressbar"
-                  aria-valuenow={scoreVal}
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-label={`Risk ${scoreVal} of 100`}
-                >
-                  <i style={{ width: `${fillWidth}%`, '--fill-width': `${fillWidth}%` }}></i>
-                </div>
-                <ul className="notes">
-                  {findings.map((n, j) => {
-                    const src = getFindingSource(n?.text, c?.key);
-                    return (
-                      <li key={j}>
-                        <b className={`d-${n?.severity || 'info'}`}></b>
-                        <span>
-                          {n?.text || ''}
-                          {src && <span className="source-chip">{src}</span>}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Recommended Safety Actions if present */}
-      {Array.isArray(r.whatToDo) && r.whatToDo.length > 0 && (
-        <div className="dash-actions-card">
-          <h3 className="dash-card-subtitle">Recommended Safety Actions</h3>
-          <ul className="dash-steps-list">
-            {r.whatToDo.map((step, idx) => (
-              <li key={idx}>
-                <CheckCircle2 size={16} color="var(--accent-cyan, #22D3EE)" aria-hidden="true" />
-                <span>{step}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Verbatim Evidence Excerpts if present */}
-      {Array.isArray(r.evidence) && r.evidence.length > 0 && (
-        <div className="dash-evidence-card">
-          <h3 className="dash-card-subtitle">Verified Verbatim Excerpts from Input</h3>
-          <div className="dash-evidence-list">
-            {r.evidence.map((ev, i) => (
-              <div key={i} className="dash-evidence-box">
-                <blockquote className="dash-quote">&ldquo;{ev.quote}&rdquo;</blockquote>
-                {ev.interpretation && (
-                  <p className="dash-quote-interp">{ev.interpretation}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <p className="small">
-        Sources used: {sources.length ? sources.join(', ') : 'none of the live services answered'}.
-      </p>
-
-      {/* Proof Card */}
-      <div className="scan-card proof-card">
-        <h3>Your scan proof</h3>
-        <div className="proof-grid">
-          <div className="proof-item">
-            <label>Proof ID</label>
-            <div className="val">
-              <span>{scan.proofId || '—'}</span>
-              {scan.proofId && (
-                <button
-                  type="button"
-                  className="copy-btn no-print"
-                  onClick={handleCopyProof}
-                >
-                  {copiedProof ? 'Copied' : 'Copy'}
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="proof-item">
-            <label>Time (UTC)</label>
-            <div className="val">{formatScanDateTime(scan.createdAt || r.generatedAt)}</div>
-          </div>
-        </div>
-
-        <div className="sr-only" aria-live="polite">
-          {copiedProof ? 'Proof ID copied to clipboard' : ''}
-        </div>
-
-        <div className="proof-btns no-print" style={{ alignItems: 'center' }}>
-          <button
-            type="button"
-            className="primary"
-            onClick={() => window.print()}
-          >
-            Download PDF
-          </button>
-          {scan.proofId && (
-            <Link
-              to={`/verify?proof=${encodeURIComponent(scan.proofId)}`}
-              className="dash-btn-outline"
-            >
-              Verify this proof
-            </Link>
-          )}
-          <button
-            type="button"
-            className="dash-btn-danger-outline"
-            onClick={() => setConfirmOpen(true)}
-          >
-            Delete scan
-          </button>
-        </div>
-      </div>
+      {/* Shared Unified Scan Result Component (Why, Checks, What to do, Proof) */}
+      <UnifiedScanResult
+        result={scan}
+        rawInput={rawInputText}
+        toolKind={resolvedToolKind}
+        isHistory={true}
+      />
 
       {confirmOpen && (
         <DeleteScanConfirmDialog

@@ -666,7 +666,12 @@ async function handleAnalyze(req, res) {
     generatedAt: new Date().toISOString(),
     tool: detectedKind,
     scamType,
+    headline,
+    whatToDo: getWhatToDo(detectedKind),
+    flaggedPhrases,
     evidenceSourceCount,
+    evidenceSources: { rules: true, links: extractedLinks.length > 0, ai: Boolean(aiResult && aiResult.ok) },
+    confidenceBand: limitedEvidence ? 'Low' : 'High',
     extractedItems,
     input: {
       kind: detectedKind,

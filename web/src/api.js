@@ -16,7 +16,7 @@ export async function apiFetch(endpoint, options = {}) {
     ...(options.headers || {})
   };
   
-  if (authToken) {
+  if (authToken && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
   
@@ -29,6 +29,9 @@ export async function apiFetch(endpoint, options = {}) {
   try {
     res = await fetch(endpoint, config);
   } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw err;
+    }
     throw new Error('Network error. Please check your connection.');
   }
   

@@ -89,8 +89,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     /* Verdict Bubble Dialog */
     .cs-bubble {
       position: fixed;
-      width: min(380px, calc(100vw - 32px));
-      max-height: min(80vh, 640px);
+      width: min(410px, calc(100vw - 24px));
+      max-height: min(82vh, calc(100vh - 32px), 680px);
       background: #0B1220;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 12px;
@@ -104,7 +104,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       box-sizing: border-box;
       font-size: 13px;
       line-height: 1.45;
-      color: #E2E8F0;
+      color: #E6EDF7;
+      color-scheme: dark;
       z-index: 2147483647;
     }
 
@@ -452,9 +453,47 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       display: inline-block;
     }
 
-    .cs-badge-bad { background: rgba(198, 40, 40, 0.25); color: #F87171; border: 1px solid rgba(198, 40, 40, 0.4); }
-    .cs-badge-warn { background: rgba(183, 121, 31, 0.25); color: #FBBF24; border: 1px solid rgba(183, 121, 31, 0.4); }
-    .cs-badge-info, .cs-badge-ok { background: rgba(18, 128, 92, 0.25); color: #34D399; border: 1px solid rgba(18, 128, 92, 0.4); }
+    .cs-badge-bad { background: rgba(198, 40, 40, 0.25); color: #FCA5A5; border: 1px solid rgba(198, 40, 40, 0.4); }
+    .cs-badge-warn { background: rgba(183, 121, 31, 0.25); color: #FCD34D; border: 1px solid rgba(183, 121, 31, 0.4); }
+    .cs-badge-info, .cs-badge-ok { background: rgba(18, 128, 92, 0.25); color: #4ADE80; border: 1px solid rgba(18, 128, 92, 0.4); }
+    .cs-badge-unknown { background: rgba(100, 116, 139, 0.2); color: #9AA8BF; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    .cs-quote {
+      display: block;
+      margin: 4px 0;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 2px solid #4DA3FF;
+      border-radius: 0 4px 4px 0;
+      font-size: 12px;
+      color: #E6EDF7;
+      font-style: italic;
+      word-break: break-word;
+    }
+
+    /* Job 5-Check Summary List */
+    .cs-checks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cs-check-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      font-size: 12.5px;
+    }
+
+    .cs-check-row-title {
+      color: #E6EDF7;
+      font-weight: 500;
+    }
 
     /* Honest Line */
     .cs-honest-line {
@@ -1211,6 +1250,10 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         if (!res || !res.ok) {
           if (res && (res.code === 'quota_exceeded' || res.error === 'quota_exceeded')) {
             showBubbleQuotaExceeded(res);
+          } else if (res && res.code === 'pro_required') {
+            showBubbleProRequired(res);
+          } else if (res && (res.code === 'missing_key' || res.code === 'invalid_extension_key' || res.code === 'key_revoked')) {
+            showBubbleKeyError(res.error || 'Key was revoked. Add a new key');
           } else {
             showBubbleError(res ? res.error : 'Could not reach Cyber Shield.');
           }
@@ -1364,14 +1407,99 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
   }
 
+  function showBubbleKeyError(errorMsg) {
+    if (!activeBubble) return;
+
+    activeBubble.innerHTML = `
+      <div class="cs-header">
+        <div class="cs-brand">
+          <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="25" fill="#0A66C2" />
+            <path d="M 50 20 L 76 28 C 76 54 64 69 50 80 C 36 69 24 54 24 28 Z" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" />
+            <path d="M 50 28 L 68 34 C 68 53 59 63 50 72 C 41 63 32 53 32 34 Z" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" />
+            <path d="M 50 37 L 60 41 C 60 52 55 58 50 63 C 45 58 40 52 40 41 Z" fill="#FFFFFF" />
+          </svg>
+          <span>Cyber Shield</span>
+        </div>
+        <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
+      </div>
+
+      <div class="cs-bubble-body">
+        <div class="cs-err-box" role="alert">
+          <span>${escapeHtml(errorMsg || 'Key not valid, generate a new one')}</span>
+        </div>
+        <div class="cs-quota-box">
+          <span>Open the Extension page on Cyber Shield to generate a key, then paste it into the extension popup.</span>
+          <a href="${escapeHtml(API_BASE)}/#/extension" target="_blank" rel="noopener noreferrer" class="cs-upgrade-btn" id="cs-ext-key-link">Open Extension Page &rarr;</a>
+        </div>
+      </div>
+
+      <div class="cs-sticky-footer">
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
+      </div>
+    `;
+
+    activeBubble.querySelector('.cs-close-btn').addEventListener('click', hideBubble);
+    positionBubbleInViewport(activeBubble, activeBubblePos);
+    requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
+  }
+
+  function showBubbleProRequired(proRes) {
+    if (!activeBubble) return;
+    const upgradePath = (proRes && proRes.upgradeUrl) ? proRes.upgradeUrl : '/#/pricing';
+    const upgradeUrl = upgradePath.startsWith('http') ? upgradePath : `${API_BASE}${upgradePath}`;
+
+    activeBubble.innerHTML = `
+      <div class="cs-header">
+        <div class="cs-brand">
+          <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="25" fill="#0A66C2" />
+            <path d="M 50 20 L 76 28 C 76 54 64 69 50 80 C 36 69 24 54 24 28 Z" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" />
+            <path d="M 50 28 L 68 34 C 68 53 59 63 50 72 C 41 63 32 53 32 34 Z" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" />
+            <path d="M 50 37 L 60 41 C 60 52 55 58 50 63 C 45 58 40 52 40 41 Z" fill="#FFFFFF" />
+          </svg>
+          <span>Cyber Shield</span>
+        </div>
+        <button type="button" class="cs-close-btn" aria-label="Close">&#x2715;</button>
+      </div>
+
+      <div class="cs-bubble-body">
+        <div class="cs-quota-box" role="alert">
+          <span>${escapeHtml((proRes && proRes.error) || 'Extension is a Pro feature')}</span>
+          <a href="${escapeHtml(upgradeUrl)}" target="_blank" rel="noopener noreferrer" class="cs-upgrade-btn" id="cs-pro-upgrade-link">Upgrade to Pro &rarr;</a>
+        </div>
+      </div>
+
+      <div class="cs-sticky-footer">
+        <div class="cs-footer">Screening aid, not a legal finding.</div>
+      </div>
+    `;
+
+    activeBubble.querySelector('.cs-close-btn').addEventListener('click', hideBubble);
+    positionBubbleInViewport(activeBubble, activeBubblePos);
+    requestAnimationFrame(() => positionBubbleInViewport(activeBubble, activeBubblePos));
+  }
+
   function formatScamTypeBadge(rawType) {
-    if (!rawType || typeof rawType !== 'string') return '';
+    if (!rawType || typeof rawType !== 'string' || rawType === 'unknown' || rawType === 'none' || rawType === 'unclear') return '';
     const map = {
+      pay_to_receive: 'Pay-to-receive pattern',
+      fake_payment_proof: 'Fake payment proof',
+      overpayment_trap: 'Refund / overpayment trap',
+      advance_fee: 'Advance fee demand',
+      unverifiable_receipt: 'Unverifiable receipt',
+      routine_payment: 'Routine payment',
+      job_task_scam: 'Job / task offer scam',
+      otp_impersonation: 'OTP / bank impersonation',
+      delivery_fee: 'Parcel delivery fee scam',
+      investment_pump: 'High-yield investment trap',
+      lottery_prize: 'Lottery / prize scam',
+      loan_advance_fee: 'Instant loan fee demand',
+      digital_arrest: 'Law enforcement impersonation',
+      family_emergency: 'Urgent family / friend trap',
+      routine_chat: 'Routine communication',
       fake_recruiter: 'Fake recruiter',
       job_scam: 'Job scam',
-      advance_fee: 'Advance fee',
-      fake_payment_proof: 'Fake payment proof',
-      unverifiable_receipt: 'Unverifiable receipt',
       upi_collect_fraud: 'Collect request fraud',
       upi_pin_fraud: 'UPI PIN fraud',
       phishing: 'Phishing',
@@ -1379,7 +1507,33 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       lottery_scam: 'Lottery / Reward scam',
       impersonation: 'Impersonation'
     };
-    return map[rawType] || rawType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return map[rawType] || rawType.replace(/_/g, ' ');
+  }
+
+  const WEBSITE_SL = {
+    ok: 'Looks fine',
+    safe: 'Looks fine',
+    pass: 'Looks fine',
+    passed: 'Looks fine',
+    warn: 'Warning',
+    warning: 'Warning',
+    caution: 'Caution',
+    bad: 'High risk',
+    danger: 'High risk',
+    flag: 'Flagged pattern',
+    fail: 'Flagged pattern',
+    failed: 'Flagged pattern',
+    info: 'Info',
+    not_applicable: 'Not applicable',
+    unknown: 'Unable to verify'
+  };
+
+  function getCheckBadgeClass(state) {
+    const s = String(state || 'unknown').toLowerCase();
+    if (s === 'bad' || s === 'flag' || s === 'fail' || s === 'failed' || s === 'danger') return 'bad';
+    if (s === 'warn' || s === 'warning' || s === 'caution') return 'warn';
+    if (s === 'ok' || s === 'safe' || s === 'pass' || s === 'passed' || s === 'info') return 'ok';
+    return 'unknown';
   }
 
   function showBubbleResult(data, checkType, payload) {
@@ -1387,7 +1541,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
     const o = data.report ? (data.report.overall || {}) : {};
     const rawLevel = String(data.level || o.level || 'unable').toLowerCase();
-    const isUnable = rawLevel === 'unable' || data.mode === 'ai_unavailable' || data.reason === 'ai_unavailable';
+    const isUnable = rawLevel === 'unable' || (checkType !== 'job' && rawLevel === 'unknown') || data.mode === 'ai_unavailable' || data.reason === 'ai_unavailable';
 
     if (isUnable) {
       const sentence = data.message ||
@@ -1442,7 +1596,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       return;
     }
 
-    // Normal verdict calculation from API only
+    // Normal verdict calculation from API only (matching website labels)
     let levelLabel = 'Low risk';
     let riskColor = '#12805C';
     let riskBg = 'rgba(18, 128, 92, 0.2)';
@@ -1455,124 +1609,225 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       levelLabel = 'Medium risk';
       riskColor = '#B7791F';
       riskBg = 'rgba(183, 121, 31, 0.2)';
+    } else if (rawLevel === 'unknown') {
+      levelLabel = 'Unable to verify';
+      riskColor = '#64748B';
+      riskBg = 'rgba(100, 116, 139, 0.2)';
     }
 
     const rawScore = typeof data.score === 'number' ? data.score : (typeof data.riskScore === 'number' ? data.riskScore : (typeof o.score === 'number' ? o.score : null));
     const showScore = rawScore != null && !isNaN(rawScore) && !isUnable;
 
-    // Confidence band formatting: taken ONLY from API's confidenceBand
+    // Confidence formatting: exact same logic as website (band for UPI/Message, percentage for Job)
     const rawBand = data.confidenceBand || (o && o.confidenceBand);
-    let confidenceBandStr = null;
+    let confidenceStr = null;
     if (typeof rawBand === 'string' && rawBand.trim()) {
       const b = rawBand.trim().toLowerCase();
-      if (b === 'high') confidenceBandStr = 'High';
-      else if (b === 'medium') confidenceBandStr = 'Medium';
-      else if (b === 'low') confidenceBandStr = 'Low';
-    } else if (typeof data.confidence === 'number') {
-      confidenceBandStr = `${Math.round(data.confidence * 100)}%`;
+      if (b === 'high') confidenceStr = 'Confidence: High';
+      else if (b === 'medium') confidenceStr = 'Confidence: Medium';
+      else if (b === 'low') confidenceStr = 'Confidence: Low';
+    } else {
+      const numConf = typeof o.confidence === 'number' ? o.confidence : (typeof data.confidence === 'number' ? data.confidence : null);
+      if (numConf != null && !isNaN(numConf)) {
+        const pct = numConf > 0 && numConf <= 1 ? Math.round(numConf * 100) : Math.round(numConf);
+        confidenceStr = `Confidence: ${pct}%`;
+      }
     }
 
-    // Headline sentence
+    // Headline title & sentence (exact website wording)
+    let headlineTitle = '';
     let headlineSentence = '';
     if (Array.isArray(data.headline) && data.headline.length > 0) {
-      headlineSentence = data.headline[1] || data.headline[0];
+      headlineTitle = data.headline[0] || '';
+      headlineSentence = data.headline[1] || '';
     } else if (typeof data.headline === 'string' && data.headline.trim()) {
-      headlineSentence = data.headline.trim();
+      headlineTitle = data.headline.trim();
     } else {
-      headlineSentence = data.primaryConcern || 'Check complete.';
+      headlineTitle = data.primaryConcern || 'Check complete.';
+    }
+    if (checkType === 'upi' && data.primaryConcern) {
+      headlineTitle = data.primaryConcern;
+      headlineSentence = '';
+    }
+
+    // Message scam signals chip (exact wording as MessageResult.jsx)
+    let scamSignalsChipText = '';
+    if (checkType === 'message') {
+      const status = (data.scamSignals && data.scamSignals.status) || (rawLevel === 'high' ? 'strong' : rawLevel === 'medium' ? 'some' : 'none_found');
+      scamSignalsChipText = status === 'strong'
+        ? 'Strong scam signs found'
+        : status === 'some'
+        ? 'Some scam signs found'
+        : 'No scam signs found';
     }
 
     // Scam Type
     const scamType = data.scamType || (data.report && data.report.scamType);
     const scamTypeBadge = formatScamTypeBadge(scamType);
 
-    // Collect top 3 findings ORDERED BY SEVERITY with server labels
-    const topFindings = [];
-    const SEV_WEIGHT = { bad: 4, flag: 4, failed: 4, warn: 3, warning: 3, info: 2, unknown: 1, ok: 0, passed: 0 };
+    // Reasons & quoted evidence (up to 5 real items, NEVER padded or forced)
+    const realReasons = [];
+    const seenReasons = new Set();
+    const SEV_WEIGHT = { bad: 4, flag: 4, failed: 4, fail: 4, warn: 3, warning: 3, caution: 3, info: 2, unknown: 1, ok: 0, pass: 0, passed: 0 };
+
+    function pushRealReason({ sev, badgeLabel, quote = '', text = '', weight = 0 }) {
+      const cleanQuote = typeof quote === 'string' ? quote.trim() : '';
+      const cleanText = typeof text === 'string' ? text.trim() : '';
+      if (!cleanQuote && !cleanText) return;
+      const dedupeKey = `${cleanQuote.toLowerCase()}|${cleanText.toLowerCase()}`;
+      if (seenReasons.has(dedupeKey)) return;
+      seenReasons.add(dedupeKey);
+      realReasons.push({ sev, badgeLabel, quote: cleanQuote, text: cleanText, weight });
+    }
+
+    const jobChecks = checkType === 'job'
+      ? ((data.report && Array.isArray(data.report.checks)) ? data.report.checks : [])
+      : [];
 
     if (checkType === 'job') {
-      const checks = (data.report && Array.isArray(data.report.checks)) ? data.report.checks : [];
-      const allFindings = [];
-      checks.forEach(c => {
-        const arr = Array.isArray(c.findings) ? c.findings : [];
+      jobChecks.forEach(c => {
+        const arr = Array.isArray(c && c.findings) ? c.findings : [];
         arr.forEach(f => {
-          allFindings.push({
-            severity: f.severity || 'info',
-            text: f.text || ''
+          if (!f || !f.text) return;
+          const rawSev = String(f.severity || 'info').toLowerCase();
+          const sevKey = rawSev === 'bad' ? 'bad' : (rawSev === 'warn' ? 'warn' : 'info');
+          const badgeLabel = WEBSITE_SL[rawSev] || (sevKey === 'bad' ? 'High risk' : (sevKey === 'warn' ? 'Warning' : 'Info'));
+          pushRealReason({
+            sev: sevKey,
+            badgeLabel,
+            text: f.text,
+            weight: SEV_WEIGHT[rawSev] ?? 1
           });
         });
-      });
-      allFindings.sort((a, b) => (SEV_WEIGHT[b.severity] || 0) - (SEV_WEIGHT[a.severity] || 0));
-      allFindings.slice(0, 3).forEach(f => {
-        const sevKey = (f.severity === 'bad') ? 'bad' : ((f.severity === 'warn') ? 'warn' : 'info');
-        const badgeLabel = (sevKey === 'bad') ? 'High risk' : ((sevKey === 'warn') ? 'Warning' : 'Info');
-        topFindings.push({ sev: sevKey, badgeLabel, text: f.text });
       });
     } else if (checkType === 'upi') {
+      const evidenceArr = Array.isArray(data.evidence)
+        ? data.evidence
+        : (data.report && Array.isArray(data.report.evidence) ? data.report.evidence : []);
+      evidenceArr.forEach(ev => {
+        if (!ev) return;
+        const sevKey = rawLevel === 'low' ? 'info' : (rawLevel === 'medium' ? 'warn' : 'bad');
+        const badgeLabel = rawLevel === 'low' ? 'Info' : (rawLevel === 'medium' ? 'Warning' : 'High risk');
+        pushRealReason({
+          sev: sevKey,
+          badgeLabel,
+          quote: ev.quote || ev.text || '',
+          text: ev.interpretation || ev.reason || '',
+          weight: sevKey === 'bad' ? 5 : (sevKey === 'warn' ? 3 : 1)
+        });
+      });
+
       const checks = Array.isArray(data.checks) ? data.checks : (data.report && Array.isArray(data.report.checks) ? data.report.checks : []);
-      const allFindings = [];
       checks.forEach(c => {
         if (!c || c.state === 'not_applicable') return;
-        const isFail = c.state === 'failed' || c.failed || c.state === 'flag';
-        const isWarn = c.state === 'warning' || c.state === 'warn';
-        const sev = isFail ? 'bad' : (isWarn ? 'warn' : 'info');
-        const badgeLabel = isFail ? 'Failed' : (isWarn ? 'Warning' : 'Passed');
-        allFindings.push({
-          sev,
+        const st = String(c.state || 'unknown').toLowerCase();
+        const sev = getCheckBadgeClass(st);
+        const badgeLabel = WEBSITE_SL[st] || st;
+        const summary = c.detail || c.summary || c.reason || '';
+        const title = c.title || c.key || '';
+        pushRealReason({
+          sev: sev === 'unknown' ? 'info' : sev,
           badgeLabel,
-          text: c.detail || c.summary || c.label || c.name || '',
-          weight: SEV_WEIGHT[sev] || 0
+          text: title && summary ? `${title}: ${summary}` : (summary || title),
+          weight: SEV_WEIGHT[st] ?? 1
         });
-      });
-      allFindings.sort((a, b) => b.weight - a.weight);
-      allFindings.slice(0, 3).forEach(f => {
-        topFindings.push({ sev: f.sev, badgeLabel: f.badgeLabel, text: f.text });
       });
     } else {
-      // Message
-      const allFindings = [];
-      if (Array.isArray(data.flaggedPhrases) && data.flaggedPhrases.length > 0) {
+      // Message: signals (with quotes), flaggedPhrases, and applicable checks
+      const signalsArr = Array.isArray(data.signals) ? data.signals : [];
+      signalsArr.forEach(s => {
+        if (!s) return;
+        const sevKey = rawLevel === 'low' ? 'info' : (rawLevel === 'medium' ? 'warn' : 'bad');
+        const badgeLabel = rawLevel === 'low' ? 'Info' : (rawLevel === 'medium' ? 'Warning' : 'High risk');
+        pushRealReason({
+          sev: sevKey,
+          badgeLabel,
+          quote: s.quote || '',
+          text: s.why || s.interpretation || s.label || '',
+          weight: sevKey === 'bad' ? 5 : (sevKey === 'warn' ? 3 : 1)
+        });
+      });
+
+      const evidenceArr = Array.isArray(data.evidence) ? data.evidence : [];
+      evidenceArr.forEach(ev => {
+        if (!ev) return;
+        const q = String(ev.quote || ev.text || '').trim();
+        // Avoid duplicating signals already added with same quote
+        const alreadyHasQuote = q && realReasons.some(r => r.quote.toLowerCase() === q.toLowerCase());
+        if (alreadyHasQuote) return;
+        const sevKey = rawLevel === 'low' ? 'info' : (rawLevel === 'medium' ? 'warn' : 'bad');
+        const badgeLabel = rawLevel === 'low' ? 'Info' : (rawLevel === 'medium' ? 'Warning' : 'High risk');
+        pushRealReason({
+          sev: sevKey,
+          badgeLabel,
+          quote: q,
+          text: ev.interpretation || ev.reason || '',
+          weight: sevKey === 'bad' ? 5 : (sevKey === 'warn' ? 3 : 1)
+        });
+      });
+
+      if (Array.isArray(data.flaggedPhrases)) {
         data.flaggedPhrases.forEach(p => {
-          allFindings.push({
-            sev: 'bad',
-            badgeLabel: 'High risk',
-            text: typeof p === 'string' ? p : (p.phrase || p.text || ''),
+          if (!p) return;
+          const q = typeof p === 'string' ? p : (p.phrase || p.text || '');
+          const cleanQ = String(q).trim();
+          const alreadyHasQuote = cleanQ && realReasons.some(r => r.quote.toLowerCase() === cleanQ.toLowerCase());
+          if (alreadyHasQuote) return;
+          const pSev = typeof p === 'object' ? String(p.severity || 'bad').toLowerCase() : 'bad';
+          const sevKey = (pSev === 'medium' || pSev === 'warn') ? 'warn' : 'bad';
+          pushRealReason({
+            sev: sevKey,
+            badgeLabel: sevKey === 'warn' ? 'Warning' : 'High risk',
+            quote: cleanQ,
+            text: typeof p === 'object' ? (p.reason || '') : '',
             weight: 4
           });
         });
       }
-      if (Array.isArray(data.signals) && data.signals.length > 0) {
-        data.signals.forEach(s => {
-          allFindings.push({
-            sev: 'bad',
-            badgeLabel: 'High risk',
-            text: s.quote || s.label || s.why || '',
-            weight: 4
-          });
+
+      const checks = Array.isArray(data.checks) ? data.checks : (data.report && Array.isArray(data.report.checks) ? data.report.checks : []);
+      checks.forEach(c => {
+        if (!c || c.state === 'not_applicable') return;
+        const st = String(c.state || 'unknown').toLowerCase();
+        const sev = getCheckBadgeClass(st);
+        const badgeLabel = WEBSITE_SL[st] || st;
+        const summary = c.reason || c.detail || c.summary || '';
+        const title = c.title || c.key || '';
+        pushRealReason({
+          sev: sev === 'unknown' ? 'info' : sev,
+          badgeLabel,
+          text: title && summary ? `${title}: ${summary}` : (summary || title),
+          weight: SEV_WEIGHT[st] ?? 1
         });
-      }
-      if (Array.isArray(data.checks)) {
-        data.checks.forEach(c => {
-          if (!c || c.state === 'not_applicable') return;
-          const isFail = c.state === 'failed' || c.failed || c.state === 'flag';
-          const isWarn = c.state === 'warning' || c.state === 'warn';
-          const sev = isFail ? 'bad' : (isWarn ? 'warn' : 'info');
-          const badgeLabel = isFail ? 'Failed' : (isWarn ? 'Warning' : 'Passed');
-          allFindings.push({
-            sev,
-            badgeLabel,
-            text: c.detail || c.summary || c.label || '',
-            weight: SEV_WEIGHT[sev] || 0
-          });
-        });
-      }
-      allFindings.sort((a, b) => b.weight - a.weight);
-      allFindings.slice(0, 3).forEach(f => {
-        topFindings.push({ sev: f.sev, badgeLabel: f.badgeLabel, text: f.text });
       });
     }
 
-    // Honesty line per tool
+    realReasons.sort((a, b) => b.weight - a.weight);
+    const displayReasons = realReasons.slice(0, 5); // Up to 5, never padded!
+
+    // Job 5-check breakdown in short form (URL, description, company, recruiter, security)
+    const JOB_CHECK_ORDER = ['url', 'desc', 'company', 'recruiter', 'security'];
+    const JOB_CHECK_DEFAULT_TITLES = {
+      url: 'Job URL',
+      desc: 'Job description',
+      company: 'Company verification',
+      recruiter: 'Recruiter verification',
+      security: 'Security checks'
+    };
+    const jobCheckRowsHtml = checkType === 'job' ? JOB_CHECK_ORDER.map(key => {
+      const c = jobChecks.find(item => item && item.key === key) || { key, title: JOB_CHECK_DEFAULT_TITLES[key], state: 'unknown' };
+      const st = String(c.state || 'unknown').toLowerCase();
+      const label = WEBSITE_SL[st] || 'Unable to verify';
+      const badgeCls = getCheckBadgeClass(st);
+      return `
+        <div class="cs-check-row">
+          <span class="cs-check-row-title">${escapeHtml(c.title || JOB_CHECK_DEFAULT_TITLES[key])}</span>
+          <span class="cs-finding-badge cs-badge-${badgeCls}">${escapeHtml(label)}</span>
+        </div>
+      `;
+    }).join('') : '';
+
+    // Honesty line per tool (exact website wording)
     let honestLine = '';
     if (checkType === 'job') {
       const evStatus = data.evidenceStatus || {};
@@ -1602,15 +1857,17 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       honestLine = data.senderNote || 'Anyone can fake the sender name or phone number shown on a message. Always verify through an official channel before acting.';
     }
 
-    const proofId = data.proofId || (data.receipt && data.receipt.proofId) || (data.ledgerProof && data.ledgerProof.proofId);
+    const proofId = data.proofId || (data.receipt && data.receipt.proofId) || (data.ledgerProof && data.ledgerProof.proofId) || '';
+    const savedReportId = data.scanId || proofId;
 
-    // Format findings HTML
-    const findingsHtml = topFindings.map(f => `
+    // Format reasons & quoted evidence HTML
+    const findingsHtml = displayReasons.map(f => `
       <div class="cs-finding-item">
         <span class="cs-finding-dot cs-sev-${f.sev}"></span>
-        <div>
+        <div style="flex: 1; min-width: 0;">
           <span class="cs-finding-badge cs-badge-${f.sev}">${escapeHtml(f.badgeLabel)}</span>
-          <span>${escapeHtml(f.text)}</span>
+          ${f.quote ? `<blockquote class="cs-quote">&ldquo;${escapeHtml(f.quote)}&rdquo;</blockquote>` : ''}
+          ${f.text ? `<span>${escapeHtml(f.text)}</span>` : ''}
         </div>
       </div>
     `).join('');
@@ -1638,17 +1895,28 @@ import { downloadReceipt } from '../shared/receipt-export.js';
           <div class="cs-level-row">
             <div class="cs-badges-cluster">
               <span class="cs-level-pill">${escapeHtml(levelLabel)}</span>
+              ${scamSignalsChipText ? `<span class="cs-level-pill">${escapeHtml(scamSignalsChipText)}</span>` : ''}
               ${scamTypeBadge ? `<span class="cs-pill-type">${escapeHtml(scamTypeBadge)}</span>` : ''}
-              ${confidenceBandStr ? `<span class="cs-pill-confidence">Confidence: ${escapeHtml(confidenceBandStr)}</span>` : ''}
+              ${confidenceStr ? `<span class="cs-pill-confidence">${escapeHtml(confidenceStr)}</span>` : ''}
             </div>
             ${showScore ? `<span class="cs-score-val">Risk score: ${rawScore}/100</span>` : ''}
           </div>
-          <div class="cs-headline-title">${escapeHtml(headlineSentence)}</div>
+          <div class="cs-headline-title">${escapeHtml(headlineTitle)}</div>
+          ${headlineSentence ? `<div class="cs-headline-sub">${escapeHtml(headlineSentence)}</div>` : ''}
         </div>
 
-        ${topFindings.length > 0 ? `
+        ${checkType === 'job' ? `
           <div class="cs-findings-section">
-            <span class="cs-section-label">Top findings</span>
+            <span class="cs-section-label">5 checks</span>
+            <div class="cs-checks-list">
+              ${jobCheckRowsHtml}
+            </div>
+          </div>
+        ` : ''}
+
+        ${displayReasons.length > 0 ? `
+          <div class="cs-findings-section">
+            <span class="cs-section-label">Reasons &amp; evidence</span>
             ${findingsHtml}
           </div>
         ` : ''}
@@ -1679,12 +1947,12 @@ import { downloadReceipt } from '../shared/receipt-export.js';
         ` : ''}
 
         <div class="cs-actions-grid">
-          <button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-act-open">Open full report</button>
-          <button type="button" class="cs-action-btn" id="cs-act-receipt">Download receipt</button>
-          ${checkType === 'job'
-            ? `<button type="button" class="cs-action-btn" id="cs-act-pdf">Download PDF</button>`
-            : `<div class="cs-pdf-hint">PDF is available on the full report page.</div>`
+          ${savedReportId
+            ? `<button type="button" class="cs-action-btn cs-action-btn-primary" id="cs-act-open">Open full report</button>`
+            : ''
           }
+          <button type="button" class="cs-action-btn" id="cs-act-receipt">Download receipt</button>
+          <button type="button" class="cs-action-btn" id="cs-act-pdf" aria-label="Download report">Download report</button>
           <button type="button" class="cs-action-btn" id="cs-act-another">Check again</button>
         </div>
 
@@ -1705,31 +1973,22 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       });
     }
 
-    // Action: Open full report
+    // Action: Open full report (opens exact saved report by ID/Proof ID without prefill or re-running)
     const openBtn = activeBubble.querySelector('#cs-act-open');
-    if (openBtn) {
-      openBtn.addEventListener('click', () => {
-        let fullUrl = '';
-        if (checkType === 'job') {
-          const prefillObj = {
-            url: payload.url || '',
-            company: payload.company || '',
-            email: payload.email || '',
-            desc: (payload.desc || payload.text || '').slice(0, 20000)
-          };
-          fullUrl = `${API_BASE}/#/tools/job-scam-check?prefill=${toBase64Url(JSON.stringify(prefillObj))}`;
-        } else if (checkType === 'upi') {
-          const prefillObj = {
-            input: (payload.text || '').slice(0, 20000)
-          };
-          fullUrl = `${API_BASE}/#/tools/upi-payment-check?prefill=${toBase64Url(JSON.stringify(prefillObj))}`;
-        } else {
-          const prefillObj = {
-            input: (payload.text || '').slice(0, 20000)
-          };
-          fullUrl = `${API_BASE}/#/tools/message-scanner?prefill=${toBase64Url(JSON.stringify(prefillObj))}`;
+    if (openBtn && savedReportId) {
+      openBtn.addEventListener('click', async () => {
+        let extKey = '';
+        if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+          try {
+            const stored = await chrome.storage.local.get(['extensionKey']);
+            extKey = typeof stored?.extensionKey === 'string' ? stored.extensionKey.trim() : '';
+          } catch (e) {}
         }
-
+        if (!extKey) {
+          showBubbleKeyError('Add your key in the extension popup');
+          return;
+        }
+        const fullUrl = `${API_BASE}/#/dashboard/history/${encodeURIComponent(savedReportId)}?key=${encodeURIComponent(extKey)}`;
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
           chrome.runtime.sendMessage({ type: 'OPEN_REPORT', url: fullUrl });
         } else {
@@ -1746,14 +2005,31 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       });
     }
 
-    // Action: Download PDF (Job offer only)
+    // Action: Download report (One-click direct PDF print for Job, UPI, and Message)
     const pdfBtn = activeBubble.querySelector('#cs-act-pdf');
-    if (pdfBtn && checkType === 'job') {
-      pdfBtn.addEventListener('click', () => {
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', async () => {
+        let extKey = '';
+        if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+          try {
+            const stored = await chrome.storage.local.get(['extensionKey']);
+            extKey = typeof stored?.extensionKey === 'string' ? stored.extensionKey.trim() : '';
+          } catch (e) {}
+        }
+        if (!extKey) {
+          showBubbleKeyError('Add your key in the extension popup');
+          return;
+        }
+        if (!savedReportId) {
+          showBubbleError("Couldn't load the report, try again");
+          return;
+        }
+
+        const reportUrl = `${API_BASE}/#/dashboard/history/${encodeURIComponent(savedReportId)}?autoPrint=1&key=${encodeURIComponent(extKey)}`;
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-          chrome.runtime.sendMessage({ type: 'OPEN_REPORT_HTML', data });
+          chrome.runtime.sendMessage({ type: 'OPEN_REPORT', url: reportUrl });
         } else {
-          window.open(chrome.runtime.getURL('report.html#' + encodeURIComponent(JSON.stringify(data))), '_blank');
+          window.open(reportUrl, '_blank');
         }
       });
     }

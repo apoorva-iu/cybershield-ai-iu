@@ -26,7 +26,7 @@ Screen suspicious job postings, UPI payment requests, and unsolicited messages f
 4. **Full Report & Downloads**:
    - **Open full report**: Opens the complete report on the Cyber Shield website with prefilled parameters (never runs automatically).
    - **Download receipt**: Saves the verification receipt JSON file (`<proof-id>.json`), byte-for-byte identical to the website's receipt.
-   - **Download PDF**: Available for Job offers using the bundled report template. For UPI and Message checks, full printable reports are accessible on the web report page.
+   - **Download report**: Directly downloads the official report PDF with matching risk level, score, checks, evidence, advice and Proof ledger across Job, UPI and Message checks.
    - **Check again**: Returns to the ready state to refine your text or switch check types.
 
 ---
