@@ -200,11 +200,11 @@ export function Pricing() {
               })}
             </div>
 
-            <div style={{ marginTop: '36px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text-dim, #94A3B8)' }}>
+            <div style={{ marginTop: '36px', textAlign: 'center', fontSize: '13.5px', color: 'var(--text-dim)' }}>
               <span>Looking for detailed legal limitations or data handling policies? </span>
-              <Link to="/terms" style={{ color: 'var(--accent-cyan, #22D3EE)', textDecoration: 'none', fontWeight: 600 }}>Terms of Service</Link>
+              <Link to="/terms" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Terms of Service</Link>
               <span> &bull; </span>
-              <Link to="/privacy" style={{ color: 'var(--accent-cyan, #22D3EE)', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</Link>
+              <Link to="/privacy" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Privacy Policy</Link>
             </div>
           </section>
         </Container>

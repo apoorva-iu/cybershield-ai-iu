@@ -28,7 +28,7 @@
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   text-decoration: none;
   transition: color 0.15s ease;
 }
@@ -55,7 +55,7 @@
 .upi-page-subtitle {
   font-size: 15px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0;
 }
 
@@ -168,7 +168,7 @@
 .upi-btn-clear {
   background: none;
   border: none;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   font-size: 13px;
   cursor: pointer;
   padding: 2px 6px;
@@ -218,7 +218,7 @@
 
 .upi-char-counter {
   font-size: 12px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
 
@@ -271,7 +271,7 @@
 
 .upi-dropzone-hint {
   font-size: 12px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 /* Thumbnail preview card */
@@ -351,7 +351,7 @@
 
 .upi-thumb-size {
   font-size: 12px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-readability-chip {
@@ -458,9 +458,8 @@
   padding: 14px 20px;
   font-size: 16px;
   font-weight: 700;
-  color: #FFFFFF;
-  background: #FFFFFF;
-  color: #05080F;
+  background: var(--primary-btn-bg, var(--primary));
+  color: var(--primary-btn-text, #FFFFFF);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -492,7 +491,7 @@
 .upi-privacy-notice {
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0 0 16px;
   padding-top: 10px;
   border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
@@ -558,7 +557,7 @@
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   background: var(--surface-2, #121A29);
   padding: 2px 6px;
   border-radius: 4px;
@@ -596,7 +595,7 @@
   gap: 12px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-guide-check-icon {
@@ -607,7 +606,7 @@
 
 .upi-guide-subtext {
   font-size: 13px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0;
   padding-top: 16px;
   border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
@@ -682,7 +681,7 @@
 
 .upi-level-unable {
   background: rgba(95, 111, 108, 0.18);
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   border: 1px solid rgba(95, 111, 108, 0.4);
 }
 
@@ -694,7 +693,7 @@
 
 .upi-chip-interactive {
   background: var(--surface-2, #121A29);
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
   cursor: pointer;
   transition: all 0.15s ease;
@@ -720,19 +719,19 @@
   z-index: 50;
   width: 260px;
   padding: 14px;
-  background: #182236;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   font-size: 13px;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: var(--text);
 }
 
 .upi-popover-title {
   font-weight: 600;
   margin-bottom: 6px;
-  color: var(--accent, #4DA3FF);
+  color: var(--primary);
 }
 
 .upi-sources-list {
@@ -755,7 +754,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #C9D3E3;
+  background: var(--text-dim);
 }
 
 .upi-source-ran .upi-source-dot {
@@ -763,7 +762,7 @@
 }
 
 .upi-source-skipped .upi-source-dot {
-  background: #64748B;
+  background: var(--border);
 }
 
 .upi-popover-close {
@@ -796,7 +795,7 @@
 }
 
 .upi-gauge-bg-path {
-  stroke: rgba(255, 255, 255, 0.1);
+  stroke: var(--track-bg, rgba(255, 255, 255, 0.1));
 }
 
 .upi-gauge-high .upi-gauge-score-path {
@@ -823,12 +822,12 @@
 .upi-gauge-number {
   font-size: 20px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text, #FFFFFF);
 }
 
 .upi-gauge-denom {
   font-size: 10px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin-left: 2px;
 }
 
@@ -841,7 +840,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin-top: 4px;
 }
 
@@ -854,7 +853,7 @@
   border-radius: 50%;
   width: 18px;
   height: 18px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   cursor: pointer;
   padding: 0;
   transition: all 0.15s ease;
@@ -882,13 +881,13 @@
   max-width: 90vw;
   z-index: 60;
   padding: 14px 16px;
-  background: #182236;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   font-size: 13px;
   line-height: 1.5;
-  color: #FFFFFF;
+  color: var(--text);
 }
 
 .upi-popover-header {
@@ -902,12 +901,12 @@
   margin: 0 0 10px;
   font-size: 12.5px;
   line-height: 1.5;
-  color: #E2E8F0;
+  color: var(--text-dim);
 }
 
 .upi-popover-factors-wrap {
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--border);
 }
 
 .upi-popover-factors-title {
@@ -915,7 +914,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--accent, #4DA3FF);
+  color: var(--primary);
   margin-bottom: 6px;
 }
 
@@ -923,7 +922,7 @@
   margin: 0;
   padding-left: 18px;
   font-size: 12px;
-  color: #E2E8F0;
+  color: var(--text-dim);
   line-height: 1.5;
 }
 
@@ -953,7 +952,7 @@
 
 .upi-honest-note {
   font-size: 14px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 4px 0 0;
 }
 
@@ -992,7 +991,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-guidance-list li + li {
@@ -1031,7 +1030,7 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1110,7 +1109,7 @@
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin-bottom: 6px;
 }
 
@@ -1126,7 +1125,7 @@
 .upi-legend-item {
   font-size: 13px;
   line-height: 1.45;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-legend-badge {
@@ -1204,7 +1203,7 @@
 .upi-check-summary {
   font-size: 13px;
   line-height: 1.45;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0;
   flex: 1;
 }
@@ -1212,7 +1211,7 @@
 .upi-checks-na-line {
   margin-top: 10px;
   font-size: 13px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   font-style: italic;
   padding: 8px 12px;
   background: var(--surface-2, #121A29);
@@ -1280,14 +1279,14 @@
 .upi-helpline-number {
   font-size: 20px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text);
   margin-bottom: 4px;
 }
 
 .upi-helpline-desc {
   font-size: 13px;
   line-height: 1.45;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0;
 }
 
@@ -1302,7 +1301,7 @@
 .upi-proof-intro {
   font-size: 13px;
   line-height: 1.45;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0 0 16px;
 }
 
@@ -1336,14 +1335,14 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin-bottom: 4px;
 }
 
 .upi-proof-val {
   font-size: 14px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--text);
   font-family: monospace;
 }
 
@@ -1356,7 +1355,7 @@
 .upi-access-code-text {
   font-size: 15px;
   font-weight: 700;
-  color: var(--accent, #4DA3FF);
+  color: var(--primary);
   font-family: monospace;
   letter-spacing: 0.08em;
 }
@@ -1366,10 +1365,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--surface-2, #121A29);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #FFFFFF;
+  color: var(--text);
   font-size: 13px;
   cursor: pointer;
 }
@@ -1380,28 +1379,28 @@
   gap: 4px;
   padding: 4px 8px;
   background: none;
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   font-size: 12px;
   cursor: pointer;
 }
 
 .upi-btn-copy-code:hover {
-  color: #FFFFFF;
-  border-color: var(--accent, #4DA3FF);
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .upi-proof-tip {
   font-size: 11px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin-top: 6px;
 }
 
 .upi-proof-hash {
   font-size: 11px;
   font-family: monospace;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   word-break: break-all;
 }
 
@@ -1430,10 +1429,10 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: var(--surface, #0B1220);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #FFFFFF;
+  color: var(--text);
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
@@ -1442,8 +1441,9 @@
 }
 
 .upi-btn-action:hover:not(:disabled) {
-  background: var(--surface-2, #121A29);
-  border-color: var(--accent, #4DA3FF);
+  background: var(--surface);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .upi-btn-action:disabled {
@@ -1454,14 +1454,14 @@
 /* Extracted items chips */
 .upi-extracted-items-section {
   padding-top: 18px;
-  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-top: 1px solid var(--border);
   margin-bottom: 16px;
 }
 
 .upi-extracted-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text, #FFFFFF);
+  color: var(--text);
   margin-bottom: 8px;
 }
 
@@ -1475,24 +1475,24 @@
   font-size: 12px;
   padding: 3px 8px;
   border-radius: 4px;
-  background: var(--surface-2, #121A29);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-  color: var(--text-dim, #C9D3E3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
 }
 
 /* Handle info */
 .upi-handle-info-section {
   margin-bottom: 16px;
   padding: 12px 14px;
-  background: rgba(18, 26, 41, 0.5);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 8px;
 }
 
 .upi-handle-info-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text, #FFFFFF);
+  color: var(--text);
   margin-bottom: 6px;
 }
 
@@ -1500,11 +1500,11 @@
   padding-left: 18px;
   margin: 0;
   font-size: 13px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-handle-info-list code {
-  color: var(--text, #FFFFFF);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -1514,17 +1514,17 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(183, 121, 31, 0.14);
-  border: 1px solid rgba(183, 121, 31, 0.35);
+  background: var(--risk-warn-bg);
+  border: 1px solid var(--risk-warn);
   border-radius: 8px;
-  color: var(--risk-warn-text, #FCD34D);
+  color: var(--risk-warn-text);
   font-size: 14px;
   line-height: 1.5;
   margin-bottom: 18px;
 }
 
 .upi-safety-box strong {
-  color: #FFFFFF;
+  color: var(--risk-warn-text);
 }
 
 /* Mandatory Disclaimers */
@@ -1533,7 +1533,7 @@
   border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-disclaimers-footer p {
@@ -1635,7 +1635,7 @@
 .upi-modal-close {
   background: none;
   border: none;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -1765,7 +1765,7 @@
   font-family: inherit;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-verdict-methodology {
@@ -1786,7 +1786,7 @@
 .upi-methodology-desc {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   margin: 0 0 10px;
 }
 
@@ -1823,7 +1823,7 @@
 }
 
 .upi-breakdown-chevron {
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   transition: transform 0.2s ease;
 }
 
@@ -1909,7 +1909,7 @@
 }
 
 .upi-factor-icon-minus {
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   flex-shrink: 0;
 }
 
@@ -1922,7 +1922,7 @@
   border-radius: 6px;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 /* Screening aid footer under all tabs */
@@ -1931,7 +1931,7 @@
   padding-top: 14px;
   border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   font-size: 12px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
   text-align: center;
 }
 
@@ -1969,7 +1969,7 @@
   margin-top: 4px;
   margin-left: 24px;
   font-size: 12px;
-  color: var(--text-dim, #C9D3E3);
+  color: var(--text-dim);
 }
 
 .upi-print-section-heading {

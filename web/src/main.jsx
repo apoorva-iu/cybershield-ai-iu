@@ -5,11 +5,17 @@ import './base.css'
 import './layout.css'
 import './scan.css'
 import App from './App.jsx'
+import { ThemeProvider, getActiveTheme, applyTheme } from './lib/theme'
+
+// Early application before first component render
+applyTheme(getActiveTheme());
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <HashRouter>
-      <App />
-    </HashRouter>
+    <ThemeProvider>
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </ThemeProvider>
   </StrictMode>,
 )

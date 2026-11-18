@@ -304,7 +304,7 @@ export function Extension() {
               style={{
                 fontSize: 'clamp(32px, 5vw, 48px)',
                 fontWeight: 700,
-                color: '#FFFFFF',
+                color: 'var(--text)',
                 lineHeight: 1.15,
                 letterSpacing: '-0.02em',
                 marginBottom: '16px'
@@ -316,7 +316,7 @@ export function Extension() {
             <p
               style={{
                 fontSize: 'clamp(16px, 2.5vw, 20px)',
-                color: '#C9D3E3',
+                color: 'var(--text-dim)',
                 maxWidth: '680px',
                 margin: '0 auto 28px',
                 lineHeight: 1.45
@@ -328,8 +328,8 @@ export function Extension() {
             {isMobile ? (
               <div
                 style={{
-                  background: 'var(--surface, #0B1220)',
-                  border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   padding: '24px',
                   maxWidth: '540px',
@@ -337,8 +337,8 @@ export function Extension() {
                   textAlign: 'center'
                 }}
               >
-                <Laptop size={32} color="#4DA3FF" style={{ margin: '0 auto 12px' }} />
-                <p style={{ color: '#C9D3E3', fontSize: '15px', marginBottom: '16px', lineHeight: 1.45 }}>
+                <Laptop size={32} color="var(--primary)" style={{ margin: '0 auto 12px' }} />
+                <p style={{ color: 'var(--text-dim)', fontSize: '15px', marginBottom: '16px', lineHeight: 1.45 }}>
                   Browser extensions are not supported on mobile browsers. Use the Cyber Shield website and screenshot scanners directly on your phone.
                 </p>
                 <Link
@@ -387,7 +387,7 @@ export function Extension() {
                 )}
 
                 {info && (
-                  <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '10px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '10px' }}>
                     Version {info.version}{formattedSize ? ` • ${formattedSize}` : ''} • Unpacked developer package
                   </p>
                 )}
@@ -508,7 +508,7 @@ export function Extension() {
                             whiteSpace: 'pre-wrap',
                             textAlign: 'center',
                             padding: '8px 10px',
-                            background: 'rgba(255, 255, 255, 0.03)',
+                            background: 'var(--surface-2, rgba(255, 255, 255, 0.03))',
                             borderRadius: '6px',
                             border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
                             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
@@ -641,8 +641,8 @@ export function Extension() {
                             fontSize: '14px',
                             fontWeight: 600,
                             borderRadius: '8px',
-                            background: 'var(--brand, #0A66C2)',
-                            color: '#FFFFFF',
+                            background: 'var(--primary)',
+                            color: 'var(--primary-btn-text, #FFFFFF)',
                             border: 'none',
                             cursor: keyLoading ? 'wait' : 'pointer'
                           }}
@@ -691,14 +691,14 @@ export function Extension() {
               <div
                 className="extension-pro-locked-card"
                 style={{
-                  background: 'var(--surface, #0B1220)',
-                  border: '1px solid rgba(77, 163, 255, 0.35)',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '14px',
                   padding: '32px 28px',
                   maxWidth: '500px',
                   margin: '0 auto',
                   textAlign: 'center',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                  boxShadow: 'var(--shadow-base)'
                 }}
               >
                 <div
@@ -707,20 +707,20 @@ export function Extension() {
                     height: '48px',
                     borderRadius: '50%',
                     background: 'rgba(77, 163, 255, 0.15)',
-                    border: '1px solid rgba(77, 163, 255, 0.3)',
+                    border: '1px solid var(--border)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto 16px',
-                    color: 'var(--brand, #4DA3FF)'
+                    color: 'var(--primary)'
                   }}
                 >
                   <Lock size={22} />
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#FFFFFF', margin: '0 0 8px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
                   The browser extension is part of Pro.
                 </h3>
-                <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 24px', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-dim)', margin: '0 0 24px', lineHeight: 1.5 }}>
                   Screen job offers, payment requests, and messages right on any webpage with 100 checks every 30 days.
                 </p>
                 {session ? (
@@ -739,8 +739,8 @@ export function Extension() {
                       borderRadius: '9999px',
                       fontSize: '15px',
                       fontWeight: 600,
-                      background: 'var(--brand, #4DA3FF)',
-                      color: '#FFFFFF',
+                      background: 'var(--primary)',
+                      color: 'var(--primary-btn-text, #FFFFFF)',
                       border: 'none',
                       cursor: 'pointer'
                     }}
@@ -762,8 +762,8 @@ export function Extension() {
                       borderRadius: '9999px',
                       fontSize: '15px',
                       fontWeight: 600,
-                      background: 'var(--brand, #4DA3FF)',
-                      color: '#FFFFFF',
+                      background: 'var(--primary)',
+                      color: 'var(--primary-btn-text, #FFFFFF)',
                       border: 'none',
                       textDecoration: 'none'
                     }}
@@ -773,7 +773,7 @@ export function Extension() {
                   </Link>
                 )}
                 {info && (
-                  <p style={{ fontSize: '12px', color: '#64748B', marginTop: '14px', marginBottom: 0 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '14px', marginBottom: 0 }}>
                     Version {info.version}{formattedSize ? ` • ${formattedSize}` : ''} • Chrome, Edge &amp; Brave
                   </p>
                 )}
@@ -793,8 +793,8 @@ export function Extension() {
           >
             <div
               style={{
-                background: 'var(--surface, #0B1220)',
-                border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
                 borderRadius: '12px',
                 padding: '24px'
               }}
@@ -805,28 +805,28 @@ export function Extension() {
                   height: '40px',
                   borderRadius: '10px',
                   background: 'rgba(77, 163, 255, 0.12)',
-                  border: '1px solid rgba(77, 163, 255, 0.25)',
+                  border: '1px solid var(--border)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '16px',
-                  color: '#4DA3FF'
+                  color: 'var(--primary)'
                 }}
               >
                 <Layers size={20} />
               </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                 Choose what you are checking
               </h3>
-              <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 Switch effortlessly between Job offer, UPI or payment, and Message before sending. If you are unsure, Message works for any text.
               </p>
             </div>
 
             <div
               style={{
-                background: 'var(--surface, #0B1220)',
-                border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
                 borderRadius: '12px',
                 padding: '24px'
               }}
@@ -847,18 +847,18 @@ export function Extension() {
               >
                 <Shield size={20} />
               </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                 See the verdict right where you are
               </h3>
-              <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 Get calculated risk scores, confidence ratings, and top findings in an in-page overlay without opening a new tab or leaving your work.
               </p>
             </div>
 
             <div
               style={{
-                background: 'var(--surface, #0B1220)',
-                border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
                 borderRadius: '12px',
                 padding: '24px'
               }}
@@ -879,10 +879,10 @@ export function Extension() {
               >
                 <FileCheck size={20} />
               </div>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                 Download the same receipt as the website
               </h3>
-              <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 Save tamper-evident JSON receipt files with cryptographic block proofs, verifiable anytime on our public audit verification tool.
               </p>
             </div>
@@ -893,19 +893,19 @@ export function Extension() {
             style={{
               maxWidth: '720px',
               margin: '0 auto 64px',
-              background: '#0B1220',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#0C2145',
+              border: '1px solid #1F4A8A',
               borderRadius: '16px',
               padding: '24px',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+              boxShadow: '0 8px 32px rgba(6, 20, 43, 0.5)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span
                   style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: '#94A3B8',
+                    background: 'rgba(77, 163, 255, 0.2)',
+                    color: '#C9DAF5',
                     fontSize: '11px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
@@ -916,18 +916,18 @@ export function Extension() {
                 >
                   Example
                 </span>
-                <span style={{ fontSize: '13px', color: '#C9D3E3', fontWeight: 500 }}>
+                <span style={{ fontSize: '13px', color: '#C9DAF5', fontWeight: 500 }}>
                   In-page selection bubble preview
                 </span>
               </div>
-              <span style={{ fontSize: '12px', color: '#64748B' }}>Made-up sample</span>
+              <span style={{ fontSize: '12px', color: '#C9DAF5' }}>Made-up sample</span>
             </div>
 
             {/* Bubble Frame */}
             <div
               style={{
-                background: '#05080F',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: '#06142B',
+                border: '1px solid #1F4A8A',
                 borderRadius: '12px',
                 padding: '20px',
                 display: 'flex',
@@ -937,10 +937,10 @@ export function Extension() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: '#FFFFFF', fontSize: '14px' }}>
-                  <div style={{ width: '18px', height: '18px', borderRadius: '4px', background: '#0A66C2' }} />
+                  <div style={{ width: '18px', height: '18px', borderRadius: '4px', background: '#0B63CE' }} />
                   Cyber Shield
                 </div>
-                <span style={{ color: '#64748B', fontSize: '14px' }}>&#x2715;</span>
+                <span style={{ color: '#C9DAF5', fontSize: '14px' }}>&#x2715;</span>
               </div>
 
               <div>
@@ -950,8 +950,8 @@ export function Extension() {
                 <div
                   style={{
                     display: 'flex',
-                    background: '#0B1220',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: '#0C2145',
+                    border: '1px solid #1F4A8A',
                     borderRadius: '8px',
                     padding: '3px',
                     gap: '4px'
@@ -968,9 +968,9 @@ export function Extension() {
                       onClick={() => setActiveTabMock(tab.id)}
                       style={{
                         flex: 1,
-                        background: activeTabMock === tab.id ? '#101B2E' : 'transparent',
-                        color: activeTabMock === tab.id ? '#4DA3FF' : '#94A3B8',
-                        border: activeTabMock === tab.id ? '1px solid rgba(77, 163, 255, 0.35)' : 'none',
+                        background: activeTabMock === tab.id ? '#12305F' : 'transparent',
+                        color: activeTabMock === tab.id ? '#4DA3FF' : '#C9DAF5',
+                        border: activeTabMock === tab.id ? '1px solid #4DA3FF' : 'none',
                         borderRadius: '6px',
                         padding: '6px 8px',
                         fontSize: '12px',
@@ -982,26 +982,26 @@ export function Extension() {
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '6px' }}>
+                <div style={{ fontSize: '11px', color: '#C9DAF5', marginTop: '6px' }}>
                   Not sure? Message works for any text.
                 </div>
               </div>
 
               <div
                 style={{
-                  background: '#0B1220',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  background: '#0C2145',
+                  border: '1px solid #1F4A8A',
                   borderRadius: '6px',
                   padding: '10px',
                   fontSize: '12px',
-                  color: '#E2E8F0',
+                  color: '#FFFFFF',
                   lineHeight: 1.45
                 }}
               >
                 {activeTabMock === 'job' && 'Example: "Urgent hiring for Operations Assistant. Weekly salary of $1,200 via courier check. Contact hiring-manager@freemail.example with your resume."'}
                 {activeTabMock === 'upi' && 'Example: "Payment of Rs 2,500 pending on PhonePe. Open your app and enter your UPI PIN to receive the credit immediately."'}
                 {activeTabMock === 'message' && 'Example: "Important notice: Your service will be suspended in 24 hours due to an unverified detail. Click here to confirm: https://service-update.example"'}
-                <div style={{ fontSize: '10.5px', color: '#64748B', textAlign: 'right', marginTop: '6px' }}>
+                <div style={{ fontSize: '10.5px', color: '#C9DAF5', textAlign: 'right', marginTop: '6px' }}>
                   142 / 20,000 characters
                 </div>
               </div>
@@ -1009,9 +1009,9 @@ export function Extension() {
               {/* Mock Verdict Card */}
               <div
                 style={{
-                  background: '#0B1220',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderLeft: '4px solid #C62828',
+                  background: '#0C2145',
+                  border: '1px solid #1F4A8A',
+                  borderLeft: '4px solid #EF4444',
                   borderRadius: '8px',
                   padding: '12px',
                   display: 'flex',
@@ -1021,26 +1021,26 @@ export function Extension() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: 'rgba(198, 40, 40, 0.2)', color: '#F87171' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#FCA5A5' }}>
                       High risk
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', background: 'rgba(77, 163, 255, 0.15)', color: '#60A5FA' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', background: 'rgba(77, 163, 255, 0.2)', color: '#93C5FD' }}>
                       Confidence: High
                     </span>
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#C9D3E3' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#C9DAF5' }}>
                     Risk score: 88/100
                   </span>
                 </div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF' }}>
                   Strong indicators of {activeTabMock === 'job' ? 'employment advance-fee fraud' : activeTabMock === 'upi' ? 'UPI PIN deception fraud' : 'account phishing'}.
                 </div>
-                <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '11px', color: '#C9DAF5' }}>
                   Evidence suggests warning signs in this text.
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748B' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#C9DAF5' }}>
                 <span>Proof ID: CS-EXAMPLE-01</span>
               </div>
             </div>
@@ -1049,8 +1049,8 @@ export function Extension() {
           {/* What the extension can access Section */}
           <div
             style={{
-              background: 'var(--surface, #0B1220)',
-              border: '1px solid var(--border, rgba(255,255,255,0.08))',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               borderRadius: '16px',
               padding: 'clamp(24px, 4vw, 40px)',
               maxWidth: '900px',
@@ -1061,7 +1061,7 @@ export function Extension() {
               style={{
                 fontSize: '24px',
                 fontWeight: 700,
-                color: '#FFFFFF',
+                color: 'var(--text)',
                 marginBottom: '8px',
                 textAlign: 'center'
               }}
@@ -1070,7 +1070,7 @@ export function Extension() {
             </h2>
             <p
               style={{
-                color: '#C9D3E3',
+                color: 'var(--text-dim)',
                 fontSize: '15px',
                 textAlign: 'center',
                 maxWidth: '680px',
@@ -1089,8 +1089,8 @@ export function Extension() {
             >
               <div
                 style={{
-                  background: '#05080F',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: '#0C2145',
+                  border: '1px solid #1F4A8A',
                   borderRadius: '10px',
                   padding: '20px'
                 }}
@@ -1101,15 +1101,15 @@ export function Extension() {
                     Reads only what you select
                   </h3>
                 </div>
-                <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                <p style={{ fontSize: '13px', color: '#C9DAF5', lineHeight: 1.45 }}>
                   The extension only accesses text that you highlight manually. It never reads full page bodies, passwords, or inputs.
                 </p>
               </div>
 
               <div
                 style={{
-                  background: '#05080F',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: '#0C2145',
+                  border: '1px solid #1F4A8A',
                   borderRadius: '10px',
                   padding: '20px'
                 }}
@@ -1120,15 +1120,15 @@ export function Extension() {
                     Sends only when you click Check
                   </h3>
                 </div>
-                <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                <p style={{ fontSize: '13px', color: '#C9DAF5', lineHeight: 1.45 }}>
                   Opening the bubble puts it in a ready state. Nothing is transmitted across the network until you explicitly press Check.
                 </p>
               </div>
 
               <div
                 style={{
-                  background: '#05080F',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: '#0C2145',
+                  border: '1px solid #1F4A8A',
                   borderRadius: '10px',
                   padding: '20px'
                 }}
@@ -1139,26 +1139,26 @@ export function Extension() {
                     Screenshots are not read
                   </h3>
                 </div>
-                <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                <p style={{ fontSize: '13px', color: '#C9DAF5', lineHeight: 1.45 }}>
                   The extension does not capture, read, or upload screenshots. For screenshot analysis, use the screenshot uploaders on the website.
                 </p>
               </div>
 
               <div
                 style={{
-                  background: '#05080F',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: '#0C2145',
+                  border: '1px solid #1F4A8A',
                   borderRadius: '10px',
                   padding: '20px'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <Shield size={18} color="#A78BFA" />
+                  <Shield size={18} color="#4DA3FF" />
                   <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#FFFFFF' }}>
                     No account or tracking
                   </h3>
                 </div>
-                <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                <p style={{ fontSize: '13px', color: '#C9DAF5', lineHeight: 1.45 }}>
                   All extension checks are anonymous. No cookies, session tokens, or personal identifiers are stored or shared.
                 </p>
               </div>
@@ -1168,8 +1168,8 @@ export function Extension() {
           {/* Installation Steps */}
           <div
             style={{
-              background: 'var(--surface, #0B1220)',
-              border: '1px solid var(--border, rgba(255,255,255,0.08))',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               borderRadius: '16px',
               padding: 'clamp(24px, 4vw, 40px)',
               maxWidth: '900px',
@@ -1180,7 +1180,7 @@ export function Extension() {
               style={{
                 fontSize: '24px',
                 fontWeight: 700,
-                color: '#FFFFFF',
+                color: 'var(--text)',
                 marginBottom: '8px',
                 textAlign: 'center'
               }}
@@ -1189,7 +1189,7 @@ export function Extension() {
             </h2>
             <p
               style={{
-                color: '#C9D3E3',
+                color: 'var(--text-dim)',
                 fontSize: '15px',
                 textAlign: 'center',
                 marginBottom: '36px'
@@ -1213,9 +1213,9 @@ export function Extension() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '8px',
-                    background: 'rgba(77, 163, 255, 0.12)',
-                    border: '1px solid rgba(77, 163, 255, 0.25)',
-                    color: '#4DA3FF',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1227,10 +1227,10 @@ export function Extension() {
                   1
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
                     Download and unzip
                   </h3>
-                  <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.45 }}>
                     Download <code>cyber-shield-extension.zip</code> and extract the <code>cyber-shield-extension</code> folder.
                   </p>
                 </div>
@@ -1243,9 +1243,9 @@ export function Extension() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '8px',
-                    background: 'rgba(77, 163, 255, 0.12)',
-                    border: '1px solid rgba(77, 163, 255, 0.25)',
-                    color: '#4DA3FF',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1257,10 +1257,10 @@ export function Extension() {
                   2
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
                     Open extensions page
                   </h3>
-                  <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.45 }}>
                     Navigate to <code>chrome://extensions</code> (or <code>edge://extensions</code>, <code>brave://extensions</code>) and switch on <strong>Developer mode</strong> in the top-right.
                   </p>
                 </div>
@@ -1273,9 +1273,9 @@ export function Extension() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '8px',
-                    background: 'rgba(77, 163, 255, 0.12)',
-                    border: '1px solid rgba(77, 163, 255, 0.25)',
-                    color: '#4DA3FF',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1287,10 +1287,10 @@ export function Extension() {
                   3
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
                     Click "Load unpacked"
                   </h3>
-                  <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.45 }}>
                     Click <strong>Load unpacked</strong> and select the extracted <code>cyber-shield-extension</code> folder.
                   </p>
                 </div>
@@ -1303,9 +1303,9 @@ export function Extension() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '8px',
-                    background: 'rgba(77, 163, 255, 0.12)',
-                    border: '1px solid rgba(77, 163, 255, 0.25)',
-                    color: '#4DA3FF',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1317,10 +1317,10 @@ export function Extension() {
                   4
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
                     Pin Cyber Shield
                   </h3>
-                  <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.45 }}>
                     Click the puzzle icon in your browser toolbar and pin Cyber Shield so its status toggle is easily accessible.
                   </p>
                 </div>
@@ -1333,9 +1333,9 @@ export function Extension() {
                     width: '36px',
                     height: '36px',
                     borderRadius: '8px',
-                    background: 'rgba(77, 163, 255, 0.12)',
-                    border: '1px solid rgba(77, 163, 255, 0.25)',
-                    color: '#4DA3FF',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1347,10 +1347,10 @@ export function Extension() {
                   5
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
                     Select text &amp; check
                   </h3>
-                  <p style={{ fontSize: '13px', color: '#C9D3E3', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.45 }}>
                     Highlight text on any page, click the floating <strong>Check this</strong> chip, select your check category, and click Check.
                   </p>
                 </div>
@@ -1359,19 +1359,19 @@ export function Extension() {
 
             <div
               style={{
-                borderTop: '1px solid var(--border, rgba(255,255,255,0.08))',
+                borderTop: '1px solid var(--border)',
                 paddingTop: '20px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
                 fontSize: '13px',
-                color: '#C9D3E3'
+                color: 'var(--text-dim)'
               }}
             >
               <p>
                 <strong>Developer preview note:</strong> This version is installed via Developer mode directly from source. It is not currently hosted on a commercial extension store.
               </p>
-              <p style={{ color: '#94A3B8' }}>
+              <p style={{ color: 'var(--text-dim)' }}>
                 <strong>Browser permission prompt:</strong> Your browser may display a prompt stating the extension can read data on websites. It only reads text you actively highlight, and nothing is transmitted until you click Check.
               </p>
             </div>
@@ -1388,7 +1388,7 @@ export function Extension() {
               style={{
                 fontSize: '24px',
                 fontWeight: 700,
-                color: '#FFFFFF',
+                color: 'var(--text)',
                 marginBottom: '28px',
                 textAlign: 'center'
               }}
@@ -1399,64 +1399,64 @@ export function Extension() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div
                 style={{
-                  background: 'var(--surface, #0B1220)',
-                  border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   padding: '20px'
                 }}
               >
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                   Which plan includes the extension?
                 </h3>
-                <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                   The browser extension is included with the Pro plan. Pro gives you 100 checks every 30 days and access to the extension for Chrome, Edge, and Brave.
                 </p>
               </div>
 
               <div
                 style={{
-                  background: 'var(--surface, #0B1220)',
-                  border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   padding: '20px'
                 }}
               >
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                   Does it work on mobile phones?
                 </h3>
-                <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                   No. Desktop and laptop browsers (Google Chrome, Microsoft Edge, Brave) are supported. Mobile browsers do not support desktop extension APIs. On phones, use the Cyber Shield website and screenshot scanner directly.
                 </p>
               </div>
 
               <div
                 style={{
-                  background: 'var(--surface, #0B1220)',
-                  border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   padding: '20px'
                 }}
               >
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                   Can the extension read screenshots?
                 </h3>
-                <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                   No. The extension only reads text that you highlight and select. It does not capture or process screenshots. To analyze image receipts, transaction screenshots, or chat captures, use the UPI or Message tools on the website.
                 </p>
               </div>
 
               <div
                 style={{
-                  background: 'var(--surface, #0B1220)',
-                  border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   padding: '20px'
                 }}
               >
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
                   Is the result a legal finding?
                 </h3>
-                <p style={{ fontSize: '14px', color: '#C9D3E3', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                   No. Cyber Shield is an automated screening aid, not a legal finding. Assessments indicate where evidence suggests warning signs or patterns to help you verify before sending money or private details.
                 </p>
               </div>

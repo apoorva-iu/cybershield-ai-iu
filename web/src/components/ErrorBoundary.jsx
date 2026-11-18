@@ -27,12 +27,12 @@ export class ErrorBoundary extends React.Component {
               We encountered an unexpected error. Please try reloading the page or go back home.
             </p>
             {isDev && this.state.error && (
-              <details style={{ textAlign: 'left', marginBottom: '24px', background: 'var(--bg-alt, #f8f9fa)', padding: '12px', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', overflowX: 'auto' }}>
+              <details style={{ textAlign: 'left', marginBottom: '24px', background: 'var(--surface-2)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', overflowX: 'auto' }}>
                 <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Details</summary>
-                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--bad, #c00)' }}>
+                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--risk-bad, #c00)' }}>
                   <strong>{this.state.error.message || String(this.state.error)}</strong>
                   {this.state.errorInfo?.componentStack && (
-                    <pre style={{ marginTop: '8px', fontSize: '12px', whiteSpace: 'pre-wrap', color: 'var(--muted, #666)' }}>
+                    <pre style={{ marginTop: '8px', fontSize: '12px', whiteSpace: 'pre-wrap', color: 'var(--text-dim)' }}>
                       {this.state.errorInfo.componentStack}
                     </pre>
                   )}

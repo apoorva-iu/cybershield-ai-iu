@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cyber Shield: scam screening for jobs, UPI and messages</title>
     <meta name="description" content="Screen job offers, UPI payment requests and messages in seconds, with evidence you can verify later." />
+    <meta name="theme-color" content="#06142B" />
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('cs_theme');
+          var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+          var theme = (stored === 'light' || stored === 'dark') ? stored : (prefersLight ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', theme === 'light' ? '#F5F9FF' : '#06142B');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -4,6 +4,7 @@ import { Logo } from './Logo';
 import { useAuth, getDisplayName, getShortDisplayName, UserAvatar } from '../auth';
 import { UsagePill } from './UsagePill';
 import { useBillingStatus } from '../lib/billing';
+import { ThemeToggle } from '../lib/theme';
 import {
   Menu,
   X,
@@ -565,6 +566,8 @@ export function Header() {
             </Link>
           )}
 
+          <ThemeToggle variant="navbar" />
+
           <Link to="/extension" className="header-btn-light">
             <BrowserIcon size={14} className="browser-icon" />
             <span>Get extension</span>
@@ -677,6 +680,7 @@ export function Header() {
 
               {/* Drawer Buttons at the Bottom */}
               <div className="mobile-drawer-bottom-actions">
+                <ThemeToggle variant="mobile" showLabel={true} />
                 {session ? (
                   <>
                     <div className="account-menu-header" style={{ padding: '4px 0 8px' }}>

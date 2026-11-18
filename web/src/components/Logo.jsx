@@ -83,8 +83,8 @@ export function Logo({ size = 32, withWordmark = true, isDark = true, className 
             alignItems: 'center'
           }}
         >
-          <span style={{ color: isDark ? '#FFFFFF' : '#111827' }}>Cyber</span>
-          <span style={{ color: isDark ? '#22D3EE' : '#0A66C2' }}>Shield</span>
+          <span style={{ color: 'var(--text, #E6EDF7)' }}>Cyber</span>
+          <span style={{ color: 'var(--accent-cyan, #22D3EE)' }}>Shield</span>
         </span>
       )}
     </div>

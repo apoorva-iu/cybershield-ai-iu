@@ -614,7 +614,7 @@
   margin-top: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--risk-bad-text);
   text-decoration: underline;
 }
 
@@ -787,7 +787,7 @@
   font-weight: 700;
   font-size: 13px;
   margin-bottom: 6px;
-  color: #FFFFFF;
+  color: var(--text);
 }
 
 .msg-popover-close {
@@ -796,10 +796,10 @@
   padding: 4px 8px;
   font-size: 12px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #FFFFFF;
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -855,7 +855,7 @@
 }
 
 .msg-gauge-bg-path {
-  stroke: rgba(255, 255, 255, 0.1);
+  stroke: var(--track-bg, rgba(255, 255, 255, 0.1));
 }
 
 .msg-gauge-high .msg-gauge-score-path {
@@ -940,13 +940,13 @@
   max-width: 90vw;
   z-index: 60;
   padding: 14px 16px;
-  background: #182236;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   font-size: 13px;
   line-height: 1.5;
-  color: #FFFFFF;
+  color: var(--text);
 }
 
 .msg-popover-header {
@@ -960,12 +960,12 @@
   margin: 0 0 10px;
   font-size: 12.5px;
   line-height: 1.5;
-  color: #E2E8F0;
+  color: var(--text-dim);
 }
 
 .msg-popover-factors-wrap {
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--border);
 }
 
 .msg-popover-factors-title {
@@ -973,7 +973,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--accent, #4DA3FF);
+  color: var(--primary);
   margin-bottom: 6px;
 }
 
@@ -981,7 +981,7 @@
   margin: 0;
   padding-left: 18px;
   font-size: 12px;
-  color: #E2E8F0;
+  color: var(--text-dim);
   line-height: 1.5;
 }
 
@@ -1112,12 +1112,12 @@
 }
 
 .msg-tab-btn:hover {
-  color: var(--text, #E6EDF7);
+  color: var(--text);
 }
 
 .msg-tab-btn.is-active {
-  color: #FFFFFF;
-  border-bottom-color: var(--accent, #22D3EE);
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 .msg-tab-panel {

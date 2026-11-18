@@ -6,8 +6,7 @@
 
 .how-it-works-page {
   padding-top: calc(var(--nav-height) + 24px);
-  padding-bottom: var(--section-gap);
-  min-height: 100vh;
+  padding-bottom: 0;
 }
 
 .hiw-hero {
@@ -39,7 +38,7 @@
 
 .hiw-hero p {
   font-size: 16px;
-  color: var(--text-dim, #94A3B8);
+  color: var(--text-dim);
   line-height: 1.6;
   margin: 0;
 }
@@ -111,7 +110,7 @@
 
 .hiw-step-card p {
   font-size: 13.5px;
-  color: var(--text-dim, #94A3B8);
+  color: var(--text-dim);
   line-height: 1.55;
   margin: 0;
 }
@@ -137,7 +136,7 @@
 
 .hiw-section-header p {
   font-size: 15px;
-  color: var(--text-dim, #94A3B8);
+  color: var(--text-dim);
   margin: 0;
 }
 
@@ -214,7 +213,7 @@
 
 .hiw-tool-tag {
   font-size: 11.5px;
-  color: var(--muted, #64748B);
+  color: var(--text-dim);
 }
 
 .hiw-tool-content-block {
@@ -226,13 +225,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted, #64748B);
+  color: var(--text-dim);
   margin: 0 0 6px;
 }
 
 .hiw-tool-content-block p {
   font-size: 13.5px;
-  color: var(--text, #E2E8F0);
+  color: var(--text);
   line-height: 1.5;
   margin: 0;
 }
@@ -251,7 +250,7 @@
   align-items: flex-start;
   gap: 8px;
   font-size: 13px;
-  color: var(--text-dim, #94A3B8);
+  color: var(--text-dim);
   line-height: 1.45;
 }
 
@@ -293,7 +292,7 @@
 
 .hiw-proof-info p {
   font-size: 14.5px;
-  color: var(--text-dim, #94A3B8);
+  color: var(--text-dim);
   line-height: 1.6;
   margin: 0;
 }

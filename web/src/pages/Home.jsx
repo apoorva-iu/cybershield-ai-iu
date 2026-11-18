@@ -511,8 +511,8 @@ export function Home() {
                       </text>
 
                       {/* Action Button inside Popup */}
-                      <rect x="280" y="348" width="316" height="38" rx="7" fill="var(--primary, #0A66C2)" />
-                      <text x="368" y="372" fill="#FFFFFF" fontSize="14" fontWeight="600" fontFamily="system-ui, sans-serif">
+                      <rect x="280" y="348" width="316" height="38" rx="7" fill="var(--primary)" />
+                      <text x="368" y="372" fill="var(--primary-btn-text, #FFFFFF)" fontSize="14" fontWeight="600" fontFamily="system-ui, sans-serif">
                         View Full Proof &rarr;
                       </text>
 

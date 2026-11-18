@@ -11,7 +11,7 @@ const StubPage = ({ title, description, children, draftNotice = false }) => (
       <Container>
         <Reveal>
           <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: '32px', marginBottom: '14px', color: 'var(--ink)' }}>{title}</h1>
+            <h1 style={{ fontSize: '32px', marginBottom: '14px', color: 'var(--text)' }}>{title}</h1>
             <p className="text-muted" style={{ fontSize: '15.5px', lineHeight: 1.6, marginBottom: '32px' }}>
               {description}
             </p>
@@ -36,8 +36,8 @@ export const HowItWorks = () => (
             <Briefcase size={20} color="var(--brand, #4DA3FF)" />
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--ink)' }}>1. Job offers</h3>
-            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Job Scam Check</span>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>1. Job offers</h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Job Scam Check</span>
           </div>
         </div>
 
@@ -47,7 +47,7 @@ export const HowItWorks = () => (
           </p>
           <div>
             <strong style={{ color: 'var(--text)' }}>What we look at:</strong>
-            <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--muted)' }}>
+            <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--text-dim)' }}>
               <li><strong>AI reading of the text:</strong> Flags advance registration fees, laptop/equipment deposits, interview-only-on-Telegram patterns, and unrealistic compensation claims.</li>
               <li><strong>Link lookups and domain age:</strong> Queries domain registration age via RDAP; flags newly registered domains claiming to represent established brands.</li>
               <li><strong>Company and recruiter signals:</strong> Checks business presence in public registries and flags corporate recruiters hiring exclusively from personal free webmail (@gmail, @yahoo).</li>
@@ -57,7 +57,7 @@ export const HowItWorks = () => (
           <p style={{ margin: 0, color: 'var(--text)' }}>
             <strong>What you get:</strong> An objective calculated risk verdict, highlighted phrases with specific reasons, clear &ldquo;What to do now&rdquo; guidance, an immutable Proof ID, and a downloadable receipt (.json) and PDF report.
           </p>
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 14px', fontSize: '12.5px', color: 'var(--muted)' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-dim)' }}>
             <strong style={{ color: 'var(--text-dim)' }}>Limits:</strong> Cannot verify if a legitimate company name was used by an impostor without contacting the company directly; absence of warning signs does not guarantee an offer is safe.
           </div>
         </div>
@@ -70,8 +70,8 @@ export const HowItWorks = () => (
             <Wallet size={20} color="var(--accent-cyan, #22D3EE)" />
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--ink)' }}>2. UPI &amp; payment requests</h3>
-            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>UPI &amp; Payment Check</span>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>2. UPI &amp; payment requests</h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>UPI &amp; Payment Check</span>
           </div>
         </div>
 
@@ -81,7 +81,7 @@ export const HowItWorks = () => (
           </p>
           <div>
             <strong style={{ color: 'var(--text)' }}>What we look at:</strong>
-            <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--muted)' }}>
+            <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--text-dim)' }}>
               <li><strong>In-memory OCR reading:</strong> Extracts text, amounts, transaction notes, and UPI handles from screenshots without saving image files.</li>
               <li><strong>Pay-to-receive trick detection:</strong> Flags instructions asking you to enter your UPI PIN or approve a collect request to receive money, refunds, or cashback.</li>
               <li><strong>Handle format validation:</strong> Inspects UPI handle structure against recognized Indian banking and PSP conventions.</li>
@@ -91,7 +91,7 @@ export const HowItWorks = () => (
           <p style={{ margin: 0, color: 'var(--text)' }}>
             <strong>What you get:</strong> An objective calculated risk verdict, highlighted phrases with specific reasons, immediate banking advisory on what to do now, an immutable Proof ID, and a downloadable receipt and PDF report.
           </p>
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 14px', fontSize: '12.5px', color: 'var(--muted)' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-dim)' }}>
             <strong style={{ color: 'var(--text-dim)' }}>Limits:</strong> Cannot confirm that a payment arrived or left an account; cannot determine whose UPI ID it is; cannot recall or reverse a transaction.
           </div>
         </div>
@@ -100,12 +100,12 @@ export const HowItWorks = () => (
       {/* 3. Messages and screenshots */}
       <Card>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          <div style={{ background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '8px', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <MessageSquare size={20} color="#C084FC" />
+          <div style={{ background: 'rgba(77, 163, 255, 0.15)', border: '1px solid var(--border)', borderRadius: '8px', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <MessageSquare size={20} color="var(--primary)" />
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--ink)' }}>3. Messages &amp; screenshots</h3>
-            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Message Scanner</span>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>3. Messages &amp; screenshots</h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Message Scanner</span>
           </div>
         </div>
 
@@ -115,7 +115,7 @@ export const HowItWorks = () => (
           </p>
           <div>
             <strong style={{ color: 'var(--text)' }}>What we look at:</strong>
-            <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--muted)' }}>
+            <ul style={{ margin: '4px 0 0', paddingLeft: '20px', color: 'var(--text-dim)' }}>
               <li><strong>In-memory OCR extraction:</strong> Extracts message copy, phone numbers, tracking IDs, and embedded links directly in memory.</li>
               <li><strong>Threat intelligence &amp; domain checks:</strong> Queries URLs against live threat feeds (URLhaus, VirusTotal) and evaluates domain registration age.</li>
               <li><strong>Dual-pass AI reading:</strong> Identifies coercion tactics, urgent electricity/parcel cutoff threats, fake law enforcement summons, and KYC suspension lures across English, Hindi, and Hinglish.</li>
@@ -125,7 +125,7 @@ export const HowItWorks = () => (
           <p style={{ margin: 0, color: 'var(--text)' }}>
             <strong>What you get:</strong> An objective calculated risk verdict, highlighted phrases with reasons, next-step action guidance, an immutable Proof ID, and a downloadable receipt and PDF report.
           </p>
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 14px', fontSize: '12.5px', color: 'var(--muted)' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 14px', fontSize: '12.5px', color: 'var(--text-dim)' }}>
             <strong style={{ color: 'var(--text-dim)' }}>Limits:</strong> Cannot tell who sent a message; cannot confirm whether an attached document, parcel notice, or certificate is genuine; cannot validate official agency notices.
           </div>
         </div>
@@ -138,18 +138,18 @@ export const HowItWorks = () => (
             <Shield size={20} color="var(--accent-cyan, #22D3EE)" />
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--ink)' }}>Proof IDs and the Verify page</h3>
-            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Tamper-evident verification ledger</span>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>Proof IDs and the Verify page</h3>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Tamper-evident verification ledger</span>
           </div>
         </div>
 
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: '0 0 12px' }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: '0 0 12px' }}>
           Every completed check generates a SHA-256 canonical hash of the inputs and findings, recorded on an append-only verification ledger. Along with your Proof ID, you receive a one-time Access Code shown on your screen (never stored on our server).
         </p>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: '0 0 12px' }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: '0 0 12px' }}>
           Anyone with the downloaded receipt file or the Proof ID and hash can visit <Link to="/verify" style={{ color: 'var(--brand, #4DA3FF)', textDecoration: 'underline' }}>/verify</Link> to independently verify:
         </p>
-        <ul style={{ color: 'var(--muted)', fontSize: '13px', lineHeight: 1.6, margin: '0 0 14px', paddingLeft: '20px' }}>
+        <ul style={{ color: 'var(--text-dim)', fontSize: '13px', lineHeight: 1.6, margin: '0 0 14px', paddingLeft: '20px' }}>
           <li>That the ledger record exists and the cryptographic chain is intact</li>
           <li>That no section of the issued report has been altered, edited, or fabricated</li>
           <li>The exact timestamp and block index when the screening occurred</li>
@@ -158,13 +158,13 @@ export const HowItWorks = () => (
 
       {/* 5. Honest What a Check Can and Cannot Do Section */}
       <Card>
-        <h3 style={{ fontSize: '18px', marginBottom: '16px', color: 'var(--ink)' }}>What a check can and cannot do</h3>
+        <h3 style={{ fontSize: '18px', marginBottom: '16px', color: 'var(--text)' }}>What a check can and cannot do</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           <div style={{ background: 'rgba(18, 128, 92, 0.08)', border: '1px solid rgba(18, 128, 92, 0.25)', borderRadius: '10px', padding: '16px' }}>
             <h4 style={{ margin: '0 0 10px', fontSize: '14.5px', color: 'var(--risk-ok-text, #34D399)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <CheckCircle2 size={16} /> What a check can do
             </h4>
-            <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-dim, #C9D3E3)', fontSize: '13px', lineHeight: 1.65 }}>
+            <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-dim)', fontSize: '13px', lineHeight: 1.65 }}>
               <li>Spot warning signs and known scam patterns across jobs, UPI, and messages</li>
               <li>Highlight suspicious phrases and explain why they are risky</li>
               <li>Look up domain age via RDAP, redirect hops, and live URL threat feeds</li>
@@ -176,7 +176,7 @@ export const HowItWorks = () => (
             <h4 style={{ margin: '0 0 10px', fontSize: '14.5px', color: 'var(--risk-bad-text, #F87171)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <AlertTriangle size={16} /> What a check cannot do
             </h4>
-            <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-dim, #C9D3E3)', fontSize: '13px', lineHeight: 1.65 }}>
+            <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-dim)', fontSize: '13px', lineHeight: 1.65 }}>
               <li>Cannot confirm that a payment arrived or left an account</li>
               <li>Cannot tell who sent a message or who created a communication</li>
               <li>Cannot confirm whose UPI ID it is or who owns an account</li>
@@ -197,29 +197,29 @@ export const Guide = () => (
   >
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <Card>
-        <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--ink)' }}>Understanding key screening vectors</h3>
+        <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--text)' }}>Understanding key screening vectors</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <strong style={{ fontSize: '14px' }}>1. Domain Age &amp; Threat Intelligence</strong>
-            <p style={{ color: 'var(--muted)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
               Newly registered domains (under 30 days old) claiming to belong to long-standing corporations or banks are a primary warning sign.
             </p>
           </div>
           <div>
             <strong style={{ fontSize: '14px' }}>2. Language &amp; Coercive Urgency</strong>
-            <p style={{ color: 'var(--muted)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
               Artificial deadlines, threats of account disconnection, immediate legal arrest warnings, or demands for upfront fees indicate high risk.
             </p>
           </div>
           <div>
             <strong style={{ fontSize: '14px' }}>3. Pay-to-Receive Mechanisms</strong>
-            <p style={{ color: 'var(--muted)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
               Entering a UPI PIN or approving a collect request will always debit funds from your account. Legitimate refunds and cashback arrive automatically.
             </p>
           </div>
           <div>
             <strong style={{ fontSize: '14px' }}>4. Sender Identity &amp; Webmail</strong>
-            <p style={{ color: 'var(--muted)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', margin: '4px 0 0', lineHeight: 1.5 }}>
               Official organizations communicate through verified corporate domains and authenticated channels rather than generic personal webmail.
             </p>
           </div>
@@ -227,8 +227,8 @@ export const Guide = () => (
       </Card>
 
       <Card>
-        <h3 style={{ fontSize: '17px', marginBottom: '8px', color: 'var(--ink)' }}>What to do before taking action</h3>
-        <ul style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: 0, paddingLeft: '20px' }}>
+        <h3 style={{ fontSize: '17px', marginBottom: '8px', color: 'var(--text)' }}>What to do before taking action</h3>
+        <ul style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: 0, paddingLeft: '20px' }}>
           <li>Never transfer money or pay advance fees to secure employment, prizes, or refunds.</li>
           <li>Never enter your UPI PIN to receive money or approve unfamiliar collect requests.</li>
           <li>Verify unexpected messages through official apps or published customer care numbers.</li>
@@ -249,7 +249,7 @@ export const ScamTypes = () => (
           <AlertTriangle size={17} color="#C62828" />
           <h3 style={{ margin: 0, fontSize: '16px' }}>1. Fake job registration fees</h3>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
           The applicant is asked to pay an upfront &ldquo;registration fee&rdquo;, &ldquo;portal processing charge&rdquo;, or &ldquo;laptop deposit&rdquo; before an interview or equipment dispatch. Legitimate employers never charge candidates to apply.
         </p>
       </Card>
@@ -259,7 +259,7 @@ export const ScamTypes = () => (
           <AlertTriangle size={17} color="#C62828" />
           <h3 style={{ margin: 0, fontSize: '16px' }}>2. Pay-to-receive UPI collect fraud</h3>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
           Fraudsters send a collect request claiming it will &ldquo;credit&rdquo; an approved refund, cashback, or OLX buyer payment. Entering your UPI PIN immediately debits your account.
         </p>
       </Card>
@@ -269,7 +269,7 @@ export const ScamTypes = () => (
           <AlertTriangle size={17} color="#C62828" />
           <h3 style={{ margin: 0, fontSize: '16px' }}>3. Urgent parcel or electricity cutoff alerts</h3>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
           SMS or WhatsApp messages warning that a delivery is blocked or power will be disconnected tonight due to an unpaid bill, directing you to click an unverified link or pay a nominal fee.
         </p>
       </Card>
@@ -279,7 +279,7 @@ export const ScamTypes = () => (
           <AlertTriangle size={17} color="#B7791F" />
           <h3 style={{ margin: 0, fontSize: '16px' }}>4. Free-email recruiter &amp; chat-only hiring</h3>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
           The recruiter claims to represent a recognized enterprise but conducts interviews exclusively over Telegram or WhatsApp and sends messages from personal webmail accounts.
         </p>
       </Card>
@@ -298,10 +298,10 @@ export const Helpline1930 = () => (
           <PhoneCall size={22} color="var(--brand)" />
           <h3 style={{ margin: 0, fontSize: '18px' }}>National Helpline: 1930</h3>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: '14px', lineHeight: 1.5, margin: '0 0 12px' }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '14px', lineHeight: 1.5, margin: '0 0 12px' }}>
           The Citizen Financial Cyber Fraud Reporting and Management System (Helpline 1930) enables immediate reporting to intercept fraudulent bank transfers.
         </p>
-        <p style={{ fontSize: '13.5px', color: 'var(--ink)', fontWeight: 600, margin: 0 }}>
+        <p style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 600, margin: 0 }}>
           Official National Cyber Crime Reporting Portal:{' '}
           <a
             href="https://cybercrime.gov.in"
@@ -316,7 +316,7 @@ export const Helpline1930 = () => (
 
       <Card>
         <h4 style={{ fontSize: '15px', marginBottom: '10px' }}>Immediate steps if you sent funds:</h4>
-        <ol style={{ paddingLeft: '20px', color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.7, margin: 0 }}>
+        <ol style={{ paddingLeft: '20px', color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.7, margin: 0 }}>
           <li>Notify your bank immediately to freeze the affected account and request an urgent transaction recall.</li>
           <li>Call 1930 or file an incident report at <strong>cybercrime.gov.in</strong> as quickly as possible.</li>
           <li>Save all evidence: chat histories, emails, payment receipts, bank transaction IDs, and website URLs.</li>
@@ -343,7 +343,7 @@ export const About = () => (
   >
     <Card>
       <h3 style={{ fontSize: '17px', marginBottom: '8px' }}>Our Mission</h3>
-      <p style={{ color: 'var(--muted)', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
+      <p style={{ color: 'var(--text-dim)', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
         Fraudsters target individuals using deceptive links, advance-fee recruitment scams, collect-request traps, and phishing alerts. Cyber Shield provides accessible, automated checks to surface objective evidence and cryptographic proof before personal or financial information is shared.
       </p>
     </Card>
@@ -357,7 +357,7 @@ export const Contact = () => (
   >
     <Card>
       <h3 style={{ fontSize: '17px', marginBottom: '8px' }}>Get in touch</h3>
-      <p style={{ color: 'var(--muted)', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
+      <p style={{ color: 'var(--text-dim)', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
         If you encounter problems or have questions regarding screening results, please open an issue in the project repository or reach out through project channels.
       </p>
     </Card>
@@ -373,13 +373,13 @@ export const Privacy = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Card>
         <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Information processed</h3>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
           When you run a check, we process the provided text, links, or uploaded screenshots directly in memory to execute verification checks. We do not keep your text or screenshot unless you sign in and the result is saved. Anonymous scans expire after 30 days.
         </p>
       </Card>
       <Card>
         <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Check storage, retention, and access</h3>
-        <ul style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.7, margin: 0, paddingLeft: '20px' }}>
+        <ul style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.7, margin: 0, paddingLeft: '20px' }}>
           <li>We do not keep your text or screenshot unless you sign in and the result is saved.</li>
           <li>Anonymous checks expire after 30 days.</li>
           <li>The Access Code is generated in page memory and never stored on the server.</li>
@@ -388,7 +388,7 @@ export const Privacy = () => (
       </Card>
       <Card>
         <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Verification and ledger</h3>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
           Checks generate a SHA-256 report hash and an append-only ledger entry. The ledger stores verification hashes and section summaries; it does not publish your private applicant credentials, chat logs, or personal payment details.
         </p>
       </Card>
@@ -405,13 +405,13 @@ export const Terms = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Card>
         <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Screening aid disclaimer</h3>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
           Cyber Shield is an automated screening aid that evaluates public web signals and text patterns. It does not provide legal advice, legal findings, or binding determinations regarding any individual or organization.
         </p>
       </Card>
       <Card>
         <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>User responsibility</h3>
-        <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
+        <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
           Users should exercise independent judgment and verify corporate employment opportunities, payment requests, and communications through official portals and verified channels before entering into agreements, authorizing payments, or sharing confidential information.
         </p>
       </Card>

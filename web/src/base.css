@@ -1,39 +1,53 @@
 :root {
-  /* Single Dark Theme Token System */
-  --bg: #05080F;
-  --surface: #0B1220;
-  --border: rgba(255, 255, 255, 0.08);
+  /* Dark Theme: Consistent Blue & White System */
+  --bg: #06142B;
+  --background: var(--bg);
+  --surface: #0C2145;
+  --surface-2: #12305F;
+  --surface-raised: #12305F;
+  --border: #1F4A8A;
   --line: var(--border);
 
-  --text: #E6EDF7;
-  --text-dim: #9AA8BF;
+  --text: #FFFFFF;
+  --text-dim: #C9DAF5;
+  --text-muted: #C9DAF5;
+  --text-faint: #C9DAF5;
+  --text-secondary: var(--text-dim);
+  --text-heading: #FFFFFF;
   --ink: var(--text);
   --muted: var(--text-dim);
 
-  /* Accents Only */
-  --primary: #0A66C2;
-  --primary-hover: #004182;
-  --brand: #0A66C2;
-  --brand-hover: #004182;
-  --accent: #22D3EE;
-  --accent-cyan: #22D3EE;
+  /* Blue Accent */
+  --primary: #4DA3FF;
+  --primary-hover: #7BBBFF;
+  --brand: #4DA3FF;
+  --brand-hover: #7BBBFF;
+  --accent: #4DA3FF;
+  --accent-cyan: #4DA3FF;
+  --accent-hover: #7BBBFF;
+  --on-accent: #06142B;
+  --accent-bg: rgba(77, 163, 255, 0.15);
+  --accent-border: #1F4A8A;
+  --accent-blue: #4DA3FF;
+  --accent-blue-soft: rgba(77, 163, 255, 0.15);
+  --focus-ring: #4DA3FF;
 
-  /* Risk States with AA Contrast against --surface (#0B1220) */
+  /* Risk States (Stay only for risk labels, gauge and Pass/Flag/Warning pills) */
   --risk-ok: #12805C;
-  --risk-ok-text: #4ADE80;
-  --risk-ok-bg: rgba(18, 128, 92, 0.16);
+  --risk-ok-text: #86EFAC;
+  --risk-ok-bg: rgba(18, 128, 92, 0.22);
 
   --risk-warn: #B7791F;
   --risk-warn-text: #FCD34D;
-  --risk-warn-bg: rgba(183, 121, 31, 0.16);
+  --risk-warn-bg: rgba(183, 121, 31, 0.22);
 
   --risk-bad: #C62828;
   --risk-bad-text: #FCA5A5;
-  --risk-bad-bg: rgba(198, 40, 40, 0.16);
+  --risk-bad-bg: rgba(198, 40, 40, 0.22);
 
-  --risk-unknown: #5F6F6C;
-  --risk-unknown-text: #9AA8BF;
-  --risk-unknown-bg: rgba(95, 111, 108, 0.16);
+  --risk-unknown: #1F4A8A;
+  --risk-unknown-text: #C9DAF5;
+  --risk-unknown-bg: rgba(31, 74, 138, 0.25);
 
   --risk-low: var(--risk-ok);
   --risk-low-text: var(--risk-ok-text);
@@ -46,6 +60,135 @@
   --risk-high: var(--risk-bad);
   --risk-high-text: var(--risk-bad-text);
   --risk-high-bg: var(--risk-bad-bg);
+
+  --risk-unable: var(--risk-unknown);
+  --risk-unable-text: var(--risk-unknown-text);
+  --risk-unable-bg: var(--risk-unknown-bg);
+
+  --good: var(--risk-ok);
+  --good-text: var(--risk-ok-text);
+  --good-bg: var(--risk-ok-bg);
+
+  --warn: var(--risk-warn);
+  --warn-text: var(--risk-warn-text);
+  --warn-bg: var(--risk-warn-bg);
+
+  --bad: var(--risk-bad);
+  --bad-text: var(--risk-bad-text);
+  --bad-bg: var(--risk-bad-bg);
+
+  --unk: var(--risk-unknown);
+  --unk-text: var(--risk-unknown-text);
+  --unk-bg: var(--risk-unknown-bg);
+
+  --track-bg: #1F4A8A;
+
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-base: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+  --header-bg: rgba(6, 20, 43, 0.92);
+  --header-border: #1F4A8A;
+  --header-item-hover: rgba(77, 163, 255, 0.12);
+
+  --primary-btn-bg: #4DA3FF;
+  --primary-btn-text: #06142B;
+
+  --modal-overlay-bg: rgba(6, 20, 43, 0.88);
+  --dotted-pattern-color: rgba(77, 163, 255, 0.12);
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+
+  --r-base: 8px;
+  --r-lg: 12px;
+  --r-card: 16px;
+  --r-input: 8px;
+  --r-btn: 9999px;
+  --r-full: 9999px;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --line-height: 1.6;
+
+  /* Layout & Spacing Tokens */
+  --container-max: 1200px;
+  --gutter: 24px;
+  --nav-height: 64px;
+  --header-height: var(--nav-height);
+  --section-gap: 85px;
+  --section-y: var(--section-gap);
+}
+
+/* Explicit Dark Theme */
+[data-theme="dark"] {
+  --bg: #05080F;
+  --background: var(--bg);
+  --surface: #0B1220;
+  --surface-2: #121A2B;
+  --border: rgba(255, 255, 255, 0.08);
+  --line: var(--border);
+
+  --text: #E6EDF7;
+  --text-dim: #9AA8BF;
+  --text-muted: #9AA8BF;
+  --text-faint: #5C7CA8;
+  --text-secondary: var(--text-dim);
+  --text-heading: #FFFFFF;
+  --ink: var(--text);
+  --muted: var(--text-dim);
+
+  --primary: #0A66C2;
+  --primary-hover: #004182;
+  --brand: #0A66C2;
+  --brand-hover: #004182;
+  --accent: #22D3EE;
+  --accent-cyan: #22D3EE;
+  --accent-hover: #0EA5E9;
+  --on-accent: #05080F;
+  --accent-bg: rgba(34, 211, 238, 0.1);
+  --accent-border: rgba(34, 211, 238, 0.25);
+  --accent-blue: #0A66C2;
+  --accent-blue-soft: rgba(10, 102, 194, 0.15);
+  --focus-ring: #22D3EE;
+
+  --risk-ok: #12805C;
+  --risk-ok-text: #4ADE80;
+  --risk-ok-bg: rgba(18, 128, 92, 0.16);
+
+  --risk-warn: #B7791F;
+  --risk-warn-text: #FCD34D;
+  --risk-warn-bg: rgba(183, 121, 31, 0.16);
+
+  --risk-bad: #C62828;
+  --risk-bad-text: #FCA5A5;
+  --risk-bad-bg: rgba(198, 40, 40, 0.16);
+
+  --risk-unknown: #2563EB;
+  --risk-unknown-text: var(--text-dim);
+  --risk-unknown-bg: var(--surface-2);
+
+  --risk-low: var(--risk-ok);
+  --risk-low-text: var(--risk-ok-text);
+  --risk-low-bg: var(--risk-ok-bg);
+
+  --risk-medium: var(--risk-warn);
+  --risk-medium-text: var(--risk-warn-text);
+  --risk-medium-bg: var(--risk-warn-bg);
+
+  --risk-high: var(--risk-bad);
+  --risk-high-text: var(--risk-bad-text);
+  --risk-high-bg: var(--risk-bad-bg);
+
+  --risk-unable: var(--risk-unknown);
+  --risk-unable-text: var(--risk-unknown-text);
+  --risk-unable-bg: var(--risk-unknown-bg);
 
   --good: var(--risk-ok);
   --good-text: var(--risk-ok-text);
@@ -65,37 +208,221 @@
 
   --track-bg: rgba(255, 255, 255, 0.08);
 
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
-  --space-5: 40px;
-  --space-6: 48px;
-  --space-8: 64px;
-  --space-10: 80px;
-
-  --r-base: 8px;
-  --r-lg: 12px;
-  --r-card: 16px;
-  --r-input: 8px;
-  --r-btn: 9999px;
-  --r-full: 9999px;
-
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-base: 0 4px 20px rgba(0, 0, 0, 0.35);
   --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.5);
 
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --line-height: 1.6;
+  --header-bg: rgba(5, 8, 15, 0.85);
+  --header-border: rgba(255, 255, 255, 0.08);
+  --header-item-hover: rgba(255, 255, 255, 0.08);
 
-  /* Layout & Spacing Tokens */
-  --container-max: 1200px;
-  --gutter: 24px;
-  --nav-height: 64px;
-  --header-height: var(--nav-height);
-  --section-gap: 85px;
-  --section-y: var(--section-gap);
+  --primary-btn-bg: #FFFFFF;
+  --primary-btn-text: #05080F;
+
+  --modal-overlay-bg: rgba(5, 8, 15, 0.84);
+  --dotted-pattern-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Explicit Light Theme & System Fallback when not forced dark */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    /* Pure blue & white system */
+    --bg: #F5F9FF;
+    --background: var(--bg);
+    --surface: #FFFFFF;
+    --surface-2: #EAF2FD;
+    --surface-raised: #FFFFFF;
+    --border: #D3E2F7;
+    --line: var(--border);
+
+    --text: #0B2545;
+    --text-dim: #35507A;
+    --text-muted: #35507A;
+    --text-faint: #35507A;
+    --text-secondary: var(--text-dim);
+    --text-heading: #0B2545;
+    --ink: var(--text);
+    --muted: var(--text-dim);
+
+    /* Blue Accent */
+    --primary: #0B63CE;
+    --primary-hover: #084FA6;
+    --brand: #0B63CE;
+    --brand-hover: #084FA6;
+    --accent: #0B63CE;
+    --accent-cyan: #0B63CE;
+    --accent-hover: #084FA6;
+    --on-accent: #FFFFFF;
+    --accent-bg: #EAF2FD;
+    --accent-border: #D3E2F7;
+    --accent-blue: #0B63CE;
+    --accent-blue-soft: #EAF2FD;
+    --focus-ring: #0B63CE;
+
+    /* Risk States for Light Mode (Keep only for risk labels, gauge, and pills) */
+    --risk-ok: #15803D;
+    --risk-ok-text: #166534;
+    --risk-ok-bg: #DCFCE7;
+
+    --risk-warn: #B45309;
+    --risk-warn-text: #92400E;
+    --risk-warn-bg: #FEF3C7;
+
+    --risk-bad: #DC2626;
+    --risk-bad-text: #991B1B;
+    --risk-bad-bg: #FEE2E2;
+
+    --risk-unknown: #35507A;
+    --risk-unknown-text: #0B2545;
+    --risk-unknown-bg: #EAF2FD;
+
+    --risk-low: var(--risk-ok);
+    --risk-low-text: var(--risk-ok-text);
+    --risk-low-bg: var(--risk-ok-bg);
+
+    --risk-medium: var(--risk-warn);
+    --risk-medium-text: var(--risk-warn-text);
+    --risk-medium-bg: var(--risk-warn-bg);
+
+    --risk-high: var(--risk-bad);
+    --risk-high-text: var(--risk-bad-text);
+    --risk-high-bg: var(--risk-bad-bg);
+
+    --risk-unable: var(--risk-unknown);
+    --risk-unable-text: var(--risk-unknown-text);
+    --risk-unable-bg: var(--risk-unknown-bg);
+
+    --good: var(--risk-ok);
+    --good-text: var(--risk-ok-text);
+    --good-bg: var(--risk-ok-bg);
+
+    --warn: var(--risk-warn);
+    --warn-text: var(--risk-warn-text);
+    --warn-bg: var(--risk-warn-bg);
+
+    --bad: var(--risk-bad);
+    --bad-text: var(--risk-bad-text);
+    --bad-bg: var(--risk-bad-bg);
+
+    --unk: var(--risk-unknown);
+    --unk-text: var(--risk-unknown-text);
+    --unk-bg: var(--risk-unknown-bg);
+
+    --track-bg: #D3E2F7;
+
+    --shadow: 0 4px 20px rgba(11, 37, 69, 0.08);
+    --shadow-base: 0 2px 12px rgba(11, 37, 69, 0.06);
+    --shadow-hover: 0 8px 30px rgba(11, 37, 69, 0.12);
+
+    --header-bg: rgba(245, 249, 255, 0.92);
+    --header-border: #D3E2F7;
+    --header-item-hover: rgba(11, 99, 206, 0.08);
+
+    --primary-btn-bg: #0B63CE;
+    --primary-btn-text: #FFFFFF;
+
+    --modal-overlay-bg: rgba(11, 37, 69, 0.6);
+    --dotted-pattern-color: rgba(11, 99, 206, 0.08);
+  }
+}
+
+/* Explicit [data-theme="light"] overrides */
+:root[data-theme="light"],
+[data-theme="light"] {
+  --bg: #F5F9FF;
+  --background: var(--bg);
+  --surface: #FFFFFF;
+  --surface-2: #EAF2FD;
+  --surface-raised: #FFFFFF;
+  --border: #D3E2F7;
+  --line: var(--border);
+
+  --text: #0B2545;
+  --text-dim: #35507A;
+  --text-muted: #35507A;
+  --text-faint: #35507A;
+  --text-secondary: var(--text-dim);
+  --text-heading: #0B2545;
+  --ink: var(--text);
+  --muted: var(--text-dim);
+
+  --primary: #0B63CE;
+  --primary-hover: #084FA6;
+  --brand: #0B63CE;
+  --brand-hover: #084FA6;
+  --accent: #0B63CE;
+  --accent-cyan: #0B63CE;
+  --accent-hover: #084FA6;
+  --on-accent: #FFFFFF;
+  --accent-bg: #EAF2FD;
+  --accent-border: #D3E2F7;
+  --accent-blue: #0B63CE;
+  --accent-blue-soft: #EAF2FD;
+  --focus-ring: #0B63CE;
+
+  --risk-ok: #15803D;
+  --risk-ok-text: #166534;
+  --risk-ok-bg: #DCFCE7;
+
+  --risk-warn: #B45309;
+  --risk-warn-text: #92400E;
+  --risk-warn-bg: #FEF3C7;
+
+  --risk-bad: #DC2626;
+  --risk-bad-text: #991B1B;
+  --risk-bad-bg: #FEE2E2;
+
+  --risk-unknown: #35507A;
+  --risk-unknown-text: #0B2545;
+  --risk-unknown-bg: #EAF2FD;
+
+  --risk-low: var(--risk-ok);
+  --risk-low-text: var(--risk-ok-text);
+  --risk-low-bg: var(--risk-ok-bg);
+
+  --risk-medium: var(--risk-warn);
+  --risk-medium-text: var(--risk-warn-text);
+  --risk-medium-bg: var(--risk-warn-bg);
+
+  --risk-high: var(--risk-bad);
+  --risk-high-text: var(--risk-bad-text);
+  --risk-high-bg: var(--risk-bad-bg);
+
+  --risk-unable: var(--risk-unknown);
+  --risk-unable-text: var(--risk-unknown-text);
+  --risk-unable-bg: var(--risk-unknown-bg);
+
+  --good: var(--risk-ok);
+  --good-text: var(--risk-ok-text);
+  --good-bg: var(--risk-ok-bg);
+
+  --warn: var(--risk-warn);
+  --warn-text: var(--risk-warn-text);
+  --warn-bg: var(--risk-warn-bg);
+
+  --bad: var(--risk-bad);
+  --bad-text: var(--risk-bad-text);
+  --bad-bg: var(--risk-bad-bg);
+
+  --unk: var(--risk-unknown);
+  --unk-text: var(--risk-unknown-text);
+  --unk-bg: var(--risk-unknown-bg);
+
+  --track-bg: #D3E2F7;
+
+  --shadow: 0 4px 20px rgba(11, 37, 69, 0.08);
+  --shadow-base: 0 2px 12px rgba(11, 37, 69, 0.06);
+  --shadow-hover: 0 8px 30px rgba(11, 37, 69, 0.12);
+
+  --header-bg: rgba(245, 249, 255, 0.92);
+  --header-border: #D3E2F7;
+  --header-item-hover: rgba(11, 99, 206, 0.08);
+
+  --primary-btn-bg: #0B63CE;
+  --primary-btn-text: #FFFFFF;
+
+  --modal-overlay-bg: rgba(11, 37, 69, 0.6);
+  --dotted-pattern-color: rgba(11, 99, 206, 0.08);
 }
 
 @media (max-width: 1023px) {
@@ -280,4 +607,211 @@ button:active,
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ==========================================================================
+   THEME TRANSITIONS & TOGGLE BUTTON
+   Quick 150ms colour transition, but NO transition on first paint
+   ========================================================================== */
+
+html.theme-ready body,
+html.theme-ready .header-floating-wrap,
+html.theme-ready .dash-sidebar,
+html.theme-ready .dash-main-area,
+html.theme-ready .dash-card,
+html.theme-ready .dash-summary-card,
+html.theme-ready .footer,
+html.theme-ready .usr-result-card,
+html.theme-ready .usr-card,
+html.theme-ready .usr-check-box,
+html.theme-ready .pricing-plan-card,
+html.theme-ready .tool-input-card,
+html.theme-ready .tool-examples-card,
+html.theme-ready .tool-textarea,
+html.theme-ready .auth-split-left,
+html.theme-ready .auth-split-right,
+html.theme-ready .auth-tab-switch,
+html.theme-ready .extension-key-card,
+html.theme-ready .quota-modal-dialog {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, fill 150ms ease, stroke 150ms ease, box-shadow 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-ready body,
+  html.theme-ready .header-floating-wrap,
+  html.theme-ready .dash-sidebar,
+  html.theme-ready .dash-main-area,
+  html.theme-ready .dash-card,
+  html.theme-ready .dash-summary-card,
+  html.theme-ready .footer,
+  html.theme-ready .usr-result-card,
+  html.theme-ready .usr-card,
+  html.theme-ready .usr-check-box,
+  html.theme-ready .pricing-plan-card,
+  html.theme-ready .tool-input-card,
+  html.theme-ready .tool-examples-card,
+  html.theme-ready .tool-textarea,
+  html.theme-ready .auth-split-left,
+  html.theme-ready .auth-split-right,
+  html.theme-ready .auth-tab-switch,
+  html.theme-ready .extension-key-card,
+  html.theme-ready .quota-modal-dialog {
+    transition: none !important;
+  }
+}
+
+/* Universal Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 9999px;
+  padding: 8px;
+  cursor: pointer;
+  line-height: 1;
+  min-width: 36px;
+  min-height: 36px;
+  box-sizing: border-box;
+  text-decoration: none !important;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  color: var(--text);
+  border-color: var(--accent-cyan);
+  background: var(--accent-bg);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.96);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--accent-cyan));
+  outline-offset: 2px;
+}
+
+.theme-toggle-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-icon {
+  display: block;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.theme-toggle-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: inherit;
+}
+
+/* Navbar variant */
+.theme-toggle-navbar {
+  padding: 6px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border-color: var(--border);
+  color: var(--text-dim);
+}
+
+.theme-toggle-navbar:hover {
+  color: var(--text);
+  background: var(--header-item-hover);
+  border-color: var(--border);
+}
+
+/* Mobile drawer variant */
+.theme-toggle-mobile {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  justify-content: flex-start;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.theme-toggle-mobile:hover {
+  background: var(--header-item-hover);
+  border-color: var(--border);
+}
+
+/* Sidebar variant in Dashboard */
+.theme-toggle-sidebar {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  justify-content: flex-start;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.theme-toggle-sidebar:hover {
+  color: var(--text);
+  background: var(--header-item-hover);
+  border-color: var(--border);
+}
+
+/* Login page corner variant */
+.theme-toggle-corner {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-base);
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+}
+
+@media (max-width: 899px) {
+  .theme-toggle-corner {
+    top: 16px;
+    right: 16px;
+  }
+}
+
+/* Toast container & Toast */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-hover);
+  padding: 12px 18px;
+  border-radius: var(--r-base);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: fadeRise 0.2s ease-out;
 }

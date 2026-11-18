@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { Check, Eye, EyeOff } from 'lucide-react';
 import { PageTransition } from '../components/wow';
+import { ThemeToggle } from '../lib/theme';
 import {
   useAuth,
   setPendingName,
@@ -603,7 +604,8 @@ export function Login({ mode }) {
 
   return (
     <PageTransition>
-      <div className="auth-split-page">
+      <div className="auth-split-page" style={{ position: 'relative' }}>
+        <ThemeToggle variant="corner" />
         {/* LEFT COLUMN (Desktop ~50%, hidden under 900px) */}
         <aside className="auth-split-left" aria-label="How Cyber Shield works">
           <div className="auth-left-top">

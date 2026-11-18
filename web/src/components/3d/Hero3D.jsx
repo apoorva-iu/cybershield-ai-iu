@@ -56,15 +56,15 @@ export default function HeroScene() {
           </mesh>
           <mesh position={[0, 0.4, 0.06]}>
             <boxGeometry args={[0.8, 0.1, 0.02]} />
-            <meshStandardMaterial color="#e2e8f0" />
+            <meshStandardMaterial color="#D3E2F7" />
           </mesh>
           <mesh position={[0, 0.1, 0.06]}>
             <boxGeometry args={[0.8, 0.1, 0.02]} />
-            <meshStandardMaterial color="#e2e8f0" />
+            <meshStandardMaterial color="#D3E2F7" />
           </mesh>
           <mesh position={[0, -0.2, 0.06]}>
             <boxGeometry args={[0.8, 0.1, 0.02]} />
-            <meshStandardMaterial color="#e2e8f0" />
+            <meshStandardMaterial color="#D3E2F7" />
           </mesh>
         </Float>
       </group>

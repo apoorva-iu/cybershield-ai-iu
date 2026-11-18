@@ -28,6 +28,7 @@ import { useAuth, getDisplayName, UserAvatar } from '../auth';
 import { Logo } from '../components/Logo';
 import { CountUp } from '../components/wow';
 import { addToast } from '../components/Toast';
+import { ThemeToggle } from '../lib/theme';
 import { useBillingStatus, startUpgrade, formatExpiryDate } from '../lib/billing';
 import { useUsage } from '../lib/useUsage';
 import { Scan } from './Scan';
@@ -529,6 +530,7 @@ export function DashboardLayout() {
             <span className="dash-sidebar-user-plan">{isPro ? 'Pro plan' : 'Free plan'}</span>
           </div>
         </div>
+        <ThemeToggle variant="sidebar" showLabel={true} />
         <button
           type="button"
           className="dash-sidebar-signout-btn"
@@ -1576,11 +1578,8 @@ export function DashboardScanDetail() {
       <div className="dash-offer-meta-card">
         <div className="dash-offer-meta-item">
           <span className="dash-offer-meta-label">Tool</span>
-          <span className={`dash-tool-tag dash-tool-${resolvedToolKind}`}>
-            {resolvedToolKind === 'upi' ? 'UPI' : resolvedToolKind === 'message' ? 'Message' : 'Job Check'}
-          </span>
-          <strong className="dash-offer-meta-val" style={{ marginLeft: '6px' }}>
-            {resolvedToolKind === 'upi' ? 'UPI and Payment Check' : resolvedToolKind === 'message' ? 'Message Scanner' : 'Job Offer Verification'}
+          <strong className="dash-offer-meta-val">
+            {resolvedToolKind === 'upi' ? 'UPI and Payment Check' : resolvedToolKind === 'message' ? 'Message Scanner' : 'Job Scam Check'}
           </strong>
         </div>
         <div className="dash-offer-meta-item">
@@ -1739,20 +1738,11 @@ export function DashboardPlan() {
           <div className="dash-tier-cta">
             <Link
               to="/dashboard/scan"
-              className="dash-btn-primary dash-btn-free"
+              className="dash-btn-secondary dash-btn-free"
               style={{
                 width: '100%',
                 height: '48px',
                 minHeight: '48px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                background: 'var(--brand, #4DA3FF)',
-                color: '#FFFFFF',
-                borderRadius: '9999px',
-                fontWeight: 600,
-                textDecoration: 'none',
                 boxSizing: 'border-box'
               }}
             >
@@ -1815,8 +1805,8 @@ export function DashboardPlan() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 textAlign: 'center',
-                background: 'var(--brand, #4DA3FF)',
-                color: '#FFFFFF',
+                background: 'var(--primary)',
+                color: 'var(--primary-btn-text, #FFFFFF)',
                 borderRadius: '9999px',
                 fontWeight: 600,
                 border: 'none',
@@ -1831,7 +1821,7 @@ export function DashboardPlan() {
                 : upgradeLoading
                 ? 'Opening checkout...'
                 : isPro
-                ? 'Extend pass by 30 days (₹1)'
+                ? 'Pro active'
                 : 'Upgrade for ₹1'}
             </button>
           </div>
@@ -1962,7 +1952,7 @@ export function DashboardSettings() {
               disabled
               className="login-input-disabled"
             />
-            <span style={{ fontSize: '12px', color: 'var(--text-dim, #94A3B8)', marginTop: '4px', display: 'block' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
               Connected via Supabase Authentication. Email changes require security verification.
             </span>
           </div>
@@ -2008,13 +1998,13 @@ export function DashboardSettings() {
           <div>
             <span className="dash-plan-label">Active Tier</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-              <strong style={{ fontSize: '16px', color: '#FFFFFF' }}>{isPro ? 'Pro Pass' : 'Free Tier'}</strong>
+              <strong style={{ fontSize: '16px', color: 'var(--text)' }}>{isPro ? 'Pro Pass' : 'Free Tier'}</strong>
               <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
                 {isPro ? `${daysLeft} days left` : '5 checks / month'}
               </span>
             </div>
             {isPro && expiresAt && (
-              <span style={{ fontSize: '12.5px', color: 'var(--text-dim, #94A3B8)', marginTop: '4px', display: 'block' }}>
+              <span style={{ fontSize: '12.5px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
                 Valid through {formatExpiryDate(expiresAt)}
               </span>
             )}
@@ -2022,7 +2012,7 @@ export function DashboardSettings() {
 
           <div style={{ textAlign: 'right' }}>
             <span className="dash-plan-label">Usage This Period</span>
-            <div style={{ fontSize: '15px', color: '#FFFFFF', fontWeight: 600, marginTop: '6px' }}>
+            <div style={{ fontSize: '20px', color: 'var(--text)', fontWeight: 700, marginTop: '6px' }}>
               {usage?.used ?? (isPro ? 0 : 1)} of {usage?.allowance ?? (isPro ? 100 : 5)} checks
             </div>
           </div>

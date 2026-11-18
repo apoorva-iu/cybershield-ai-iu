@@ -718,7 +718,7 @@ export function DemoPlayer() {
                   </div>
 
                   <div className="proof-tamper-note">
-                    <Lock size={13} color="#94A3B8" />
+                    <Lock size={13} color="currentColor" />
                     <span>
                       Anchored to tamper-evident ledger. Any modification to report text is detected on verification. Access Code is never stored.
                     </span>

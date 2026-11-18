@@ -197,15 +197,15 @@ export function Resources() {
                   </div>
                   <ul className="resources-feature-list">
                     <li>
-                      <CheckCircle2 size={15} color="#A78BFA" />
+                      <CheckCircle2 size={15} color="var(--primary)" />
                       <span><strong>Utility Cut-Off Panic:</strong> Fake warnings that your electricity or gas will be disconnected tonight at 9:30 PM.</span>
                     </li>
                     <li>
-                      <CheckCircle2 size={15} color="#A78BFA" />
+                      <CheckCircle2 size={15} color="var(--primary)" />
                       <span><strong>Part-Time Tasks:</strong> Promises of ₹3,000–₹8,000 daily for liking YouTube videos or rating Google Maps locations.</span>
                     </li>
                     <li>
-                      <CheckCircle2 size={15} color="#A78BFA" />
+                      <CheckCircle2 size={15} color="var(--primary)" />
                       <span><strong>Courier / Customs Alert:</strong> Phishing links alleging your parcel has an invalid address or unpaid ₹25 duty fee.</span>
                     </li>
                   </ul>
@@ -399,7 +399,7 @@ export function Resources() {
                 {/* What it CANNOT do */}
                 <div className="resources-limit-card limit-cannot">
                   <h3 className="limit-title cannot-title">
-                    <XCircle size={18} color="#F87171" />
+                    <XCircle size={18} color="var(--risk-bad)" />
                     What Cyber Shield CANNOT do
                   </h3>
                   <ul className="resources-limit-list">
