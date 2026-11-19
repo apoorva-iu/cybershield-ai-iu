@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldAlert,
@@ -20,7 +20,9 @@ import {
   AlertOctagon,
   Building,
   Mail,
-  Link2
+  Link2,
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { dedupeSafetyAdvice, getDefaultWhatToDo } from '../lib/dedupeAdvice';
 import './unified-scan-result.css';
@@ -547,6 +549,16 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
    Main Component: UnifiedScanResult
    -------------------------------------------------------------------------- */
 
+function isPageHostOrUrl(str) {
+  if (!str || typeof str !== 'string') return true;
+  const s = str.trim().toLowerCase();
+  if (!s) return true;
+  if (/^https?:\/\//i.test(s) || /^www\./i.test(s)) return true;
+  if (s.includes('claude.ai') || s.includes('chatgpt.com') || s.includes('anthropic.com')) return true;
+  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/.*)?$/i.test(s)) return true;
+  return false;
+}
+
 export function UnifiedScanResult({
   result,
   rawInput = '',
@@ -560,12 +572,17 @@ export function UnifiedScanResult({
   const [copiedAccess, setCopiedAccess] = useState(false);
   const [copiedProof, setCopiedProof] = useState(false);
   const [copiedHash, setCopiedHash] = useState(false);
+  const [copiedPrevHash, setCopiedPrevHash] = useState(false);
+  const [copiedReportHash, setCopiedReportHash] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [showScorePopover, setShowScorePopover] = useState(false);
   const [showSourcesPopover, setShowSourcesPopover] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [showAllBreakdown, setShowAllBreakdown] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  // Ledger status: null = not checked, 'checking' = in-progress, { ok, label, detail } = done
+  const [ledgerStatus, setLedgerStatus] = useState(null);
+  const [ledgerChecking, setLedgerChecking] = useState(false);
 
   const scorePopoverRef = useRef(null);
 
@@ -760,8 +777,43 @@ export function UnifiedScanResult({
   const accessCode = res.accessCode || receipt?.accessCode || null;
   const blockIndex = res.block != null ? res.block : (receipt?.block != null ? receipt.block : null);
   const blockHash = res.blockHash || receipt?.blockHash || null;
+  const prevHash = res.prevHash || receipt?.prevHash || null;
+  const reportHash = res.reportHash || receipt?.reportHash || null;
+  const blockTimestamp = res.blockTimestamp || null;
   const isSaved = res.saved === true || isHistory;
-  const timeFormatted = res.createdAt || res.timestamp || report.generatedAt || new Date().toISOString();
+  const timeFormatted = blockTimestamp || res.createdAt || res.timestamp || report.generatedAt || new Date().toISOString();
+
+  // "Check now" — calls /api/proof/verify with proofId + blockHash
+  const handleCheckLedger = useCallback(async () => {
+    if (!proofId || ledgerChecking) return;
+    setLedgerChecking(true);
+    setLedgerStatus(null);
+    try {
+      const payload = blockHash
+        ? { proofId, hash: blockHash }
+        : { proofId };
+      const d = await fetch('/api/proof/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r => r.json());
+      if (d && (d.status === 'intact' || d.ok === true)) {
+        setLedgerStatus({ ok: true, label: 'Chain intact', detail: null });
+      } else {
+        const outcome = d?.status || d?.outcome;
+        const label = outcome === 'report_modified' ? 'Report modified'
+          : outcome === 'ledger_altered' ? 'Ledger altered'
+          : outcome === 'hash_mismatch' ? 'Hash mismatch'
+          : outcome === 'not_found' ? 'Not found in ledger'
+          : 'Verification failed';
+        setLedgerStatus({ ok: false, label, detail: d?.summary || d?.reason || null });
+      }
+    } catch {
+      setLedgerStatus({ ok: false, label: 'Verification failed', detail: 'Network error' });
+    } finally {
+      setLedgerChecking(false);
+    }
+  }, [proofId, blockHash, ledgerChecking]);
 
   // Handlers
   const handleCopyProof = () => {
@@ -776,6 +828,20 @@ export function UnifiedScanResult({
     navigator.clipboard?.writeText?.(blockHash);
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2000);
+  };
+
+  const handleCopyPrevHash = () => {
+    if (!prevHash) return;
+    navigator.clipboard?.writeText?.(prevHash);
+    setCopiedPrevHash(true);
+    setTimeout(() => setCopiedPrevHash(false), 2000);
+  };
+
+  const handleCopyReportHash = () => {
+    if (!reportHash) return;
+    navigator.clipboard?.writeText?.(reportHash);
+    setCopiedReportHash(true);
+    setTimeout(() => setCopiedReportHash(false), 2000);
   };
 
   const handleCopyAccess = () => {
@@ -963,9 +1029,10 @@ export function UnifiedScanResult({
         {headlineSub && <p className="usr-headline-sub">{headlineSub}</p>}
 
         {level === 'high' && (confidenceBandStr === 'Low' || confidenceBandStr === 'Medium') && (
-          <p className="usr-confidence-warning-line">
-            Warning signs are strong, but live evidence was partial. Treat this as an urgent warning and confirm directly with official sources.
-          </p>
+          <div className="usr-confidence-warning-line" role="status">
+            <AlertTriangle size={15} strokeWidth={2} aria-hidden="true" />
+            <span>Warning signs are strong, but live evidence was partial. Treat this as an urgent warning and confirm directly with official sources.</span>
+          </div>
         )}
 
         {resolvedTool === 'upi' && (scamType === 'fake_payment_proof' || scamType === 'unverifiable_receipt') && (
@@ -1001,18 +1068,20 @@ export function UnifiedScanResult({
   /* --------------------------------------------------------------------------
      Sub-render: Why Panel
      -------------------------------------------------------------------------- */
+  const cleanCompany = (inp.company && !isPageHostOrUrl(inp.company)) ? String(inp.company).trim() : null;
+
   const renderWhyPanel = () => (
     <div className="usr-tab-panel">
       {/* Job Offer Details (if job scan) */}
-      {(inp.company || inp.url || inp.recruiterEmail) && (
+      {(cleanCompany || inp.url || inp.recruiterEmail) && (
         <div className="usr-job-meta-box">
           <div className="usr-card-subhead">Job Offer Details Analyzed</div>
           <div className="usr-job-meta-grid">
-            {inp.company && (
+            {cleanCompany && (
               <div className="usr-job-meta-item">
                 <Building size={14} className="usr-meta-icon" />
                 <span className="usr-meta-label">Company:</span>
-                <strong className="usr-meta-val">{inp.company}</strong>
+                <strong className="usr-meta-val">{cleanCompany}</strong>
               </div>
             )}
             {inp.url && (
@@ -1252,147 +1321,277 @@ export function UnifiedScanResult({
   /* --------------------------------------------------------------------------
      Sub-render: Proof Panel
      -------------------------------------------------------------------------- */
-  const renderProofPanel = (forPrint = false) => (
-    <div className="usr-tab-panel">
-      <div className="usr-card usr-proof-card">
-        <div className="usr-card-subhead">Cryptographic Audit Trail</div>
-        <p className="usr-proof-intro">
-          Anchored to a tamper-evident SHA-256 ledger block to prove results were never altered.
-        </p>
+  const renderProofPanel = (forPrint = false) => {
+    // Helper: shorten a hex hash to first8…last8
+    const shortenHash = (h) => {
+      if (!h || typeof h !== 'string') return null;
+      if (h.length <= 20) return h;
+      return `${h.slice(0, 8)}…${h.slice(-8)}`;
+    };
 
-        <div className="usr-proof-grid">
-          <div className="usr-proof-cell">
-            <label>Proof ID</label>
-            <div className="usr-proof-val">
-              <span className="mono">{proofId || '—'}</span>
-              {proofId && !forPrint && (
-                <button
-                  type="button"
-                  className="usr-btn-copy-code no-print"
-                  onClick={handleCopyProof}
-                  title="Copy Proof ID"
-                >
-                  {copiedProof ? <Check size={13} /> : <Copy size={13} />}
-                  <span>{copiedProof ? 'Copied' : 'Copy'}</span>
-                </button>
-              )}
+    // Format UTC time and IST local time
+    const utcStr = timeFormatted
+      ? String(timeFormatted).replace('T', ' ').slice(0, 19) + ' UTC'
+      : null;
+    const istStr = (() => {
+      if (!timeFormatted) return null;
+      try {
+        return new Date(timeFormatted).toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true
+        }) + ' IST';
+      } catch { return null; }
+    })();
+
+    return (
+      <div className="usr-tab-panel">
+        <div className="usr-card usr-proof-card">
+          <div className="usr-card-subhead">Cryptographic Audit Trail</div>
+          <p className="usr-proof-intro">
+            Anchored to a tamper-evident SHA-256 ledger block to prove results were never altered.
+          </p>
+
+          {/* Saved badge — blue tinted, AA contrast */}
+          {isSaved && (
+            <div className="usr-saved-badge">
+              <Check size={15} strokeWidth={2.5} className="usr-saved-badge-icon" aria-hidden="true" />
+              <span>Saved to your history</span>
             </div>
-          </div>
+          )}
 
-          <div className="usr-proof-cell">
-            <label>Block number</label>
-            <div className="usr-proof-val mono">{blockIndex != null ? blockIndex : '—'}</div>
-          </div>
+          <div className="usr-proof-grid">
 
-          <div className="usr-proof-cell">
-            <label>Time (UTC)</label>
-            <div className="usr-proof-val">{String(timeFormatted).replace('T', ' ').slice(0, 19)}</div>
-          </div>
-
-          {!forPrint && accessCode && !isHistory && (
-            <div className="usr-proof-cell usr-proof-cell-full">
-              <label>Access Code</label>
-              <div className="usr-access-code-row">
-                {revealedCode ? (
-                  <>
-                    <span className="usr-access-code-text mono">{accessCode}</span>
+            {/* Proof ID */}
+            {proofId ? (
+              <div className="usr-proof-cell">
+                <label>Proof ID</label>
+                <div className="usr-proof-val">
+                  <span className="mono usr-proof-id-text">{proofId}</span>
+                  {!forPrint && (
                     <button
                       type="button"
                       className="usr-btn-copy-code no-print"
-                      onClick={handleCopyAccess}
-                      title="Copy Access Code"
+                      onClick={handleCopyProof}
+                      title="Copy Proof ID"
                     >
-                      {copiedAccess ? <Check size={13} /> : <Copy size={13} />}
-                      <span>{copiedAccess ? 'Copied' : 'Copy'}</span>
+                      {copiedProof ? <Check size={13} /> : <Copy size={13} />}
+                      <span>{copiedProof ? 'Copied' : 'Copy'}</span>
                     </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="usr-btn-reveal no-print"
-                    onClick={() => setRevealedCode(true)}
-                  >
-                    <Eye size={13} strokeWidth={1.75} />
-                    <span>Reveal Access Code</span>
-                  </button>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Block number */}
+            {blockIndex != null ? (
+              <div className="usr-proof-cell">
+                <label>Block number</label>
+                <div className="usr-proof-val mono">#{blockIndex}</div>
+              </div>
+            ) : proofId ? (
+              <div className="usr-proof-cell">
+                <label>Block number</label>
+                <div className="usr-proof-val usr-proof-na">Not available for this report</div>
+              </div>
+            ) : null}
+
+            {/* Time */}
+            {utcStr && (
+              <div className="usr-proof-cell">
+                <label>Time</label>
+                <div className="usr-proof-val usr-proof-time-wrap">
+                  <span>{utcStr}</span>
+                  {istStr && <span className="usr-proof-local-time">{istStr}</span>}
+                </div>
+              </div>
+            )}
+
+            {/* Ledger status */}
+            {proofId && !forPrint && (
+              <div className="usr-proof-cell">
+                <label>Ledger status</label>
+                <div className="usr-proof-val usr-proof-status-row">
+                  {ledgerStatus ? (
+                    <span className={`usr-ledger-badge ${ledgerStatus.ok ? 'usr-ledger-ok' : 'usr-ledger-fail'}`}>
+                      {ledgerStatus.ok ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
+                      <span>{ledgerStatus.label}</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span className="usr-proof-na">Not checked yet</span>
+                      <button
+                        type="button"
+                        className="usr-btn-check-ledger no-print"
+                        onClick={handleCheckLedger}
+                        disabled={ledgerChecking}
+                        aria-label="Check ledger now"
+                      >
+                        {ledgerChecking
+                          ? <Loader2 size={12} className="usr-spin" />
+                          : <Clock size={12} />}
+                        <span>{ledgerChecking ? 'Checking…' : 'Check now'}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+                {ledgerStatus && !ledgerStatus.ok && ledgerStatus.detail && (
+                  <div className="usr-proof-status-detail">{ledgerStatus.detail}</div>
                 )}
               </div>
-              <div className="usr-proof-tip">
-                Keep this code private. It is kept in memory and proves record ownership.
+            )}
+
+            {/* Report hash (SHA-256) */}
+            {reportHash && (
+              <div className="usr-proof-cell usr-proof-cell-full">
+                <label>Report hash (SHA-256)</label>
+                <div className="usr-proof-val">
+                  <span className="usr-proof-hash mono" title={reportHash}>{shortenHash(reportHash)}</span>
+                  {!forPrint && (
+                    <button
+                      type="button"
+                      className="usr-btn-copy-code no-print"
+                      onClick={handleCopyReportHash}
+                      title="Copy full report hash"
+                    >
+                      {copiedReportHash ? <Check size={13} /> : <Copy size={13} />}
+                      <span>{copiedReportHash ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  )}
+                </div>
               </div>
+            )}
+
+            {/* Block hash */}
+            {blockHash && (
+              <div className="usr-proof-cell usr-proof-cell-full">
+                <label>Block hash</label>
+                <div className="usr-proof-val">
+                  <span className="usr-proof-hash mono" title={blockHash}>{shortenHash(blockHash)}</span>
+                  {!forPrint && (
+                    <button
+                      type="button"
+                      className="usr-btn-copy-code no-print"
+                      onClick={handleCopyHash}
+                      title="Copy full block hash"
+                    >
+                      {copiedHash ? <Check size={13} /> : <Copy size={13} />}
+                      <span>{copiedHash ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Previous block hash */}
+            {prevHash && (
+              <div className="usr-proof-cell usr-proof-cell-full">
+                <label>Previous block hash</label>
+                <div className="usr-proof-val">
+                  <span className="usr-proof-hash mono" title={prevHash}>{shortenHash(prevHash)}</span>
+                  {!forPrint && (
+                    <button
+                      type="button"
+                      className="usr-btn-copy-code no-print"
+                      onClick={handleCopyPrevHash}
+                      title="Copy full previous block hash"
+                    >
+                      {copiedPrevHash ? <Check size={13} /> : <Copy size={13} />}
+                      <span>{copiedPrevHash ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Access code (live result only, never history) */}
+            {!forPrint && accessCode && !isHistory && (
+              <div className="usr-proof-cell usr-proof-cell-full">
+                <label>Access Code</label>
+                <div className="usr-access-code-row">
+                  {revealedCode ? (
+                    <>
+                      <span className="usr-access-code-text mono">{accessCode}</span>
+                      <button
+                        type="button"
+                        className="usr-btn-copy-code no-print"
+                        onClick={handleCopyAccess}
+                        title="Copy Access Code"
+                      >
+                        {copiedAccess ? <Check size={13} /> : <Copy size={13} />}
+                        <span>{copiedAccess ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="usr-btn-reveal no-print"
+                      onClick={() => setRevealedCode(true)}
+                    >
+                      <Eye size={13} strokeWidth={1.75} />
+                      <span>Reveal Access Code</span>
+                    </button>
+                  )}
+                </div>
+                <div className="usr-proof-tip">
+                  Keep this code private. It is kept in memory and proves record ownership.
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Access code note */}
+          {(isHistory || (!accessCode && proofId)) && (
+            <p className="usr-proof-access-note">
+              The Access Code was shown once after the scan and is not stored.
+            </p>
+          )}
+
+          {/* "Verify this proof" blue button */}
+          {proofId && (
+            <div className="usr-verify-ledger-row">
+              <Link
+                to={`/verify?proof=${encodeURIComponent(proofId)}`}
+                className="usr-verify-btn"
+                title="Verify this proof on the ledger"
+                aria-label="Verify this proof on the ledger"
+                target={forPrint ? undefined : '_blank'}
+                rel="noopener noreferrer"
+              >
+                <ExternalLink size={14} strokeWidth={1.75} />
+                <span>Verify this proof</span>
+              </Link>
             </div>
           )}
 
-          {blockHash && (
-            <div className="usr-proof-cell usr-proof-cell-full">
-              <label>Block hash</label>
-              <div className="usr-proof-val">
-                <span className="usr-proof-hash mono" title={blockHash}>{blockHash}</span>
-                {!forPrint && (
-                  <button
-                    type="button"
-                    className="usr-btn-copy-code no-print"
-                    onClick={handleCopyHash}
-                    title="Copy Block Hash"
-                  >
-                    {copiedHash ? <Check size={13} /> : <Copy size={13} />}
-                    <span>{copiedHash ? 'Copied' : 'Copy'}</span>
-                  </button>
-                )}
-              </div>
+          {/* Live-only action buttons (History page has action buttons in the top header) */}
+          {!forPrint && !isHistory && (
+            <div className="usr-proof-actions-row no-print">
+              <button
+                type="button"
+                className="usr-btn-action"
+                onClick={handleDownloadReceipt}
+                disabled={!receipt && !proofId}
+              >
+                <Download size={14} strokeWidth={1.75} />
+                <span>Download verification file (.json)</span>
+              </button>
+
+              <button type="button" className="usr-btn-action" onClick={handlePrintPdf}>
+                <Printer size={14} strokeWidth={1.75} />
+                <span>Download PDF</span>
+              </button>
+
+              <button type="button" className="usr-btn-action" onClick={handleCopySummary}>
+                {copiedSummary ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copiedSummary ? 'Summary copied' : 'Copy summary'}</span>
+              </button>
             </div>
           )}
         </div>
-
-        {isSaved && (
-          <div className="usr-saved-badge">
-            <FileCheck2 size={15} strokeWidth={2} />
-            <span>Saved to your history</span>
-          </div>
-        )}
-
-        {/* Verification ledger link */}
-        {proofId && (
-          <div className="usr-verify-ledger-row">
-            <Link
-              to={`/verify?proof=${encodeURIComponent(proofId)}`}
-              className="usr-verify-ledger-link"
-              target={forPrint ? undefined : '_blank'}
-              rel="noopener noreferrer"
-            >
-              <ExternalLink size={14} strokeWidth={1.75} />
-              <span>Verify this proof on the ledger</span>
-            </Link>
-          </div>
-        )}
-
-        {/* Live-only action buttons (History page has action buttons in the top header) */}
-        {!forPrint && !isHistory && (
-          <div className="usr-proof-actions-row no-print">
-            <button
-              type="button"
-              className="usr-btn-action"
-              onClick={handleDownloadReceipt}
-              disabled={!receipt && !proofId}
-            >
-              <Download size={14} strokeWidth={1.75} />
-              <span>Download verification file (.json)</span>
-            </button>
-
-            <button type="button" className="usr-btn-action" onClick={handlePrintPdf}>
-              <Printer size={14} strokeWidth={1.75} />
-              <span>Download PDF</span>
-            </button>
-
-            <button type="button" className="usr-btn-action" onClick={handleCopySummary}>
-              {copiedSummary ? <Check size={14} /> : <Copy size={14} />}
-              <span>{copiedSummary ? 'Summary copied' : 'Copy summary'}</span>
-            </button>
-          </div>
-        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   /* --------------------------------------------------------------------------
      Print Mode Render (Continuous document matching on-screen layout)

@@ -9,7 +9,9 @@ import {
   setPendingName,
   triggerWelcomeToastOnce,
   consumeReturnTo,
-  isValidReturnPath
+  isValidReturnPath,
+  consumeSessionExpiredNotice,
+  clearSessionExpiredNotice
 } from '../auth';
 
 const COMMON_PASSWORDS = new Set([
@@ -107,8 +109,8 @@ function classifyNetworkOrRateError(error) {
   ) {
     return { type: 'rate', message: 'Too many attempts. Please try again in a minute.' };
   }
-  if (msg.includes('network') || msg.includes('failed to fetch') || msg.includes('fetch')) {
-    return { type: 'network', message: 'Network error. Please check your connection and try again.' };
+  if (msg.includes('network') || msg.includes('failed to fetch') || msg.includes('fetch') || error?.isNetworkError) {
+    return { type: 'network', message: "Couldn't reach the server. Check your connection and try again" };
   }
   return null;
 }
@@ -120,6 +122,7 @@ export function Login({ mode }) {
   const {
     configLoaded,
     authAvailable,
+    serverUnreachable,
     supabase,
     session,
     callbackError,
@@ -180,11 +183,33 @@ export function Login({ mode }) {
   const [resending, setResending] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [infoMsg, setInfoMsg] = useState(null);
+  const [sessionExpiredMsg, setSessionExpiredMsg] = useState(() => {
+    if (location.state?.sessionExpired) {
+      return 'Your session expired. Please sign in again.';
+    }
+    return null;
+  });
+
+  // Clear the sessionExpired flag immediately after showing once so refreshing or re-visiting never shows it
+  useEffect(() => {
+    if (location.state?.sessionExpired) {
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+      } catch {
+        // Ignore history errors
+      }
+    }
+    if (callbackError) {
+      clearCallbackError();
+    }
+    clearSessionExpiredNotice();
+  }, [location.state, callbackError, clearCallbackError]);
 
   // Reset transient state when switching routes
   useEffect(() => {
     setErrorMsg(null);
     setInfoMsg(null);
+    setSessionExpiredMsg(null);
     setUnconfirmedEmail(false);
     setSignupConfirmStep(false);
     setLoginSubMode('password');
@@ -225,6 +250,7 @@ export function Login({ mode }) {
   const handleSwitchAuthMode = (targetMode) => {
     setErrorMsg(null);
     setInfoMsg(null);
+    setSessionExpiredMsg(null);
     setUnconfirmedEmail(false);
     setSignupConfirmStep(false);
     setPassword('');
@@ -241,6 +267,7 @@ export function Login({ mode }) {
     if (resolvedView === 'signup' && !isSignupFormValid) return;
 
     clearCallbackError();
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setInfoMsg(null);
 
@@ -274,6 +301,7 @@ export function Login({ mode }) {
     if (serviceUnavailable || !supabase || submitting || !isSignupFormValid) return;
 
     clearCallbackError();
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setInfoMsg(null);
     setSubmitting(true);
@@ -313,7 +341,7 @@ export function Login({ mode }) {
       setResendCooldown(60);
       setInfoMsg('If this email can be used, we sent you a message.');
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
@@ -329,6 +357,7 @@ export function Login({ mode }) {
       return;
     }
 
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setSubmitting(true);
     try {
@@ -353,7 +382,7 @@ export function Login({ mode }) {
         navigate(resolvePostLoginDest(), { replace: true });
       }
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
@@ -362,6 +391,7 @@ export function Login({ mode }) {
   // RESEND SIGNUP CONFIRMATION
   const handleResendSignup = async () => {
     if (serviceUnavailable || !supabase || resending || resendCooldown > 0 || !isEmailValid) return;
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setResending(true);
     try {
@@ -379,7 +409,7 @@ export function Login({ mode }) {
       setResendCooldown(60);
       setInfoMsg('If this email can be used, we sent you a message.');
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setResending(false);
     }
@@ -395,6 +425,7 @@ export function Login({ mode }) {
     }
 
     clearCallbackError();
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setInfoMsg(null);
     setUnconfirmedEmail(false);
@@ -426,7 +457,7 @@ export function Login({ mode }) {
         navigate(resolvePostLoginDest(), { replace: true });
       }
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
@@ -442,6 +473,7 @@ export function Login({ mode }) {
     }
 
     clearCallbackError();
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setInfoMsg(null);
     setSubmitting(true);
@@ -471,7 +503,7 @@ export function Login({ mode }) {
       setResendCooldown(60);
       setInfoMsg('If an account exists for this email, we sent a 6-digit sign-in code.');
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
@@ -487,6 +519,7 @@ export function Login({ mode }) {
       return;
     }
 
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setSubmitting(true);
     try {
@@ -510,7 +543,7 @@ export function Login({ mode }) {
         navigate(resolvePostLoginDest(), { replace: true });
       }
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
@@ -526,6 +559,7 @@ export function Login({ mode }) {
     }
 
     clearCallbackError();
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setInfoMsg(null);
     setSubmitting(true);
@@ -550,7 +584,7 @@ export function Login({ mode }) {
       // Always show generic message so accounts cannot be guessed
       setInfoMsg('If an account exists, we sent a reset link.');
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
@@ -570,6 +604,7 @@ export function Login({ mode }) {
     }
 
     clearCallbackError();
+    setSessionExpiredMsg(null);
     setErrorMsg(null);
     setInfoMsg(null);
     setSubmitting(true);
@@ -594,13 +629,18 @@ export function Login({ mode }) {
         navigate('/dashboard', { replace: true });
       }, 900);
     } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg("Couldn't reach the server. Check your connection and try again");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const activeError = errorMsg || callbackError;
+  const activeError = (() => {
+    if (serverUnreachable) {
+      return "Couldn't reach the server. Check your connection and try again";
+    }
+    return errorMsg || sessionExpiredMsg || callbackError || null;
+  })();
 
   return (
     <PageTransition>

@@ -729,11 +729,6 @@ export function DemoPlayer() {
           </div>
         </div>
       </div>
-
-      {/* Frame Disclaimer */}
-      <p className="demo-disclaimer">
-        Example demonstration for illustration. Screening aid, not a legal finding.
-      </p>
     </div>
   );
 }

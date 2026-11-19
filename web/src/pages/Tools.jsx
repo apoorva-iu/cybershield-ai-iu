@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shield,
@@ -15,30 +15,12 @@ import { TOOLS } from '../tools';
 import { ToolCard } from '../components/ToolCard';
 import { Container } from '../components/ui';
 import { PageTransition } from '../components/wow';
-import { apiFetch } from '../api';
+import { UsagePill } from '../components/UsagePill';
 import '../tools.css';
 
 export function Tools() {
-  const [quota, setQuota] = useState(null);
-
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    apiFetch('/api/quota')
-      .then((data) => {
-        if (active && data && data.enabled) {
-          setQuota(data);
-        }
-      })
-      .catch(() => {
-        // When the endpoint fails or returns enabled:false show nothing
-      });
-    return () => {
-      active = false;
-    };
   }, []);
 
   return (
@@ -49,14 +31,7 @@ export function Tools() {
           <div className="tools-hub-header">
             <div className="tools-hub-meta-row">
               <span className="tools-hub-kicker">Security Tools</span>
-              {quota && quota.enabled && (
-                <div className="quota-chip" role="status" aria-live="polite">
-                  <Shield size={13} aria-hidden="true" />
-                  <span>
-                    {quota.remaining} of {quota.limit} free checks left
-                  </span>
-                </div>
-              )}
+              <UsagePill variant="tool" className="quota-chip" />
             </div>
             <h1 className="tools-hub-heading">Check any scam in one place</h1>
             <p className="tools-hub-subtitle">

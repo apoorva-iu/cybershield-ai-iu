@@ -140,6 +140,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const safeMessage = e => e ? ((e.name || 'Error') + ': ' + (e.code || 'unknown')) : 'Unknown Error';
 
+function isHostOrUrl(str) {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim().toLowerCase();
+  if (/^https?:\/\//i.test(s) || /^www\./i.test(s)) return true;
+  if (s.includes('claude.ai') || s.includes('chatgpt.com') || s.includes('anthropic.com')) return true;
+  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/.*)?$/i.test(s)) return true;
+  return false;
+}
+
 /* One HTTP helper: timeout, plus a retry when the network itself fails. */
 async function http(url, opt = {}, ms = H.defaultTimeoutMs) {
   let last;
@@ -531,6 +540,9 @@ app.post('/api/verify', optionalAuth, quotaMiddleware, verifyLimiterMin, verifyL
     email: String(b.email || '').trim(),
     desc: String(b.desc || '').trim() // don't slice, already checked length
   };
+  if (inp.company && isHostOrUrl(inp.company)) {
+    inp.company = '';
+  }
 if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide a job URL or a job description.' });
 
   const p = C.parseUrl(inp.url);
@@ -671,6 +683,8 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
     accessCode,
     block: blk ? blk.index : null,
     blockHash: blk ? blk.hash : null,
+    prevHash: blk ? blk.prevHash : null,
+    reportHash: reportHash || (blk ? blk.reportHash : null),
     timestamp: blk ? blk.timestamp : null,
     receipt,
     saved,
@@ -1156,9 +1170,22 @@ app.get('/api/scans', requireAuth, userLimiter, async (req, res) => {
 
     const items = (Array.isArray(data) ? data : []).map(r => {
       const inp = (r.report && r.report.input) || {};
+      const rep = r.report || {};
       const parsedUrl = inp.url ? C.parseUrl(inp.url) : null;
-      const host = (parsedUrl && !parsedUrl.bad && parsedUrl.host) ? parsedUrl.host : null;
-      const company = (typeof inp.company === 'string' && inp.company.trim()) ? inp.company.trim() : null;
+      let host = (parsedUrl && !parsedUrl.bad && parsedUrl.host) ? parsedUrl.host : null;
+      if (host && (host.includes('claude.ai') || host.includes('chatgpt.com') || host.includes('anthropic.com'))) {
+        host = null;
+      }
+      let company = (typeof inp.company === 'string' && inp.company.trim()) ? inp.company.trim() : null;
+      if (company && (isHostOrUrl(company) || (host && company.toLowerCase() === host.toLowerCase()))) {
+        company = null;
+      }
+      const rawKind = String(rep.tool || inp.kind || (rep.overall && rep.overall.tool) || '').toLowerCase();
+      let toolKind = 'JOB';
+      if (rawKind.includes('upi')) toolKind = 'UPI';
+      else if (rawKind.includes('msg') || rawKind.includes('message')) toolKind = 'MESSAGE';
+      else toolKind = 'JOB';
+
       const confidence = r.confidence != null
         ? r.confidence
         : ((r.report && r.report.overall && r.report.overall.confidence != null) ? r.report.overall.confidence : null);
@@ -1171,7 +1198,8 @@ app.get('/api/scans', requireAuth, userLimiter, async (req, res) => {
         proofId: r.proof_id,
         headline: (Array.isArray(C.LV[r.level]) ? C.LV[r.level][0] : C.LV[r.level]) || null,
         company,
-        host
+        host,
+        toolKind
       };
     });
 
@@ -1210,8 +1238,32 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
       return res.status(404).json({ error: 'Scan not found' });
     }
     const rep = row.report || {};
+    if (rep.input && typeof rep.input.company === 'string' && isHostOrUrl(rep.input.company)) {
+      rep.input.company = '';
+    }
     const o = rep.overall || {};
     const defaultHeadline = rep.headline || o.headline || rep.primaryConcern || o.primaryConcern || C.LV[row.level] || null;
+
+    // Look up ledger block by proof_id (owner-only, read-only) to surface block number and hashes
+    let blockData = null;
+    if (row.proof_id) {
+      try {
+        const store = L.getStorage();
+        const blk = await store.getByProofId(row.proof_id);
+        if (blk) {
+          blockData = {
+            block: blk.index,
+            blockHash: blk.hash,
+            prevHash: blk.prevHash,
+            reportHash: blk.reportHash,
+            blockTimestamp: blk.timestamp
+          };
+        }
+      } catch (_ledgerErr) {
+        // Non-fatal: ledger may not be accessible; proceed without block data
+      }
+    }
+
     return res.json({
       id: row.id,
       createdAt: row.created_at,
@@ -1232,7 +1284,8 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
       confidenceBand: rep.confidenceBand || o.confidenceBand || (row.confidence != null ? (row.confidence >= 75 ? 'High' : (row.confidence >= 45 ? 'Medium' : 'Low')) : null),
       confidenceFactors: rep.confidenceFactors || o.confidenceFactors || null,
       scoreBreakdown: rep.scoreBreakdown || o.scoreBreakdown || null,
-      report: row.report
+      report: row.report,
+      ...(blockData || {})
     });
   } catch (err) {
     return res.status(503).json({ error: 'Could not load scan' });

@@ -355,7 +355,7 @@ export function MessageCheck() {
       if (err.status === 429 && (err.data?.error === 'quota_exceeded' || err.data?.code === 'QUOTA_EXCEEDED')) {
         setQuotaModalData(err.data);
         setIsQuotaModalOpen(true);
-      } else if (err.status === 404 || err.message?.includes('Network error')) {
+      } else if (err.status === 404 || err.message?.includes('Network error') || err.isNetworkError || err.message?.includes('reach the server')) {
         setCheckError('This tool is not available yet.');
       } else if (err.status === 429) {
         setCheckError('Too many checks right now. Please try again in a minute.');

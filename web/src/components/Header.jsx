@@ -22,7 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-function BrowserIcon({ size = 14, className = '' }) {
+function BrowserIcon({ size = 16, className = '' }) {
   return (
     <svg
       width={size}
@@ -569,7 +569,7 @@ export function Header() {
           <ThemeToggle variant="navbar" />
 
           <Link to="/extension" className="header-btn-light">
-            <BrowserIcon size={14} className="browser-icon" />
+            <BrowserIcon size={16} className="browser-icon" />
             <span>Get extension</span>
           </Link>
         </div>
@@ -650,7 +650,7 @@ export function Header() {
                 <div className="mobile-resources-wrap">
                   <button
                     type="button"
-                    className="drawer-link-item mobile-resources-toggle"
+                    className={`drawer-link-item mobile-resources-toggle ${isResourceActive ? 'active' : ''}`}
                     onClick={() => setMobileResourcesOpen(!mobileResourcesOpen)}
                     aria-expanded={mobileResourcesOpen}
                   >

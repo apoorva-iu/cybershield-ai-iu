@@ -270,6 +270,11 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
       proofId: proofResult.proofId,
       receipt: proofResult.receipt,
       ledgerProof: proofResult.receipt,
+      block: proofResult.blk ? proofResult.blk.index : null,
+      blockHash: proofResult.blk ? proofResult.blk.hash : null,
+      prevHash: proofResult.blk ? proofResult.blk.prevHash : null,
+      reportHash: proofResult.reportHash || (proofResult.blk ? proofResult.blk.reportHash : null),
+      timestamp: proofResult.blk ? proofResult.blk.timestamp : null,
       saved,
       showUpiSafetyNote
     }

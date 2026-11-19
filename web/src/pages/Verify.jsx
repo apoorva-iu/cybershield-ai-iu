@@ -57,6 +57,9 @@ export function Verify() {
         setBcMode('hash');
         setForm(f => ({ ...f, proofIdHash: pId, blockHash: bHash }));
         runVerification('hash', { proofIdHash: pId, blockHash: bHash });
+      } else {
+        setBcMode('hash');
+        setForm(f => ({ ...f, proofIdHash: pId }));
       }
     }
   }, [location.search]);

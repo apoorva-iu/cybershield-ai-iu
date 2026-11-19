@@ -96,10 +96,15 @@
   }
 }
 
-.header-nav-item {
-  color: var(--text-dim) !important;
+.header-nav-item,
+button.header-nav-item,
+button.dropdown-trigger {
+  font-family: var(--font-sans);
   font-size: 13.5px;
   font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1;
+  color: var(--text-dim) !important;
   padding: 6px 14px;
   border-radius: 9999px;
   text-decoration: none !important;
@@ -110,19 +115,66 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  line-height: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  transform: none !important;
 }
 
-.header-nav-item:hover {
+button.header-nav-item span,
+button.dropdown-trigger span {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.header-nav-item:hover,
+button.header-nav-item:hover,
+button.dropdown-trigger:hover {
   color: var(--text) !important;
   background: rgba(255, 255, 255, 0.06);
+  transform: none !important;
+}
+
+.header-nav-item:active,
+button.header-nav-item:active,
+button.dropdown-trigger:active {
+  transform: none !important;
 }
 
 /* Active link gets a soft pill */
-.header-nav-item.active {
+.header-nav-item.active,
+button.header-nav-item.active,
+button.dropdown-trigger.active {
   color: var(--text) !important;
   background: rgba(255, 255, 255, 0.1);
   font-weight: 600;
+  transform: none !important;
+}
+
+/* Focus state */
+.header-nav-item:focus-visible,
+button.header-nav-item:focus-visible,
+button.dropdown-trigger:focus-visible {
+  outline: 2px solid var(--accent-cyan, #22D3EE);
+  outline-offset: 2px;
+}
+
+/* Light mode overrides for nav items */
+[data-theme="light"] .header-nav-item:hover,
+[data-theme="light"] button.header-nav-item:hover,
+[data-theme="light"] button.dropdown-trigger:hover {
+  color: var(--text) !important;
+  background: rgba(11, 99, 206, 0.08);
+}
+
+[data-theme="light"] .header-nav-item.active,
+[data-theme="light"] button.header-nav-item.active,
+[data-theme="light"] button.dropdown-trigger.active {
+  color: var(--text) !important;
+  background: rgba(11, 99, 206, 0.12);
 }
 
 /* Resources Dropdown Popover */
@@ -135,13 +187,14 @@
 }
 
 .dropdown-chevron {
-  transition: transform 0.2s ease;
-  opacity: 0.7;
+  transition: transform 0.2s ease, color 0.15s ease;
+  color: inherit;
+  opacity: 1;
+  flex-shrink: 0;
 }
 
 .dropdown-chevron.rotated {
   transform: rotate(180deg);
-  opacity: 1;
 }
 
 .dropdown-menu-popover {
@@ -264,7 +317,7 @@
   text-decoration: none !important;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   transition: all 0.15s ease;
   box-shadow: var(--shadow-base);
 }
@@ -276,7 +329,82 @@
 }
 
 .browser-icon {
-  color: #0A66C2;
+  color: currentColor;
+  stroke: currentColor;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  opacity: 1;
+}
+
+.header-btn-light .browser-icon,
+.drawer-btn-light .browser-icon,
+.header-btn-light svg,
+.drawer-btn-light svg {
+  color: currentColor;
+  stroke: currentColor;
+  opacity: 1;
+}
+
+/* Light mode button & icon: white on blue (#0B63CE) */
+:root[data-theme="light"] .header-btn-light,
+:root[data-theme="light"] .drawer-btn-light,
+[data-theme="light"] .header-btn-light,
+[data-theme="light"] .drawer-btn-light {
+  background: #0B63CE !important;
+  color: #FFFFFF !important;
+}
+
+:root[data-theme="light"] .header-btn-light .browser-icon,
+:root[data-theme="light"] .drawer-btn-light .browser-icon,
+:root[data-theme="light"] .header-btn-light svg,
+:root[data-theme="light"] .drawer-btn-light svg,
+[data-theme="light"] .header-btn-light .browser-icon,
+[data-theme="light"] .drawer-btn-light .browser-icon,
+[data-theme="light"] .header-btn-light svg,
+[data-theme="light"] .drawer-btn-light svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode button & icon: navy (#0B2545) on light blue (#4DA3FF) */
+:root .header-btn-light,
+:root .drawer-btn-light,
+[data-theme="dark"] .header-btn-light,
+[data-theme="dark"] .drawer-btn-light {
+  background: #4DA3FF !important;
+  color: #0B2545 !important;
+}
+
+:root .header-btn-light .browser-icon,
+:root .drawer-btn-light .browser-icon,
+:root .header-btn-light svg,
+:root .drawer-btn-light svg,
+[data-theme="dark"] .header-btn-light .browser-icon,
+[data-theme="dark"] .drawer-btn-light .browser-icon,
+[data-theme="dark"] .header-btn-light svg,
+[data-theme="dark"] .drawer-btn-light svg {
+  color: #0B2545 !important;
+  stroke: #0B2545 !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .header-btn-light,
+  :root:not([data-theme="dark"]) .drawer-btn-light {
+    background: #0B63CE !important;
+    color: #FFFFFF !important;
+  }
+
+  :root:not([data-theme="dark"]) .header-btn-light .browser-icon,
+  :root:not([data-theme="dark"]) .drawer-btn-light .browser-icon,
+  :root:not([data-theme="dark"]) .header-btn-light svg,
+  :root:not([data-theme="dark"]) .drawer-btn-light svg {
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+    opacity: 1 !important;
+  }
 }
 
 .soon-tag {
@@ -381,7 +509,9 @@
   gap: 8px;
 }
 
-.drawer-link-item {
+.drawer-link-item,
+button.drawer-link-item,
+button.mobile-resources-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -389,19 +519,63 @@
   border-radius: 8px;
   color: var(--text-dim) !important;
   text-decoration: none !important;
+  font-family: var(--font-sans);
   font-size: 15px;
   font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.4;
   transition: all 0.15s ease;
   background: transparent;
   border: none;
   cursor: pointer;
   width: 100%;
   text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+  transform: none !important;
+}
+
+button.drawer-link-item span,
+button.mobile-resources-toggle span {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  color: inherit;
 }
 
 .drawer-link-item:hover,
-.drawer-link-item.active {
+.drawer-link-item.active,
+button.drawer-link-item:hover,
+button.drawer-link-item.active,
+button.mobile-resources-toggle:hover,
+button.mobile-resources-toggle.active {
   background: rgba(255, 255, 255, 0.08);
+  color: var(--text) !important;
+  transform: none !important;
+}
+
+.drawer-link-item:active,
+button.drawer-link-item:active,
+button.mobile-resources-toggle:active {
+  transform: none !important;
+}
+
+.drawer-link-item:focus-visible,
+button.drawer-link-item:focus-visible,
+button.mobile-resources-toggle:focus-visible {
+  outline: 2px solid var(--accent-cyan, #22D3EE);
+  outline-offset: 2px;
+}
+
+[data-theme="light"] .drawer-link-item:hover,
+[data-theme="light"] .drawer-link-item.active,
+[data-theme="light"] button.drawer-link-item:hover,
+[data-theme="light"] button.drawer-link-item.active,
+[data-theme="light"] button.mobile-resources-toggle:hover,
+[data-theme="light"] button.mobile-resources-toggle.active {
+  background: rgba(11, 99, 206, 0.08);
   color: var(--text) !important;
 }
 
@@ -1366,14 +1540,6 @@
   padding: 10px;
 }
 
-.demo-disclaimer {
-  font-size: 12px;
-  color: var(--text-dim);
-  text-align: center;
-  margin-top: 14px;
-  margin-bottom: 0;
-}
-
 /* ==========================================================================
    PRICING CARDS (FREE, PRO)
    ========================================================================== */
@@ -2322,9 +2488,9 @@
 .account-plan-chip {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 1px 7px;
+  padding: 3px 9px;
   border-radius: 9999px;
   line-height: 1.3;
   letter-spacing: 0.02em;
@@ -4129,25 +4295,39 @@
 .dash-company-link {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 3px;
   text-decoration: none;
   color: var(--text);
+  min-height: 40px;
 }
 
+.dash-row-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dash-row-company,
 .dash-company-link strong {
   font-weight: 600;
   color: var(--text);
+  font-size: 14px;
 }
 
+.dash-company-link:hover .dash-row-company,
 .dash-company-link:hover strong {
   color: var(--accent-cyan);
   text-decoration: underline;
 }
 
+.dash-row-risk-label,
 .dash-company-link span {
   font-size: 13px;
   color: var(--text-dim);
   word-break: break-word;
+  line-height: 1.2;
 }
 
 /* Level Badges: Low #12805C, Medium #B7791F, High #C62828 (AA Contrast Verified) */
@@ -4295,6 +4475,11 @@
   .dash-company-link {
     align-items: flex-end;
     text-align: right;
+    min-height: auto;
+  }
+
+  .dash-row-head {
+    justify-content: flex-end;
   }
 }
 
@@ -5205,20 +5390,195 @@
    QUOTA & USAGE SYSTEM (Pill & 429 Modal)
    ========================================================================== */
 
-.account-usage-pill {
+.account-usage-pill,
+.tool-quota-badge,
+.quota-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  margin-top: 6px;
+  padding: 4px 12px;
   border-radius: 9999px;
-  background: #0B63CE;
-  border: 1px solid rgba(77, 163, 255, 0.4);
-  color: #FFFFFF !important;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
   width: fit-content;
+  background: #4DA3FF !important;
+  color: #0B2545 !important;
+  border: 1px solid #4DA3FF !important;
+}
+
+.account-usage-pill {
+  margin-top: 6px;
+}
+
+/* Default / Dark Mode Pill (Blue fill #4DA3FF, navy text & icon #0B2545) */
+:root .account-usage-pill,
+:root .tool-quota-badge,
+:root .quota-chip,
+:root .account-plan-chip.chip-pro,
+:root .account-plan-chip.chip-free,
+:root .feature-pill-badge.pill-pro,
+:root .feature-pill-badge.pill-active,
+:root .dash-current-pill,
+[data-theme="dark"] .account-usage-pill,
+[data-theme="dark"] .tool-quota-badge,
+[data-theme="dark"] .quota-chip,
+[data-theme="dark"] .account-plan-chip.chip-pro,
+[data-theme="dark"] .account-plan-chip.chip-free,
+[data-theme="dark"] .feature-pill-badge.pill-pro,
+[data-theme="dark"] .feature-pill-badge.pill-active,
+[data-theme="dark"] .dash-current-pill {
+  background: #4DA3FF !important;
+  color: #0B2545 !important;
+  border: 1px solid #4DA3FF !important;
+}
+
+:root .account-usage-pill svg,
+:root .tool-quota-badge svg,
+:root .quota-chip svg,
+:root .account-plan-chip.chip-pro svg,
+:root .account-plan-chip.chip-free svg,
+:root .feature-pill-badge.pill-pro svg,
+:root .feature-pill-badge.pill-active svg,
+:root .dash-current-pill svg,
+:root .usage-pill-icon,
+[data-theme="dark"] .account-usage-pill svg,
+[data-theme="dark"] .tool-quota-badge svg,
+[data-theme="dark"] .quota-chip svg,
+[data-theme="dark"] .account-plan-chip.chip-pro svg,
+[data-theme="dark"] .account-plan-chip.chip-free svg,
+[data-theme="dark"] .feature-pill-badge.pill-pro svg,
+[data-theme="dark"] .feature-pill-badge.pill-active svg,
+[data-theme="dark"] .dash-current-pill svg,
+[data-theme="dark"] .usage-pill-icon {
+  color: #0B2545 !important;
+  stroke: #0B2545 !important;
+}
+
+:root .account-usage-pill span,
+:root .tool-quota-badge span,
+:root .quota-chip span,
+:root .account-plan-chip.chip-pro span,
+:root .account-plan-chip.chip-free span,
+:root .feature-pill-badge.pill-pro span,
+:root .feature-pill-badge.pill-active span,
+:root .dash-current-pill span,
+:root .usage-pill-text,
+[data-theme="dark"] .account-usage-pill span,
+[data-theme="dark"] .tool-quota-badge span,
+[data-theme="dark"] .quota-chip span,
+[data-theme="dark"] .account-plan-chip.chip-pro span,
+[data-theme="dark"] .account-plan-chip.chip-free span,
+[data-theme="dark"] .feature-pill-badge.pill-pro span,
+[data-theme="dark"] .feature-pill-badge.pill-active span,
+[data-theme="dark"] .dash-current-pill span,
+[data-theme="dark"] .usage-pill-text {
+  color: #0B2545 !important;
+}
+
+/* Light Mode Pill (Blue fill #0B63CE, white text & icon #FFFFFF) */
+:root[data-theme="light"] .account-usage-pill,
+:root[data-theme="light"] .tool-quota-badge,
+:root[data-theme="light"] .quota-chip,
+:root[data-theme="light"] .account-plan-chip.chip-pro,
+:root[data-theme="light"] .account-plan-chip.chip-free,
+:root[data-theme="light"] .feature-pill-badge.pill-pro,
+:root[data-theme="light"] .feature-pill-badge.pill-active,
+:root[data-theme="light"] .dash-current-pill,
+[data-theme="light"] .account-usage-pill,
+[data-theme="light"] .tool-quota-badge,
+[data-theme="light"] .quota-chip,
+[data-theme="light"] .account-plan-chip.chip-pro,
+[data-theme="light"] .account-plan-chip.chip-free,
+[data-theme="light"] .feature-pill-badge.pill-pro,
+[data-theme="light"] .feature-pill-badge.pill-active,
+[data-theme="light"] .dash-current-pill {
+  background: #0B63CE !important;
+  color: #FFFFFF !important;
+  border: 1px solid #0B63CE !important;
+}
+
+:root[data-theme="light"] .account-usage-pill svg,
+:root[data-theme="light"] .tool-quota-badge svg,
+:root[data-theme="light"] .quota-chip svg,
+:root[data-theme="light"] .account-plan-chip.chip-pro svg,
+:root[data-theme="light"] .account-plan-chip.chip-free svg,
+:root[data-theme="light"] .feature-pill-badge.pill-pro svg,
+:root[data-theme="light"] .feature-pill-badge.pill-active svg,
+:root[data-theme="light"] .dash-current-pill svg,
+:root[data-theme="light"] .usage-pill-icon,
+[data-theme="light"] .account-usage-pill svg,
+[data-theme="light"] .tool-quota-badge svg,
+[data-theme="light"] .quota-chip svg,
+[data-theme="light"] .account-plan-chip.chip-pro svg,
+[data-theme="light"] .account-plan-chip.chip-free svg,
+[data-theme="light"] .feature-pill-badge.pill-pro svg,
+[data-theme="light"] .feature-pill-badge.pill-active svg,
+[data-theme="light"] .dash-current-pill svg,
+[data-theme="light"] .usage-pill-icon {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+:root[data-theme="light"] .account-usage-pill span,
+:root[data-theme="light"] .tool-quota-badge span,
+:root[data-theme="light"] .quota-chip span,
+:root[data-theme="light"] .account-plan-chip.chip-pro span,
+:root[data-theme="light"] .account-plan-chip.chip-free span,
+:root[data-theme="light"] .feature-pill-badge.pill-pro span,
+:root[data-theme="light"] .feature-pill-badge.pill-active span,
+:root[data-theme="light"] .dash-current-pill span,
+:root[data-theme="light"] .usage-pill-text,
+[data-theme="light"] .account-usage-pill span,
+[data-theme="light"] .tool-quota-badge span,
+[data-theme="light"] .quota-chip span,
+[data-theme="light"] .account-plan-chip.chip-pro span,
+[data-theme="light"] .account-plan-chip.chip-free span,
+[data-theme="light"] .feature-pill-badge.pill-pro span,
+[data-theme="light"] .feature-pill-badge.pill-active span,
+[data-theme="light"] .dash-current-pill span,
+[data-theme="light"] .usage-pill-text {
+  color: #FFFFFF !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .account-usage-pill,
+  :root:not([data-theme="dark"]) .tool-quota-badge,
+  :root:not([data-theme="dark"]) .quota-chip,
+  :root:not([data-theme="dark"]) .account-plan-chip.chip-pro,
+  :root:not([data-theme="dark"]) .account-plan-chip.chip-free,
+  :root:not([data-theme="dark"]) .feature-pill-badge.pill-pro,
+  :root:not([data-theme="dark"]) .feature-pill-badge.pill-active,
+  :root:not([data-theme="dark"]) .dash-current-pill {
+    background: #0B63CE !important;
+    color: #FFFFFF !important;
+    border: 1px solid #0B63CE !important;
+  }
+
+  :root:not([data-theme="dark"]) .account-usage-pill svg,
+  :root:not([data-theme="dark"]) .tool-quota-badge svg,
+  :root:not([data-theme="dark"]) .quota-chip svg,
+  :root:not([data-theme="dark"]) .account-plan-chip.chip-pro svg,
+  :root:not([data-theme="dark"]) .account-plan-chip.chip-free svg,
+  :root:not([data-theme="dark"]) .feature-pill-badge.pill-pro svg,
+  :root:not([data-theme="dark"]) .feature-pill-badge.pill-active svg,
+  :root:not([data-theme="dark"]) .dash-current-pill svg,
+  :root:not([data-theme="dark"]) .usage-pill-icon {
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+  }
+
+  :root:not([data-theme="dark"]) .account-usage-pill span,
+  :root:not([data-theme="dark"]) .tool-quota-badge span,
+  :root:not([data-theme="dark"]) .quota-chip span,
+  :root:not([data-theme="dark"]) .account-plan-chip.chip-pro span,
+  :root:not([data-theme="dark"]) .account-plan-chip.chip-free span,
+  :root:not([data-theme="dark"]) .feature-pill-badge.pill-pro span,
+  :root:not([data-theme="dark"]) .feature-pill-badge.pill-active span,
+  :root:not([data-theme="dark"]) .dash-current-pill span,
+  :root:not([data-theme="dark"]) .usage-pill-text {
+    color: #FFFFFF !important;
+  }
 }
 
 .account-usage-pill.is-warning,

@@ -768,6 +768,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     if (!name || typeof name !== 'string') return true;
     const clean = name.trim().toLowerCase();
     if (!clean) return true;
+    if (clean.includes('claude.ai') || clean.includes('chatgpt.com') || clean.includes('anthropic.com')) return true;
+    if (/^https?:\/\//i.test(clean) || /^www\./i.test(clean) || /^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/.*)?$/i.test(clean)) return true;
     const host = window.location.hostname.toLowerCase();
     if (clean === host || host.includes(clean) || clean.includes(host)) return true;
     const boards = Array.isArray(KNOWN_JOB_BOARDS) ? KNOWN_JOB_BOARDS : [
@@ -776,6 +778,18 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       'workindia', 'cutshort', 'hirist', 'unstop'
     ];
     return boards.some(b => clean === b || clean.includes(b) || clean === `${b}.com`);
+  }
+
+  function extractUrlFromText(text) {
+    if (!text || typeof text !== 'string') return '';
+    const match = text.match(/\bhttps?:\/\/[^\s<>"'{}|\\^`]+|\bwww\.[^\s<>"'{}|\\^`]+/i);
+    if (!match) return '';
+    let found = match[0].trim();
+    if (found.startsWith('www.')) {
+      found = 'https://' + found;
+    }
+    found = found.replace(/[.,;:!?)]+$/, '');
+    return found.slice(0, 2000);
   }
 
   function getCleanUrl() {
@@ -1236,7 +1250,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     const payload = {
       text,
       desc: text,
-      url: getCleanUrl(),
+      url: extractUrlFromText(text),
       company: checkType === 'job' ? getCompany(text) : '',
       email: checkType === 'job' ? getEmail(text) : ''
     };

@@ -36,28 +36,18 @@ export function formatResetDate(isoString) {
 export function formatUsageText(usage) {
   if (!usage || usage.unlimited) return null;
 
-  if (usage.kind === 'anonymous') {
-    const rem = typeof usage.remaining === 'number' ? usage.remaining : 3;
-    if (rem === 3) {
-      return '3 free checks, sign in for 2 more';
-    }
-    const unit = rem === 1 ? 'check' : 'checks';
-    return `${rem} free ${unit}, sign in for 2 more`;
-  }
-
-  if (usage.kind === 'free') {
-    const rem = typeof usage.remaining === 'number' ? usage.remaining : 5;
-    const limit = usage.limit || 5;
-    return `${rem} of ${limit} checks left this month`;
-  }
-
-  if (usage.kind === 'pro') {
+  const isPro = usage.kind === 'pro' || usage.plan === 'pro';
+  if (isPro) {
     const rem = typeof usage.remaining === 'number' ? usage.remaining : 100;
     const limit = usage.limit || 100;
     return `${rem} of ${limit} checks left`;
   }
 
-  return null;
+  // Free users and visitors: use "free"
+  const defaultLimit = usage.kind === 'anonymous' ? (usage.limit || 3) : (usage.limit || 5);
+  const rem = typeof usage.remaining === 'number' ? usage.remaining : defaultLimit;
+  const limit = usage.limit || defaultLimit;
+  return `${rem} of ${limit} free checks left`;
 }
 
 export function useUsage() {

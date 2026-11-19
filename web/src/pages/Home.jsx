@@ -13,7 +13,7 @@ import { Container } from '../components/ui';
 import { Reveal, PageTransition } from '../components/wow';
 import '../tools.css';
 
-function BrowserIcon({ size = 14, className = '' }) {
+function BrowserIcon({ size = 16, className = '' }) {
   return (
     <svg
       width={size}
@@ -354,7 +354,7 @@ export function Home() {
               {/* Left Column: Copy & Details */}
               <div className="extension-text-left">
                 <div className="extension-kicker">
-                  <BrowserIcon size={14} />
+                  <BrowserIcon size={16} />
                   <span>Browser Extension &bull; Developer preview</span>
                 </div>
 

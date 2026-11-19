@@ -31,6 +31,7 @@ import { addToast } from '../components/Toast';
 import { ThemeToggle } from '../lib/theme';
 import { useBillingStatus, startUpgrade, formatExpiryDate } from '../lib/billing';
 import { useUsage } from '../lib/useUsage';
+import { UsagePill } from '../components/UsagePill';
 import { Scan } from './Scan';
 import { UnifiedScanResult } from '../components/UnifiedScanResult';
 import '../tools.css';
@@ -141,6 +142,18 @@ function EmptyScansIllustration() {
   );
 }
 
+function getCleanCompanyName(company, host) {
+  if (!company || typeof company !== 'string') return null;
+  const c = company.trim();
+  if (!c) return null;
+  const lower = c.toLowerCase();
+  if (/^https?:\/\//i.test(lower) || /^www\./i.test(lower)) return null;
+  if (lower.includes('claude.ai') || lower.includes('chatgpt.com') || lower.includes('anthropic.com')) return null;
+  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/.*)?$/i.test(lower)) return null;
+  if (host && (lower === host.toLowerCase() || lower.includes(host.toLowerCase()) || host.toLowerCase().includes(lower))) return null;
+  return c;
+}
+
 function useScanToolKinds(items) {
   const [kinds, setKinds] = useState({});
 
@@ -153,15 +166,16 @@ function useScanToolKinds(items) {
 
     for (const item of items) {
       if (!item || !item.id) continue;
-      if (item.company || item.host) {
-        newKinds[item.id] = 'Job';
+      if (item.toolKind) {
+        newKinds[item.id] = String(item.toolKind).toUpperCase();
         continue;
       }
       const cached = item.proofId
         ? sessionStorage.getItem('cs_tool_kind_' + item.proofId)
         : null;
       if (cached) {
-        newKinds[item.id] = cached === 'upi' ? 'UPI' : 'Message';
+        const cUpper = cached.toUpperCase();
+        newKinds[item.id] = cUpper === 'UPI' ? 'UPI' : (cUpper === 'JOB' ? 'JOB' : 'MESSAGE');
       } else if (!newKinds[item.id]) {
         missing.push(item);
       }
@@ -176,14 +190,12 @@ function useScanToolKinds(items) {
         missing.map(async (m) => {
           try {
             const detail = await apiFetch(`/api/scans/${m.id}`);
-            const k = detail?.report?.input?.kind;
-            if (k) {
-              const label = k === 'upi' ? 'UPI' : 'Message';
-              if (m.proofId) sessionStorage.setItem('cs_tool_kind_' + m.proofId, k);
-              return { id: m.id, kind: label };
-            }
+            const k = String(detail?.tool || detail?.report?.tool || detail?.report?.input?.kind || '').toLowerCase();
+            const label = k.includes('upi') ? 'UPI' : (k.includes('msg') || k.includes('message') ? 'MESSAGE' : 'JOB');
+            if (m.proofId) sessionStorage.setItem('cs_tool_kind_' + m.proofId, label.toLowerCase());
+            return { id: m.id, kind: label };
           } catch {}
-          return { id: m.id, kind: 'Message' };
+          return { id: m.id, kind: 'JOB' };
         })
       ).then((resolved) => {
         if (!active) return;
@@ -528,6 +540,7 @@ export function DashboardLayout() {
               {displayName}
             </strong>
             <span className="dash-sidebar-user-plan">{isPro ? 'Pro plan' : 'Free plan'}</span>
+            <UsagePill variant="header" />
           </div>
         </div>
         <ThemeToggle variant="sidebar" showLabel={true} />
@@ -743,6 +756,7 @@ export function DashboardOverview() {
               <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
                 {isPro ? 'Pro' : 'Free'}
               </span>
+              <UsagePill variant="tool" />
               <span className="dash-plan-expiry-text">
                 {isPro && expiresAt
                   ? `Active until ${formatExpiryDate(expiresAt)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`
@@ -862,7 +876,7 @@ export function DashboardOverview() {
               <thead>
                 <tr>
                   <th scope="col">Date</th>
-                  <th scope="col">Company / Host</th>
+                  <th scope="col">Check</th>
                   <th scope="col">Level</th>
                   <th scope="col">Score</th>
                   <th scope="col">Proof ID</th>
@@ -871,19 +885,10 @@ export function DashboardOverview() {
               </thead>
               <tbody>
                 {recentScans.map((item) => {
-                  const toolTag = recentScansToolKinds[item.id];
-                  const primaryLabel =
-                    item.company ||
-                    item.host ||
-                    (toolTag === 'UPI'
-                      ? 'UPI Payment Check'
-                      : toolTag === 'Message'
-                      ? 'Message Scan'
-                      : 'Screening result');
-                  const secondaryLabel =
-                    item.company && item.host
-                      ? item.host
-                      : item.headline || 'Saved screening report';
+                  const rawTool = recentScansToolKinds[item.id] || item.toolKind || 'JOB';
+                  const toolTag = String(rawTool).toUpperCase();
+                  const cleanCompany = toolTag === 'JOB' ? getCleanCompanyName(item.company, item.host) : null;
+                  const riskLabel = item.headline || (item.level ? `${formatLevelLabel(item.level)} risk` : 'Screening report');
                   const isCopied = copiedId === item.proofId;
 
                   return (
@@ -891,17 +896,17 @@ export function DashboardOverview() {
                       <td data-label="Date" className="dash-cell-date">
                         {formatScanDate(item.createdAt)}
                       </td>
-                      <td data-label="Company / Host" className="dash-cell-company">
+                      <td data-label="Check" className="dash-cell-company">
                         <Link to={`/dashboard/history/${item.id}`} className="dash-company-link">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                            {toolTag && toolTag !== 'Job' && (
-                              <span className={`dash-tool-tag dash-tool-${toolTag.toLowerCase()}`}>
-                                {toolTag}
-                              </span>
+                          <div className="dash-row-head">
+                            <span className={`dash-tool-tag dash-tool-${toolTag.toLowerCase()}`}>
+                              {toolTag}
+                            </span>
+                            {cleanCompany && (
+                              <strong className="dash-row-company">{cleanCompany}</strong>
                             )}
-                            <strong>{primaryLabel}</strong>
                           </div>
-                          <span>{secondaryLabel}</span>
+                          <span className="dash-row-risk-label">{riskLabel}</span>
                         </Link>
                       </td>
                       <td data-label="Level">
@@ -1075,15 +1080,15 @@ export function DashboardHistory() {
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const visibleItems = normalizedSearch
     ? items.filter((item) => {
-        const comp = String(item.company || '').toLowerCase();
-        const host = String(item.host || '').toLowerCase();
+        const cleanComp = (getCleanCompanyName(item.company, item.host) || '').toLowerCase();
         const proof = String(item.proofId || '').toLowerCase();
         const head = String(item.headline || '').toLowerCase();
+        const tool = String(item.toolKind || '').toLowerCase();
         return (
-          comp.includes(normalizedSearch) ||
-          host.includes(normalizedSearch) ||
+          cleanComp.includes(normalizedSearch) ||
           proof.includes(normalizedSearch) ||
-          head.includes(normalizedSearch)
+          head.includes(normalizedSearch) ||
+          tool.includes(normalizedSearch)
         );
       })
     : items;
@@ -1219,7 +1224,7 @@ export function DashboardHistory() {
                 <thead>
                   <tr>
                     <th scope="col">Date</th>
-                    <th scope="col">Company / Host</th>
+                    <th scope="col">Check</th>
                     <th scope="col">Level</th>
                     <th scope="col">Score</th>
                     <th scope="col">Proof ID</th>
@@ -1230,19 +1235,10 @@ export function DashboardHistory() {
                 </thead>
                 <tbody>
                   {visibleItems.map((item) => {
-                    const toolTag = historyToolKinds[item.id];
-                    const primaryLabel =
-                      item.company ||
-                      item.host ||
-                      (toolTag === 'UPI'
-                        ? 'UPI Payment Check'
-                        : toolTag === 'Message'
-                        ? 'Message Scan'
-                        : 'Screening result');
-                    const secondaryLabel =
-                      item.company && item.host
-                        ? item.host
-                        : item.headline || 'View full screening report';
+                    const rawTool = historyToolKinds[item.id] || item.toolKind || 'JOB';
+                    const toolTag = String(rawTool).toUpperCase();
+                    const cleanCompany = toolTag === 'JOB' ? getCleanCompanyName(item.company, item.host) : null;
+                    const riskLabel = item.headline || (item.level ? `${formatLevelLabel(item.level)} risk` : 'Screening report');
                     const isCopied = copiedId === item.proofId;
 
                     return (
@@ -1250,17 +1246,17 @@ export function DashboardHistory() {
                         <td data-label="Date" className="dash-cell-date">
                           {formatScanDate(item.createdAt)}
                         </td>
-                        <td data-label="Company / Host" className="dash-cell-company">
+                        <td data-label="Check" className="dash-cell-company">
                           <Link to={`/dashboard/history/${item.id}`} className="dash-company-link">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              {toolTag && toolTag !== 'Job' && (
-                                <span className={`dash-tool-tag dash-tool-${toolTag.toLowerCase()}`}>
-                                  {toolTag}
-                                </span>
+                            <div className="dash-row-head">
+                              <span className={`dash-tool-tag dash-tool-${toolTag.toLowerCase()}`}>
+                                {toolTag}
+                              </span>
+                              {cleanCompany && (
+                                <strong className="dash-row-company">{cleanCompany}</strong>
                               )}
-                              <strong>{primaryLabel}</strong>
                             </div>
-                            <span>{secondaryLabel}</span>
+                            <span className="dash-row-risk-label">{riskLabel}</span>
                           </Link>
                         </td>
                         <td data-label="Level">
@@ -1307,7 +1303,7 @@ export function DashboardHistory() {
                               type="button"
                               className="dash-btn-danger-outline dash-btn-sm"
                               onClick={() => setDeleteTargetId(item.id)}
-                              aria-label={`Delete scan for ${primaryLabel}`}
+                              aria-label={cleanCompany ? `Delete scan for ${cleanCompany}` : `Delete ${toolTag} scan`}
                             >
                               <Trash2 size={14} aria-hidden="true" />
                               <span>Delete</span>

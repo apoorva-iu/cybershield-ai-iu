@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch, setAuthToken, setOnUnauthorized } from './api';
+import { apiFetch, setAuthToken, getAuthToken, setOnUnauthorized } from './api';
 import { addToast } from './components/Toast';
 
 export function getDisplayName(profile, session) {
@@ -177,10 +177,64 @@ function maybeWelcomeBrandNewUser(user, profile) {
   }
 }
 
+export function markHadStoredSession() {
+  try {
+    localStorage.setItem('cs_had_stored_session', '1');
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function clearHadStoredSession() {
+  try {
+    localStorage.removeItem('cs_had_stored_session');
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function checkHadStoredSession() {
+  try {
+    return localStorage.getItem('cs_had_stored_session') === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setSessionExpiredNotice(msg = 'Your session expired. Please sign in again.') {
+  try {
+    sessionStorage.setItem('cs_session_expired_notice', msg);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function consumeSessionExpiredNotice() {
+  try {
+    const val = sessionStorage.getItem('cs_session_expired_notice');
+    if (val) {
+      sessionStorage.removeItem('cs_session_expired_notice');
+      return val;
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return null;
+}
+
+export function clearSessionExpiredNotice() {
+  try {
+    sessionStorage.removeItem('cs_session_expired_notice');
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 const AuthContext = createContext({
   configLoaded: false,
   authReady: false,
   authAvailable: false,
+  serverUnreachable: false,
   supabase: null,
   session: null,
   profile: null,
@@ -213,27 +267,27 @@ async function initAuthConfigOnce() {
       cfg = await apiFetch('/api/config-public');
     } catch (err) {
       console.error('Auth setup failed: could not fetch /api/config-public.', err?.message || '');
-      return { authAvailable: false, supabase: null, config: null };
+      return { authAvailable: false, supabase: null, config: null, serverUnreachable: true };
     }
 
     if (!cfg || typeof cfg !== 'object') {
       console.error('Auth setup failed: /api/config-public returned an empty or non-object response.');
-      return { authAvailable: false, supabase: null, config: null };
+      return { authAvailable: false, supabase: null, config: null, serverUnreachable: false };
     }
 
     if (cfg.authEnabled === false) {
       console.error('Auth setup failed: authEnabled is false.');
-      return { authAvailable: false, supabase: null, config: cfg };
+      return { authAvailable: false, supabase: null, config: cfg, serverUnreachable: false };
     }
 
     if (typeof cfg.supabaseUrl !== 'string' || cfg.supabaseUrl.trim() === '') {
       console.error('Auth setup failed: supabaseUrl is missing or empty.');
-      return { authAvailable: false, supabase: null, config: cfg };
+      return { authAvailable: false, supabase: null, config: cfg, serverUnreachable: false };
     }
 
     if (typeof cfg.supabasePublishableKey !== 'string' || cfg.supabasePublishableKey.trim() === '') {
       console.error('Auth setup failed: supabasePublishableKey is missing or empty.');
-      return { authAvailable: false, supabase: null, config: cfg };
+      return { authAvailable: false, supabase: null, config: cfg, serverUnreachable: false };
     }
 
     if (!supabaseInstance) {
@@ -250,7 +304,8 @@ async function initAuthConfigOnce() {
     return {
       authAvailable: true,
       supabase: supabaseInstance,
-      config: cfg
+      config: cfg,
+      serverUnreachable: false
     };
   })();
 
@@ -424,6 +479,7 @@ export function AuthProvider({ children }) {
   const [configLoaded, setConfigLoaded] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [authAvailable, setAuthAvailable] = useState(false);
+  const [serverUnreachable, setServerUnreachable] = useState(false);
   const [supabase, setSupabase] = useState(null);
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -507,11 +563,12 @@ export function AuthProvider({ children }) {
       initialCode = null;
       initialAuthError = null;
 
-      const { authAvailable: available, supabase: client } = await initAuthConfigOnce();
+      const { authAvailable: available, supabase: client, serverUnreachable: unreachable } = await initAuthConfigOnce();
       if (!mounted) return;
 
       setAuthAvailable(available);
       setSupabase(client);
+      setServerUnreachable(Boolean(unreachable));
       setConfigLoaded(true);
 
       if (authErrOnBoot) {
@@ -550,6 +607,8 @@ export function AuthProvider({ children }) {
         }
 
         if (token) {
+          markHadStoredSession();
+          clearSessionExpiredNotice();
           fetchMe(token, nextSession?.user);
         } else {
           setProfile(null);
@@ -586,6 +645,8 @@ export function AuthProvider({ children }) {
           }
 
           const activeSession = data.session;
+          markHadStoredSession();
+          clearSessionExpiredNotice();
           setAuthToken(activeSession.access_token);
           setSession(activeSession);
 
@@ -611,6 +672,8 @@ export function AuthProvider({ children }) {
         }
 
         if (data?.session) {
+          markHadStoredSession();
+          clearSessionExpiredNotice();
           setAuthToken(data.session.access_token);
           setSession(data.session);
           await fetchMe(data.session.access_token, data.session?.user);
@@ -619,6 +682,8 @@ export function AuthProvider({ children }) {
           setSession(null);
           setProfile(null);
           setShowNamePrompt(false);
+          clearHadStoredSession();
+          clearSessionExpiredNotice();
         }
         if (mounted) {
           setAuthReady(true);
@@ -671,6 +736,9 @@ export function AuthProvider({ children }) {
   const signOut = useCallback(async () => {
     const userId = profile?.id || session?.user?.id;
     clearPromptSkippedInSession(userId);
+    clearHadStoredSession();
+    clearSessionExpiredNotice();
+    setCallbackError(null);
     setAuthToken(null);
     setSession(null);
     setProfile(null);
@@ -684,17 +752,38 @@ export function AuthProvider({ children }) {
     }
   }, [supabase, profile, session]);
 
-  // On a 401 response from any user API route, sign out with a message
+  // On a 401 response from any user API route, sign out with a message only if signed in
   useEffect(() => {
     setOnUnauthorized((msg) => {
-      const notice = msg || 'Your session expired. Please sign in again.';
-      signOut();
-      setCallbackError(notice);
-      addToast(notice);
-      navigateRef.current('/login', { replace: true });
+      const hadSession = checkHadStoredSession() || Boolean(getAuthToken());
+
+      const userId = profile?.id || session?.user?.id;
+      clearPromptSkippedInSession(userId);
+      clearHadStoredSession();
+      setAuthToken(null);
+      setSession(null);
+      setProfile(null);
+      setShowNamePrompt(false);
+      if (supabase) {
+        try {
+          supabase.auth.signOut().catch(() => {});
+        } catch {
+          // Ignore signout errors on unauthorized
+        }
+      }
+
+      if (hadSession) {
+        const notice = msg || 'Your session expired. Please sign in again.';
+        setSessionExpiredNotice(notice);
+        addToast(notice);
+        navigateRef.current('/login', { replace: true, state: { sessionExpired: true } });
+      } else {
+        clearSessionExpiredNotice();
+        setCallbackError(null);
+      }
     });
     return () => setOnUnauthorized(null);
-  }, [signOut]);
+  }, [supabase, profile, session]);
 
   const clearCallbackError = useCallback(() => {
     setCallbackError(null);
@@ -734,6 +823,7 @@ export function AuthProvider({ children }) {
         configLoaded,
         authReady,
         authAvailable,
+        serverUnreachable,
         supabase,
         session,
         profile,

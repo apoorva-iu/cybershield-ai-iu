@@ -66,6 +66,8 @@ async function createProof(report, overallLevel, hostname) {
     accessCode,
     block: blk.index,
     blockHash: blk.hash,
+    prevHash: blk.prevHash,
+    reportHash: blk.reportHash,
     report
   } : null;
 

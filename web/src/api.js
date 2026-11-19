@@ -5,6 +5,10 @@ export function setAuthToken(token) {
   authToken = token;
 }
 
+export function getAuthToken() {
+  return authToken;
+}
+
 export function setOnUnauthorized(cb) {
   onUnauthorizedCallback = typeof cb === 'function' ? cb : null;
 }
@@ -32,7 +36,9 @@ export async function apiFetch(endpoint, options = {}) {
     if (err?.name === 'AbortError') {
       throw err;
     }
-    throw new Error('Network error. Please check your connection.');
+    const netErr = new Error("Couldn't reach the server. Check your connection and try again");
+    netErr.isNetworkError = true;
+    throw netErr;
   }
   
   let data;
@@ -40,7 +46,7 @@ export async function apiFetch(endpoint, options = {}) {
     data = await res.json();
   } catch (err) {
     if (!res.ok) {
-      if (res.status === 401 && onUnauthorizedCallback) {
+      if (res.status === 401 && onUnauthorizedCallback && (authToken || headers['Authorization'])) {
         onUnauthorizedCallback();
       }
       const statusErr = new Error(`Server error: ${res.status}`);
@@ -53,9 +59,13 @@ export async function apiFetch(endpoint, options = {}) {
   if (!res.ok) {
     let msg = data?.error || data?.message || `Error ${res.status}`;
     if (res.status === 401) {
-      msg = 'Your session expired. Please sign in again.';
-      if (onUnauthorizedCallback) {
-        onUnauthorizedCallback(msg);
+      if (authToken || headers['Authorization']) {
+        msg = 'Your session expired. Please sign in again.';
+        if (onUnauthorizedCallback) {
+          onUnauthorizedCallback(msg);
+        }
+      } else {
+        msg = data?.error || data?.message || 'Authentication required';
       }
     } else if (res.status === 429) {
       msg = data?.error || 'Too many scans. Please wait a minute and try again.';
