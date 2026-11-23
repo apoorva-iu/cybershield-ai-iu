@@ -16,12 +16,18 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     return;
   }
 
-  // Create closed Shadow DOM host attached to documentElement
+  // Create open Shadow DOM host attached to documentElement
   const host = document.createElement('div');
   host.id = 'cybershield-extension-host';
-  host.style.all = 'initial';
-  const shadow = host.attachShadow({ mode: 'closed' });
-  document.documentElement.appendChild(host);
+  host.style.position = 'fixed';
+  host.style.top = '0';
+  host.style.left = '0';
+  host.style.width = '0';
+  host.style.height = '0';
+  host.style.zIndex = '2147483647';
+  host.style.pointerEvents = 'none';
+  const shadow = host.attachShadow({ mode: 'open' });
+  (document.body || document.documentElement).appendChild(host);
 
   // Inject Shadow DOM styles
   const styleEl = document.createElement('style');
@@ -64,6 +70,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       cursor: pointer;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
       pointer-events: auto;
+      z-index: 2147483647;
       transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
       user-select: none;
     }
@@ -967,7 +974,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     const text = sel.toString().trim();
-    if (text.length < 30) {
+    if (text.length < 10) {
       hideChip();
       return;
     }
@@ -980,16 +987,28 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       return;
     }
 
-    // Check enabled preference from chrome.storage.local
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['enabled'], (res) => {
-        if (res.enabled === false) {
-          hideChip();
-          return;
-        }
+    // Check enabled preference from chrome.storage.local (defaults to ON)
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['enabled'], (res) => {
+          try {
+            if (chrome.runtime?.lastError) {
+              showSelectionChip(sel, text);
+              return;
+            }
+            if (res && res.enabled === false) {
+              hideChip();
+              return;
+            }
+            showSelectionChip(sel, text);
+          } catch (err) {
+            showSelectionChip(sel, text);
+          }
+        });
+      } else {
         showSelectionChip(sel, text);
-      });
-    } else {
+      }
+    } catch (err) {
       showSelectionChip(sel, text);
     }
   }
@@ -1053,12 +1072,16 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     activeBubblePos = pos || { x: 40, y: 40 };
 
     // Get remembered last check type from storage (default: 'message')
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['lastCheckType'], (res) => {
-        const checkType = res.lastCheckType || 'message';
-        renderReadyBubble(initialText, activeBubblePos, checkType);
-      });
-    } else {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['lastCheckType'], (res) => {
+          const checkType = (res && res.lastCheckType) || 'message';
+          renderReadyBubble(initialText, activeBubblePos, checkType);
+        });
+      } else {
+        renderReadyBubble(initialText, activeBubblePos, 'message');
+      }
+    } catch (e) {
       renderReadyBubble(initialText, activeBubblePos, 'message');
     }
   }
@@ -1267,7 +1290,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
           } else if (res && res.code === 'pro_required') {
             showBubbleProRequired(res);
           } else if (res && (res.code === 'missing_key' || res.code === 'invalid_extension_key' || res.code === 'key_revoked')) {
-            showBubbleKeyError(res.error || 'Key was revoked. Add a new key');
+            showBubbleKeyError(res.code === 'missing_key' ? 'Add your key in the extension popup' : (res.error || 'Key was revoked. Add a new key'));
           } else {
             showBubbleError(res ? res.error : 'Could not reach Cyber Shield.');
           }
@@ -2073,13 +2096,15 @@ import { downloadReceipt } from '../shared/receipt-export.js';
   }
 
   // Global listeners
-  document.addEventListener('mouseup', handleSelectionCheck);
+  document.addEventListener('mouseup', () => {
+    setTimeout(handleSelectionCheck, 15);
+  });
   document.addEventListener('keyup', (e) => {
     if (e.key === 'Escape') {
       hideChip();
       hideBubble();
     } else {
-      handleSelectionCheck(e);
+      setTimeout(handleSelectionCheck, 15);
     }
   });
 

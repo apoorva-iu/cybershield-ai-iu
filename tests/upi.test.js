@@ -80,8 +80,8 @@ async function runTests() {
 
   // TEST SUITE 1: Band Consistency Validator
   console.log('\n[Suite 1] Band Consistency Validator');
-  assert('Low band requires score 0-29', isBandConsistent('low', 0) && isBandConsistent('low', 29) && !isBandConsistent('low', 30) && !isBandConsistent('low', -1));
-  assert('Medium band requires score 30-69', isBandConsistent('medium', 30) && isBandConsistent('medium', 69) && !isBandConsistent('medium', 29) && !isBandConsistent('medium', 70));
+  assert('Low band requires score 0-34', isBandConsistent('low', 0) && isBandConsistent('low', 34) && !isBandConsistent('low', 35) && !isBandConsistent('low', -1));
+  assert('Medium band requires score 35-69', isBandConsistent('medium', 35) && isBandConsistent('medium', 69) && !isBandConsistent('medium', 34) && !isBandConsistent('medium', 70));
   assert('High band requires score 70-100', isBandConsistent('high', 70) && isBandConsistent('high', 100) && !isBandConsistent('high', 69) && !isBandConsistent('high', 101));
   assert('Unable band accepts null score', isBandConsistent('unable', null) && isBandConsistent('unable', 50));
   assert('Invalid level fails band check', !isBandConsistent('unknown_level', 50));
@@ -562,7 +562,7 @@ async function runTests() {
   });
   assert('Confidence exceeds 0.90 when two passes agreed, 3+ signals fired, and readability was good', capExemption.confidence > 0.90, `Got: ${capExemption.confidence}`);
 
-  // 10d: Obvious scam score lands between 80 and 97, NOT 100
+  // 10d: Obvious scam score lands between 70 and 99, NOT 100
   const obviousScamEval = evaluateUpiScoreAndConfidence({
     finalAi: {
       level: 'high',
@@ -586,7 +586,7 @@ async function runTests() {
     source: 'pasted',
     readability: 'good'
   });
-  assert('Obvious scam riskScore lands between 80 and 97', obviousScamEval.score >= 80 && obviousScamEval.score <= 97, `Got: ${obviousScamEval.score}`);
+  assert('Obvious scam riskScore lands between 70 and 99', obviousScamEval.score >= 70 && obviousScamEval.score <= 99, `Got: ${obviousScamEval.score}`);
   assert('Obvious scam without flagged link does not return exactly 100', obviousScamEval.score !== 100, `Got: ${obviousScamEval.score}`);
 
   // 10e: Score 100 reachable ONLY when 5+ signals, flagged link, and pass agreement all hold

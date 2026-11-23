@@ -32,6 +32,8 @@ const SCAM_TYPES = [
   'Money request from a known contact',
   'Fake customer care',
   'Link or app install lure',
+  'Suspicious Off-Platform Redirect',
+  'Unverified Outreach Scam',
   'Other scam',
   'none',
   'unclear'

@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const cfg = require('../config');
 const { getAnalysisModel, env } = require('./config');
 const { SYSTEM_INSTRUCTION } = require('./prompts');
@@ -9,6 +10,8 @@ const LLM_CFG = cfg.runtime.llm || {};
 
 let customRunner = null;
 let liveCallCount = 0;
+const analysisCache = new Map();
+const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function setCustomRunner(fn) {
   customRunner = fn;
@@ -20,6 +23,33 @@ function getLiveCallCount() {
 
 function resetLiveCallCount() {
   liveCallCount = 0;
+}
+
+function clearAnalysisCache() {
+  analysisCache.clear();
+}
+
+function getCachedAnalysis(text) {
+  if (typeof text !== 'string') return null;
+  const normalized = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  const hashKey = crypto.createHash('sha256').update(normalized).digest('hex');
+  const entry = analysisCache.get(hashKey);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+    analysisCache.delete(hashKey);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedAnalysis(text, data) {
+  if (typeof text !== 'string' || !data) return;
+  const normalized = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  const hashKey = crypto.createHash('sha256').update(normalized).digest('hex');
+  analysisCache.set(hashKey, {
+    timestamp: Date.now(),
+    data
+  });
 }
 
 function extractGeminiText(data) {
@@ -72,29 +102,34 @@ async function callGeminiApi(promptText, modelName, apiKey, timeoutMs) {
     });
 
     if (!res.ok) {
-      // If 404 or 429 and not default fallback, try fallback
-      if ((res.status === 404 || res.status === 429) && modelName !== 'gemini-flash-lite-latest') {
-        const fallbackUrl = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}gemini-flash-lite-latest:generateContent`;
-        const fallbackRes = await fetch(fallbackUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
-          signal: c.signal,
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: 'application/json'
-            }
-          })
-        });
-        if (fallbackRes.ok) {
-          const data = await fallbackRes.json();
-          return { ok: true, text: extractGeminiText(data) };
-        }
+      if (res.status === 429 || res.status === 503) {
+        const jitter = Math.floor(Math.random() * 500) + 1000;
+        await new Promise(r => setTimeout(r, jitter));
+      }
+
+      // Try fallback model if configured and different
+      const fallbackModel = modelName === 'gemini-flash-lite-latest' ? 'gemini-2.5-flash-lite' : 'gemini-flash-lite-latest';
+      const fallbackUrl = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}${fallbackModel}:generateContent`;
+      const fallbackRes = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        signal: c.signal,
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (fallbackRes.ok) {
+        const data = await fallbackRes.json();
+        return { ok: true, text: extractGeminiText(data) };
       }
       return { ok: false, status: res.status, reason: `http_${res.status}` };
     }
@@ -221,5 +256,8 @@ module.exports = {
   runPassWithRetry,
   setCustomRunner,
   getLiveCallCount,
-  resetLiveCallCount
+  resetLiveCallCount,
+  getCachedAnalysis,
+  setCachedAnalysis,
+  clearAnalysisCache
 };

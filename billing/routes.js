@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const {
   createOrder,
   verifyOrderPayment,
+  checkPaymentOrderStatus,
   processWebhook,
   getBillingStatus,
   isPaymentsAvailable
@@ -19,9 +20,10 @@ const billingLimiter = rateLimit({
     res.status(429).json({ error: 'Too many requests. Please try again in a minute.' })
 });
 
-module.exports = function createBillingRouter(requireAuthMiddleware) {
+module.exports = function createBillingRouter(requireAuthMiddleware, optionalAuthMiddleware) {
   const router = express.Router();
   const requireAuth = requireAuthMiddleware || ((req, res, next) => next());
+  const optionalAuth = optionalAuthMiddleware || ((req, res, next) => next());
 
   // Webhook handler (mounted with raw body parser for this route only)
   router.post(
@@ -77,7 +79,7 @@ module.exports = function createBillingRouter(requireAuthMiddleware) {
   // POST /api/billing/verify
   router.post(
     '/api/billing/verify',
-    requireAuth,
+    optionalAuth,
     billingLimiter,
     async (req, res) => {
       if (!isPaymentsAvailable()) {
@@ -85,10 +87,11 @@ module.exports = function createBillingRouter(requireAuthMiddleware) {
       }
 
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+      const userId = req.user?.id || null;
 
       try {
         const result = await verifyOrderPayment({
-          userId: req.user.id,
+          userId,
           orderId: razorpay_order_id,
           paymentId: razorpay_payment_id,
           signature: razorpay_signature
@@ -112,6 +115,24 @@ module.exports = function createBillingRouter(requireAuthMiddleware) {
         }
         console.error('[billing] verify error:', err.message);
         return res.status(500).json({ error: 'Payment verification failed: ' + err.message });
+      }
+    }
+  );
+
+  // POST /api/billing/check-order
+  router.post(
+    '/api/billing/check-order',
+    optionalAuth,
+    billingLimiter,
+    async (req, res) => {
+      const { orderId } = req.body || {};
+      const userId = req.user?.id || null;
+      try {
+        const result = await checkPaymentOrderStatus(orderId, userId);
+        return res.json(result);
+      } catch (err) {
+        console.error('[billing] check-order error:', err.message);
+        return res.status(500).json({ error: 'Failed to check order status', orderId });
       }
     }
   );

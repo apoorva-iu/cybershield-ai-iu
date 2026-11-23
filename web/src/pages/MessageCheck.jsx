@@ -215,7 +215,12 @@ export function MessageCheck() {
       setSource('screenshot');
     } catch (err) {
       console.error('OCR processing error:', err);
-      setOcrError(err.message || 'Could not process screenshot.');
+      const rawMsg = String(err?.message || err?.data?.message || err?.data?.error || '');
+      const isAiUnavail = rawMsg.includes('AI_UNAVAILABLE') || err?.code === 'AI_UNAVAILABLE' || err?.status === 503;
+      const friendlyMsg = isAiUnavail
+        ? 'Could not read screenshot right now. Please try again or paste the text directly.'
+        : (err?.message || 'Could not process screenshot.');
+      setOcrError(friendlyMsg);
     } finally {
       setOcrLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -291,7 +296,12 @@ export function MessageCheck() {
       await handleProcessFiles([file]);
     } catch (err) {
       console.error('Failed to load example image:', err);
-      setOcrError(err.message || 'Failed to load example image.');
+      const rawMsg = String(err?.message || err?.data?.message || err?.data?.error || '');
+      const isAiUnavail = rawMsg.includes('AI_UNAVAILABLE') || err?.code === 'AI_UNAVAILABLE' || err?.status === 503;
+      const friendlyMsg = isAiUnavail
+        ? 'Could not read screenshot right now. Please try again or paste the text directly.'
+        : (err?.message || 'Failed to load example image.');
+      setOcrError(friendlyMsg);
       setOcrLoading(false);
     }
   };
@@ -352,6 +362,8 @@ export function MessageCheck() {
     } catch (err) {
       console.error('Message check error:', err);
       setCheckErrorCode(err.status || null);
+      const rawMsg = String(err?.message || err?.data?.message || err?.data?.error || '');
+      const isAiUnavail = rawMsg.includes('AI_UNAVAILABLE') || err?.code === 'AI_UNAVAILABLE' || err?.status === 503;
       if (err.status === 429 && (err.data?.error === 'quota_exceeded' || err.data?.code === 'QUOTA_EXCEEDED')) {
         setQuotaModalData(err.data);
         setIsQuotaModalOpen(true);
@@ -359,6 +371,8 @@ export function MessageCheck() {
         setCheckError('This tool is not available yet.');
       } else if (err.status === 429) {
         setCheckError('Too many checks right now. Please try again in a minute.');
+      } else if (isAiUnavail) {
+        setCheckError('AI screening service is temporarily unavailable. Please try again in a moment or edit the text.');
       } else {
         setCheckError(err.message || 'Message check failed. Please check your input and try again.');
       }
@@ -516,7 +530,7 @@ export function MessageCheck() {
               {ocrError && (
                 <div className="msg-ocr-error" role="alert">
                   <AlertTriangle size={15} strokeWidth={2} />
-                  <span>{ocrError}</span>
+                  <span>{String(ocrError).includes('AI_UNAVAILABLE') ? 'Could not read screenshot right now. Please try again or paste the text directly.' : ocrError}</span>
                 </div>
               )}
 
@@ -641,7 +655,11 @@ export function MessageCheck() {
             <div className="msg-error-card" role="alert">
               <AlertTriangle size={18} strokeWidth={2} />
               <div className="msg-error-content">
-                <div className="msg-error-text">{checkError}</div>
+                <div className="msg-error-text">
+                  {String(checkError).includes('AI_UNAVAILABLE')
+                    ? 'AI screening service is temporarily unavailable. Please try again in a moment or edit the text.'
+                    : checkError}
+                </div>
                 {checkErrorCode === 404 && (
                   <Link to="/tools" className="msg-error-link">
                     Return to Tools

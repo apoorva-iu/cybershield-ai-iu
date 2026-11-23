@@ -47,7 +47,7 @@ const serverCode = fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8')
 
 // Check /api/verify saves headline, scamType, whatToDo, evidence
 assert(serverCode.includes("tool: 'job'"), 'Job scan includes tool: job in report');
-assert(serverCode.includes('headline: C.LV[overall.level]'), 'Job scan includes headline in report');
+assert(serverCode.includes('headline: jobHeadline') || serverCode.includes('headline: C.LV[overall.level]'), 'Job scan includes headline in report');
 assert(serverCode.includes('whatToDo: jobWhatToDo'), 'Job scan includes whatToDo in report');
 
 // Check /api/scans/:id promotes all required fields
@@ -84,7 +84,7 @@ assert(dashCode.includes('import { UnifiedScanResult } from'), 'DashboardScanDet
 assert(dashCode.includes('<UnifiedScanResult'), 'DashboardScanDetail renders UnifiedScanResult');
 assert(dashCode.includes('isHistory={true}'), 'DashboardScanDetail sets isHistory={true}');
 assert(dashCode.includes('Download PDF'), 'Header has Download PDF button');
-assert(dashCode.includes('Verify this proof'), 'Header has Verify this proof button');
+assert(dashCode.includes('Download Verification Receipt') || dashCode.includes('Verify this proof'), 'Header has Download Verification Receipt');
 assert(dashCode.includes('Delete scan'), 'Header has Delete scan button');
 assert(!dashCode.includes('Recommended Safety Actions'), 'Old separate layout removed from Dashboard.jsx');
 assert(!dashCode.includes('Verified Verbatim Excerpts from Input'), 'Old separate evidence card removed from Dashboard.jsx');

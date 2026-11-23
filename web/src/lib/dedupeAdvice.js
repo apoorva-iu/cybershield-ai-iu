@@ -21,12 +21,8 @@ export function dedupeSafetyAdvice(list) {
         !/cybercrime/i.test(s)
     },
     {
-      id: 'helpline_1930',
-      test: (s) => /\b1930\b|national cyber crime helpline/i.test(s)
-    },
-    {
-      id: 'cybercrime_portal',
-      test: (s) => /cybercrime\.gov\.in/i.test(s)
+      id: 'cybercrime_reporting',
+      test: (s) => /\b1930\b|cybercrime\.gov\.in|national cyber crime helpline/i.test(s)
     },
     {
       id: 'remote_access_apk',
@@ -82,13 +78,19 @@ export function dedupeSafetyAdvice(list) {
       if (seenCategories.has(matchedCat)) {
         // If the new item is significantly more detailed (> 25 chars longer) than the previous,
         // replace the previous one with the richer description. Otherwise skip.
-        const prevIdx = seenCategories.get(matchedCat);
-        if (trimmed.length > cleaned[prevIdx].length + 25) {
-          cleaned[prevIdx] = trimmed;
+        if (matchedCat !== 'cybercrime_reporting') {
+          const prevIdx = seenCategories.get(matchedCat);
+          if (trimmed.length > cleaned[prevIdx].length + 25) {
+            cleaned[prevIdx] = trimmed;
+          }
         }
         continue;
       }
       seenCategories.set(matchedCat, cleaned.length);
+      if (matchedCat === 'cybercrime_reporting') {
+        cleaned.push('Report cyber fraud immediately at cybercrime.gov.in or call national helpline 1930.');
+        continue;
+      }
     }
 
     cleaned.push(trimmed);
@@ -115,7 +117,7 @@ export function getDefaultWhatToDo(toolKind = 'job', level = 'high') {
       'Do not accept the collect request or enter your UPI PIN. A UPI PIN is only required to send money, never to receive funds.',
       'Check your official banking app directly to verify credits. Screenshots and UTR numbers alone cannot prove payment.',
       'Decline unknown payment requests and block suspicious contact handles.',
-      'Report financial fraud immediately to the National Cyber Crime Helpline at 1930 or on cybercrime.gov.in.'
+      'Report cyber fraud immediately at cybercrime.gov.in or call national helpline 1930.'
     ];
   }
 
@@ -130,7 +132,7 @@ export function getDefaultWhatToDo(toolKind = 'job', level = 'high') {
       'Do not click unknown links, download attachments, or share OTPs, passwords, or personal details.',
       'Never install remote-access applications (.apk, AnyDesk, TeamViewer) from chat links.',
       'Verify claims directly with the organization via their official portal or public customer care.',
-      'Report suspicious scam messages on cybercrime.gov.in or dial 1930 if money was compromised.'
+      'Report cyber fraud immediately at cybercrime.gov.in or call national helpline 1930.'
     ];
   }
 
@@ -145,6 +147,6 @@ export function getDefaultWhatToDo(toolKind = 'job', level = 'high') {
     'Do not transfer money for equipment, registration, training, or background checks. Legitimate employers never charge candidates.',
     'Verify the opening directly on the organization\'s official careers portal, not through messaging apps.',
     'Never download unverified remote-access tools or executable task files from recruiters.',
-    'Report suspected fraudulent postings to cybercrime.gov.in.'
+    'Report cyber fraud immediately at cybercrime.gov.in or call national helpline 1930.'
   ];
 }

@@ -36,7 +36,7 @@ function copyDirRecursive(src, dest, ignoreList = []) {
 }
 
 async function zipExtension() {
-  const rawApiUrl = process.env.EXTENSION_API_URL || 'http://localhost:3000';
+  const rawApiUrl = process.env.EXTENSION_API_URL || process.env.PUBLIC_URL || 'http://localhost:3000';
   const apiUrl = validateApiUrl(rawApiUrl);
   console.log(`[extension:zip] Packaging extension with API_BASE="${apiUrl}"`);
 
@@ -67,7 +67,17 @@ async function zipExtension() {
   // Rewrite manifest.json in temp folder
   const tempManifestPath = path.join(tempExtDir, 'manifest.json');
   const manifest = JSON.parse(fs.readFileSync(tempManifestPath, 'utf8'));
-  manifest.host_permissions = [`${apiUrl}/*`];
+  const hosts = ['http://localhost:3000/*', 'https://cybershield-ai-iu.onrender.com/*'];
+  if (apiUrl) hosts.push(`${apiUrl}/*`);
+  manifest.host_permissions = Array.from(new Set(hosts));
+  manifest.content_scripts = [
+    {
+      matches: ['http://*/*', 'https://*/*'],
+      js: ['dist/content.js'],
+      run_at: 'document_idle',
+      all_frames: false
+    }
+  ];
   fs.writeFileSync(tempManifestPath, JSON.stringify(manifest, null, 2), 'utf8');
 
   // Destination directories

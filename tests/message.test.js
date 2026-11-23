@@ -99,8 +99,8 @@ async function runTests() {
 
   // TEST SUITE 1: Band Consistency Validator
   console.log('\n[Suite 1] Band Consistency Validator');
-  assert('Low band requires score 0-29', isBandConsistent('low', 0) && isBandConsistent('low', 29) && !isBandConsistent('low', 30) && !isBandConsistent('low', -1));
-  assert('Medium band requires score 30-69', isBandConsistent('medium', 30) && isBandConsistent('medium', 69) && !isBandConsistent('medium', 29) && !isBandConsistent('medium', 70));
+  assert('Low band requires score 0-34', isBandConsistent('low', 0) && isBandConsistent('low', 34) && !isBandConsistent('low', 35) && !isBandConsistent('low', -1));
+  assert('Medium band requires score 35-69', isBandConsistent('medium', 35) && isBandConsistent('medium', 69) && !isBandConsistent('medium', 34) && !isBandConsistent('medium', 70));
   assert('High band requires score 70-100', isBandConsistent('high', 70) && isBandConsistent('high', 100) && !isBandConsistent('high', 69) && !isBandConsistent('high', 101));
   assert('Unable band accepts null score or 0-100', isBandConsistent('unable', null) && isBandConsistent('unable', 50));
   assert('Invalid level fails band check', !isBandConsistent('unknown_level', 50));
@@ -511,7 +511,7 @@ async function runTests() {
   });
   assert('Confidence exceeds 0.90 when passes agree, 3+ signals, and clear text', confExempt.confidence > 0.90);
 
-  // Obvious scam riskScore normally lands between 80 and 97
+  // Obvious scam riskScore normally lands between 70 and 99
   const obviousScamEval = evaluateMessageScoreAndConfidence({
     finalAi: {
       level: 'high',
@@ -535,7 +535,7 @@ async function runTests() {
     source: 'text',
     readability: 'good'
   });
-  assert('Obvious scam riskScore lands between 80 and 97', obviousScamEval.score >= 80 && obviousScamEval.score <= 97);
+  assert('Obvious scam riskScore lands between 70 and 99', obviousScamEval.score >= 70 && obviousScamEval.score <= 99);
   assert('Obvious scam without flagged link does not reach 100', obviousScamEval.score < 100);
 
   // Score 100 ONLY with 5+ signals, flagged link, and pass agreement

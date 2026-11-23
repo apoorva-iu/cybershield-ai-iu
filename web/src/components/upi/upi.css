@@ -1473,11 +1473,12 @@
 
 .upi-found-chip {
   font-size: 12px;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
+  background: #E0F2FE;
+  border: 1px solid #7DD3FC;
+  color: #0B2545;
+  font-weight: 700;
 }
 
 /* Handle info */

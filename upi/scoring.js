@@ -214,15 +214,15 @@ function extractIndependentSignals({
  */
 function computeScoreBreakdown(signals, level, canReach100) {
   if (signals.length === 0) {
-    const defaultScore = level === 'low' ? 0 : (level === 'medium' ? 35 : 70);
+    const defaultScore = level === 'low' ? 5 : (level === 'medium' ? 45 : 72);
     return {
       finalScore: defaultScore,
-      scoreBreakdown: defaultScore > 0 ? [{
+      scoreBreakdown: [{
         signal: 'other_signals',
         family: 'contextual_risk',
         description: 'Other signals',
         points: defaultScore
-      }] : []
+      }]
     };
   }
 
@@ -259,13 +259,24 @@ function computeScoreBreakdown(signals, level, canReach100) {
   let targetScore = rawSum;
 
   if (level === 'high') {
-    // Obvious scams without all 3 criteria cap at 97 (typical obvious: 80 - 97)
-    const highCeiling = canReach100 ? 100 : 97;
-    targetScore = Math.max(70, Math.min(highCeiling, rawSum));
+    if (canReach100) {
+      targetScore = 100;
+    } else {
+      // Smooth deterministic curve across 70 to 97 based on evidence strength
+      const evidenceRatio = Math.min(1.0, Math.max(0, (rawSum - 25) / 100));
+      targetScore = Math.round(72 + evidenceRatio * 25);
+      targetScore = Math.max(70, Math.min(97, targetScore));
+    }
   } else if (level === 'medium') {
-    targetScore = Math.max(30, Math.min(69, rawSum));
+    // Smooth deterministic curve across 40 to 69
+    const medRatio = Math.min(1.0, Math.max(0, (rawSum - 15) / 60));
+    targetScore = Math.round(40 + medRatio * 29);
+    targetScore = Math.max(40, Math.min(69, targetScore));
   } else if (level === 'low') {
-    targetScore = Math.max(0, Math.min(29, rawSum));
+    // Smooth deterministic curve across 5 to 39
+    const lowRatio = Math.min(1.0, Math.max(0, rawSum / 35));
+    targetScore = Math.round(5 + lowRatio * 32);
+    targetScore = Math.max(5, Math.min(39, targetScore));
   }
 
   // Allocate points proportionally so that sum(items.points) === targetScore exactly
@@ -558,6 +569,8 @@ function evaluateUpiScoreAndConfidence({
     };
   }
 
+  const safeCleanText = String(cleanText || '').trim();
+
   const activeSignals = extractIndependentSignals({
     finalAi,
     deterministic,
@@ -567,16 +580,37 @@ function evaluateUpiScoreAndConfidence({
 
   const independentSignalsCount = activeSignals.length;
 
-  // 100 reachable ONLY when at least 5 independent signals, a flagged link lookup, and pass agreement all hold
-  const canReach100 = (independentSignalsCount >= 5 && maliciousLinkFound === true && passesAgreed === true);
+  // 100 reachable ONLY with confirmed malicious link, 5+ signals, and pass agreement
+  const canReach100 = (maliciousLinkFound === true && independentSignalsCount >= 5 && (passCount < 2 || passesAgreed === true));
 
-  const { finalScore, scoreBreakdown } = computeScoreBreakdown(activeSignals, finalAi.level, canReach100);
+  let { finalScore, scoreBreakdown } = computeScoreBreakdown(activeSignals, finalAi.level, canReach100);
+
+  // If passes disagreed or conflicting signals, pull score slightly towards Medium
+  if (finalScore >= 70 && !passesAgreed && !canReach100) {
+    const adjusted = Math.max(70, finalScore - 4);
+    if (adjusted !== finalScore) {
+      finalScore = adjusted;
+      // Re-scale breakdown to match adjusted score
+      const totalPts = scoreBreakdown.reduce((sum, item) => sum + item.points, 0);
+      if (totalPts > 0) {
+        let acc = 0;
+        scoreBreakdown = scoreBreakdown.map((item, idx) => {
+          if (idx === scoreBreakdown.length - 1) {
+            return { ...item, points: Math.max(1, finalScore - acc) };
+          }
+          const scaled = Math.max(1, Math.round((item.points / totalPts) * finalScore));
+          acc += scaled;
+          return { ...item, points: scaled };
+        });
+      }
+    }
+  }
 
   const signalPointsSum = scoreBreakdown.reduce((sum, item) => sum + item.points, 0);
 
   const { confidence, confidenceBand, confidenceFactors } = computeConfidence({
     finalAi,
-    textLength: cleanText.length,
+    textLength: safeCleanText.length,
     signalsCount: independentSignalsCount,
     signalPointsSum,
     passCount,

@@ -1243,12 +1243,13 @@
 
 .msg-found-chip {
   padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: #E0F2FE;
+  border: 1px solid #7DD3FC;
   border-radius: 4px;
   font-size: 12px;
   font-family: monospace;
-  color: var(--text, #E6EDF7);
+  color: #0B2545;
+  font-weight: 700;
 }
 
 /* Methodology */

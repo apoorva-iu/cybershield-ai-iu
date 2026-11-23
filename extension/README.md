@@ -1,6 +1,6 @@
-# Cyber Shield Browser Extension (v0.2.0)
+# Cyber Shield Browser Extension (v0.3.0)
 
-Developer preview browser extension for Google Chrome, Microsoft Edge, and Brave.
+Developer preview browser extension for Google Chrome and Microsoft Edge.
 
 Screen suspicious job postings, UPI payment requests, and unsolicited messages for scam indicators directly in your browser.
 
@@ -10,7 +10,7 @@ Screen suspicious job postings, UPI payment requests, and unsolicited messages f
 
 ## What It Does
 
-1. **Inline Selection Check**: Select 30+ characters of text on any web page (or 10+ characters via the right-click menu **"Check selection with Cyber Shield"**). A small **Check this** chip appears next to your selection.
+1. **Inline Selection Check**: Select 10+ characters of text on any web page (or via the right-click menu **"Check selection with Cyber Shield"**). A small **Check this** chip appears next to your selection.
 2. **Ready State Before Sending**: Clicking the chip or context menu item opens the verdict bubble in a **ready state**. Nothing is sent yet.
    - Choose how to check your text: **Job offer**, **UPI or payment**, or **Message**.
    - Review or edit the text in the preview box (up to 20,000 characters).
@@ -73,13 +73,13 @@ If a limit is exceeded, the bubble displays: *"Too many checks right now. Please
 ## Where It Cannot Run
 
 Browser security policies prevent content scripts from executing on:
-- Internal browser pages (`chrome://`, `edge://`, `brave://`)
+- Internal browser pages (`chrome://`, `edge://`)
 - Browser web extension stores (e.g. Chrome Web Store)
 - Built-in browser PDF viewers and local `file://` scheme pages without explicit user permission
 
 ---
 
-## Loading Unpacked (Chrome, Edge, Brave)
+## Loading Unpacked (Chrome, Edge)
 
 1. Build the extension package:
    ```bash
@@ -88,7 +88,6 @@ Browser security policies prevent content scripts from executing on:
 2. Open your browser's extension management page:
    - **Chrome**: `chrome://extensions`
    - **Edge**: `edge://extensions`
-   - **Brave**: `brave://extensions`
 3. Enable **Developer mode** (toggle in the top-right or sidebar).
 4. Click **Load unpacked**.
 5. Select the `extension/` directory (or unzipped `cyber-shield-extension` folder).

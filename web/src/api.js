@@ -30,6 +30,7 @@ export async function apiFetch(endpoint, options = {}) {
   };
   
   let res;
+  const isBillingRoute = typeof endpoint === 'string' && endpoint.includes('/api/billing/');
   try {
     res = await fetch(endpoint, config);
   } catch (err) {
@@ -46,7 +47,7 @@ export async function apiFetch(endpoint, options = {}) {
     data = await res.json();
   } catch (err) {
     if (!res.ok) {
-      if (res.status === 401 && onUnauthorizedCallback && (authToken || headers['Authorization'])) {
+      if (!isBillingRoute && res.status === 401 && onUnauthorizedCallback && (authToken || headers['Authorization'])) {
         onUnauthorizedCallback();
       }
       const statusErr = new Error(`Server error: ${res.status}`);
@@ -57,11 +58,15 @@ export async function apiFetch(endpoint, options = {}) {
   }
   
   if (!res.ok) {
-    let msg = data?.error || data?.message || `Error ${res.status}`;
-    if (res.status === 401) {
+    let msg = data?.message || data?.error || `Error ${res.status}`;
+    if (res.status === 503 || data?.error === 'AI_UNAVAILABLE' || data?.code === 'AI_UNAVAILABLE' || data?.message === 'AI_UNAVAILABLE' || msg === 'AI_UNAVAILABLE' || (typeof msg === 'string' && (msg.includes('AI_UNAVAILABLE') || msg.toLowerCase().includes('ai service unavailable')))) {
+      msg = (data?.message && data.message !== 'AI_UNAVAILABLE' && !data.message.includes('AI_UNAVAILABLE'))
+        ? data.message
+        : 'Could not read screenshot right now. Please try again or paste the text directly.';
+    } else if (res.status === 401) {
       if (authToken || headers['Authorization']) {
         msg = 'Your session expired. Please sign in again.';
-        if (onUnauthorizedCallback) {
+        if (!isBillingRoute && onUnauthorizedCallback) {
           onUnauthorizedCallback(msg);
         }
       } else {

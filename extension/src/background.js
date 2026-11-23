@@ -83,7 +83,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             ok: false,
             status: 401,
             code: 'missing_key',
-            error: 'Add your key in the Cyber Shield extension popup to run checks.'
+            error: 'Add your key in the extension popup'
           });
           return;
         }

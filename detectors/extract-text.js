@@ -143,7 +143,8 @@ async function handleExtractText(req, res) {
       return res.status(503).json({
         error: 'AI service unavailable: ' + result.reason,
         code: 'AI_UNAVAILABLE',
-        reason: result.reason
+        reason: result.reason,
+        message: 'Screenshot reading is temporarily unavailable. Please paste the text instead.'
       });
     }
 

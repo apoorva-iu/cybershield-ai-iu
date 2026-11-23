@@ -395,7 +395,7 @@ export function Home() {
                 <div className="extension-cta-wrap">
                   <div className="extension-badge-row">
                     <span className="notify-badge">Pro</span>
-                    <span className="notify-sub">Chrome, Edge &amp; Brave (Desktop)</span>
+                    <span className="notify-sub">Chrome &amp; Edge (Desktop)</span>
                   </div>
                   <Link
                     to="/extension"

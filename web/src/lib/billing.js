@@ -6,9 +6,12 @@
 import { apiFetch } from '../api';
 import { setReturnTo } from '../auth';
 import { triggerUsageRefresh } from './useUsage';
+import { usePlan } from './planContext';
 import { useState, useEffect, useCallback } from 'react';
 
 export const BILLING_EVENT = 'cs:billing-updated';
+export const PENDING_ORDER_KEY = 'cs_pending_payment_order_id';
+export const PENDING_VERIFY_KEY = 'cs_pending_payment_verify';
 
 let cachedSession = null;
 let isUpgradeInProgress = false;
@@ -266,6 +269,11 @@ export async function startUpgrade(options = {}) {
       throw new Error('Invalid order response from server');
     }
 
+    // Save pending order in sessionStorage before opening Razorpay
+    try {
+      sessionStorage.setItem(PENDING_ORDER_KEY, order.orderId);
+    } catch {}
+
     // 3. Lazy-load Razorpay checkout script ONLY at this moment
     const RazorpaySdk = await loadRazorpayScript();
 
@@ -284,7 +292,7 @@ export async function startUpgrade(options = {}) {
         color: '#0A66C2' // accent blue token
       },
       modal: {
-        ondismiss: function () {
+        ondismiss: async function () {
           isUpgradeInProgress = false;
           if (typeof options.onProgress === 'function') {
             options.onProgress(false);
@@ -292,6 +300,32 @@ export async function startUpgrade(options = {}) {
           if (typeof options.onDismiss === 'function') {
             options.onDismiss();
           }
+
+          // Do NOT sign user out. Check if payment was completed:
+          try {
+            const pendingId = sessionStorage.getItem(PENDING_ORDER_KEY);
+            if (pendingId) {
+              const check = await apiFetch('/api/billing/check-order', {
+                method: 'POST',
+                body: JSON.stringify({ orderId: pendingId })
+              });
+              if (check?.isPro || check?.status === 'paid') {
+                sessionStorage.removeItem(PENDING_ORDER_KEY);
+                sessionStorage.removeItem(PENDING_VERIFY_KEY);
+                triggerUsageRefresh();
+                triggerBillingRefresh();
+                const expDate = formatExpiryDate(check.expiresAt);
+                showNotificationModal({
+                  title: 'Pro Activated',
+                  message: `Pro active until ${expDate}. Up to 100 checks.`,
+                  type: 'success'
+                });
+                return;
+              }
+              sessionStorage.removeItem(PENDING_ORDER_KEY);
+            }
+          } catch {}
+
           showNotificationModal({
             title: 'Payment Incomplete',
             message: 'Checkout was cancelled. No charges were made.',
@@ -301,17 +335,43 @@ export async function startUpgrade(options = {}) {
       },
       handler: async function (paymentResp) {
         try {
-          // Send verification fields to server
-          const verifyResult = await apiFetch('/api/billing/verify', {
-            method: 'POST',
-            body: JSON.stringify({
-              razorpay_order_id: paymentResp.razorpay_order_id,
-              razorpay_payment_id: paymentResp.razorpay_payment_id,
-              razorpay_signature: paymentResp.razorpay_signature
-            })
-          });
+          // Save verification fields in sessionStorage so it survives reloads or lost sessions
+          try {
+            sessionStorage.setItem(PENDING_VERIFY_KEY, JSON.stringify(paymentResp));
+          } catch {}
 
-          // Refresh entitlements across UI
+          // Send verification fields to server
+          let verifyResult;
+          try {
+            verifyResult = await apiFetch('/api/billing/verify', {
+              method: 'POST',
+              body: JSON.stringify({
+                razorpay_order_id: paymentResp.razorpay_order_id,
+                razorpay_payment_id: paymentResp.razorpay_payment_id,
+                razorpay_signature: paymentResp.razorpay_signature
+              })
+            });
+          } catch (vErr) {
+            console.warn('[Billing] verify call error, checking order status:', vErr.message);
+            // Check payment status step on server
+            const check = await apiFetch('/api/billing/check-order', {
+              method: 'POST',
+              body: JSON.stringify({ orderId: paymentResp.razorpay_order_id || order.orderId })
+            });
+            if (check?.isPro || check?.status === 'paid') {
+              verifyResult = check;
+            } else {
+              throw vErr;
+            }
+          }
+
+          // Clear pending items from storage
+          try {
+            sessionStorage.removeItem(PENDING_ORDER_KEY);
+            sessionStorage.removeItem(PENDING_VERIFY_KEY);
+          } catch {}
+
+          // Refresh entitlements across UI (Plans, Dashboard, Extension)
           triggerUsageRefresh();
           triggerBillingRefresh();
 
@@ -320,7 +380,7 @@ export async function startUpgrade(options = {}) {
 
           showNotificationModal({
             title: 'Pro Activated',
-            message: `Pro is active until ${expiryDateFormatted}. Up to 100 checks.`,
+            message: `Pro active until ${expiryDateFormatted}. Up to 100 checks.`,
             type: 'success',
             isTestMode: isTest
           });
@@ -330,8 +390,31 @@ export async function startUpgrade(options = {}) {
           }
         } catch (verifyErr) {
           console.error('[Billing] Payment verification failed:', verifyErr);
-          // Calm error message: "If money was debited it will be applied after verification. Contact us with your order id."
-          // Do NOT set Pro locally!
+          // Check payment status step before showing error
+          let check = null;
+          try {
+            check = await apiFetch('/api/billing/check-order', {
+              method: 'POST',
+              body: JSON.stringify({ orderId: paymentResp?.razorpay_order_id || order.orderId })
+            });
+          } catch {}
+
+          if (check?.isPro || check?.status === 'paid') {
+            try {
+              sessionStorage.removeItem(PENDING_ORDER_KEY);
+              sessionStorage.removeItem(PENDING_VERIFY_KEY);
+            } catch {}
+            triggerUsageRefresh();
+            triggerBillingRefresh();
+            const expDate = formatExpiryDate(check.expiresAt);
+            showNotificationModal({
+              title: 'Pro Activated',
+              message: `Pro active until ${expDate}. Up to 100 checks.`,
+              type: 'success'
+            });
+            return;
+          }
+
           const orderIdToShow = paymentResp?.razorpay_order_id || order.orderId;
           showNotificationModal({
             title: 'Verification In Progress',
@@ -375,7 +458,7 @@ export async function startUpgrade(options = {}) {
       options.onProgress(false);
     }
 
-    if (err?.status === 401) {
+    if (err?.status === 401 && !session) {
       setReturnTo('/pricing');
       if (typeof window !== 'undefined') {
         window.location.hash = '#/login?returnTo=/pricing';
@@ -402,83 +485,139 @@ export async function startUpgrade(options = {}) {
 }
 
 /**
+ * Recovers pending payment on return or app load.
+ * Survives page reloads or lost sessions.
+ */
+export async function checkAndRecoverPendingPayment() {
+  if (typeof window === 'undefined') return false;
+
+  let pendingOrderId = null;
+  let pendingVerify = null;
+
+  try {
+    pendingOrderId = sessionStorage.getItem(PENDING_ORDER_KEY);
+    const rawVerify = sessionStorage.getItem(PENDING_VERIFY_KEY);
+    if (rawVerify) pendingVerify = JSON.parse(rawVerify);
+  } catch {}
+
+  if (!pendingOrderId && !pendingVerify) {
+    return false;
+  }
+
+  const orderId = pendingVerify?.razorpay_order_id || pendingOrderId;
+
+  try {
+    let result = null;
+
+    // 1. If full payment verification fields exist, call verify endpoint
+    if (
+      pendingVerify &&
+      pendingVerify.razorpay_order_id &&
+      pendingVerify.razorpay_payment_id &&
+      pendingVerify.razorpay_signature
+    ) {
+      try {
+        result = await apiFetch('/api/billing/verify', {
+          method: 'POST',
+          body: JSON.stringify(pendingVerify)
+        });
+      } catch (err) {
+        console.warn('[Billing] Recovery verify error:', err.message);
+      }
+    }
+
+    // 2. Check payment status step if verify didn't resolve
+    if (!result?.isPro && orderId) {
+      try {
+        result = await apiFetch('/api/billing/check-order', {
+          method: 'POST',
+          body: JSON.stringify({ orderId })
+        });
+      } catch (err) {
+        console.warn('[Billing] Recovery check-order error:', err.message);
+      }
+    }
+
+    // Clear storage
+    try {
+      sessionStorage.removeItem(PENDING_ORDER_KEY);
+      sessionStorage.removeItem(PENDING_VERIFY_KEY);
+    } catch {}
+
+    if (result?.isPro || result?.status === 'paid' || result?.plan === 'pro') {
+      triggerUsageRefresh();
+      triggerBillingRefresh();
+      const expDate = formatExpiryDate(result.expiresAt);
+      showNotificationModal({
+        title: 'Pro Activated',
+        message: `Pro active until ${expDate}. Up to 100 checks.`,
+        type: 'success'
+      });
+      return true;
+    } else if (result?.status === 'unknown') {
+      showNotificationModal({
+        title: 'Payment Verification',
+        message: result.message || `Payment status could not be verified automatically. Contact us with your order id: ${orderId}`,
+        type: 'warning'
+      });
+    }
+  } catch (err) {
+    console.warn('[Billing] checkAndRecoverPendingPayment error:', err);
+    try {
+      sessionStorage.removeItem(PENDING_ORDER_KEY);
+      sessionStorage.removeItem(PENDING_VERIFY_KEY);
+    } catch {}
+  }
+
+  return false;
+}
+
+/**
  * React Hook to track billing status, current plan, expiry, check limits and test mode.
- * Auto-refreshes on cs:usage-updated, cs:billing-updated, and window focus.
+ * Reads directly from the unified PlanContext (single source of truth).
  */
 export function useBillingStatus(session) {
   if (session !== undefined) {
     setBillingSession(session);
   }
 
-  const [status, setStatus] = useState({
-    plan: 'free',
-    expiresAt: null,
-    daysLeft: 0,
-    checksUsed: 0,
-    checksLimit: 5,
-    paymentsMode: 'test'
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchStatus = useCallback(async () => {
-    try {
-      // If user is authenticated, query /api/billing/status
-      const data = await apiFetch('/api/billing/status');
-      if (data) {
-        setStatus(data);
-        setError(null);
-      }
-    } catch (err) {
-      // If unauthenticated (401), fetch public config for paymentsMode
-      if (err?.status === 401) {
-        try {
-          const pub = await apiFetch('/api/config-public');
-          setStatus((prev) => ({
-            ...prev,
-            plan: 'free',
-            paymentsMode: pub?.paymentsMode || 'test'
-          }));
-        } catch {}
-      } else {
-        setError(err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const planCtx = usePlan('billing');
+  const [paymentsMode, setPaymentsMode] = useState('test');
 
   useEffect(() => {
-    fetchStatus();
+    apiFetch('/api/config-public')
+      .then((cfg) => {
+        if (cfg?.paymentsMode) setPaymentsMode(cfg.paymentsMode);
+      })
+      .catch(() => {});
+  }, []);
 
-    const onUpdate = () => fetchStatus();
+  const isPro = planCtx.isPro;
+  const isPaymentsAvailable = paymentsMode === 'test' || paymentsMode === 'live';
+  const checksUsed = planCtx.quota?.used || 0;
+  const checksLimit = planCtx.quota?.limit || (isPro ? 100 : 5);
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener(BILLING_EVENT, onUpdate);
-      window.addEventListener('cs:usage-updated', onUpdate);
-      window.addEventListener('focus', onUpdate);
-      return () => {
-        window.removeEventListener(BILLING_EVENT, onUpdate);
-        window.removeEventListener('cs:usage-updated', onUpdate);
-        window.removeEventListener('focus', onUpdate);
-      };
-    }
-  }, [fetchStatus, session]);
-
-  const isPro = status.plan === 'pro';
-  const isPaymentsAvailable = status.paymentsMode === 'test' || status.paymentsMode === 'live';
+  const status = {
+    plan: planCtx.plan || 'free',
+    expiresAt: planCtx.expiresAt,
+    daysLeft: planCtx.daysLeft,
+    checksUsed,
+    checksLimit,
+    paymentsMode
+  };
 
   return {
     status,
     isPro,
-    daysLeft: status.daysLeft || 0,
-    expiresAt: status.expiresAt,
-    checksUsed: status.checksUsed || 0,
-    checksLimit: status.checksLimit || (isPro ? 100 : 5),
-    paymentsMode: status.paymentsMode || 'test',
+    plan: planCtx.plan,
+    daysLeft: planCtx.daysLeft || 0,
+    expiresAt: planCtx.expiresAt,
+    checksUsed,
+    checksLimit,
+    paymentsMode,
     isPaymentsAvailable,
-    loading,
-    refresh: fetchStatus
+    loading: planCtx.loading,
+    refresh: planCtx.refresh
   };
 }
 

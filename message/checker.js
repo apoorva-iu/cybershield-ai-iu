@@ -11,6 +11,7 @@ const { runPassWithRetry, getCachedAnalysis, setCachedAnalysis } = require('./ai
 const { resolvePassDisagreement, sanitizeBannedClaims } = require('./validator');
 const { getPassesCount, SENDER_NOTE } = require('./config');
 const { evaluateMessageScoreAndConfidence } = require('./scoring');
+const { generateSpecificAnalysisText, dedupeAdviceList } = require('../detectors/analysis-text');
 
 async function performMessageCheck({ text, turns, source, readability, reqUser, hostname }) {
   const cleanText = String(text || '').trim();
@@ -205,9 +206,21 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
 
   const evidenceSourceCount = evidenceSources.filter(s => s.status === 'ran').length;
 
+  let scamTypeLabel = finalAi.scamType;
+  if (scamTypeLabel === 'Other scam' || scamTypeLabel === 'other' || scamTypeLabel === 'other_scam') {
+    const rawLower = cleanText.toLowerCase();
+    if (finalAi.requestedAction === 'move to another chat app' || rawLower.includes('whatsapp') || rawLower.includes('telegram')) {
+      scamTypeLabel = 'Suspicious Off-Platform Redirect';
+    } else if (finalAi.requestedAction === 'click a link' || rawLower.includes('http') || rawLower.includes('link')) {
+      scamTypeLabel = 'Suspicious Link Solicitation';
+    } else {
+      scamTypeLabel = 'Unverified Outreach Scam';
+    }
+  }
+
   // Headline
-  const headlineTitle = (finalAi.scamType && finalAi.scamType !== 'none' && finalAi.scamType !== 'unclear')
-    ? finalAi.scamType
+  const headlineTitle = (scamTypeLabel && scamTypeLabel !== 'none' && scamTypeLabel !== 'unclear')
+    ? scamTypeLabel
     : (finalAi.level === 'high' ? 'High Risk Communication' : (finalAi.level === 'medium' ? 'Suspicious Communication' : 'Normal Communication'));
   const headlineSentence = finalAi.primaryConcern || finalAi.explanation || 'Message evaluation complete.';
   const headline = [headlineTitle, headlineSentence];
@@ -223,6 +236,21 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
     reason: c.reason
   }));
 
+  const dynamicAnalysis = generateSpecificAnalysisText({
+    tool: 'message',
+    level: finalAi.level,
+    text: cleanText,
+    signals: finalAi.signals,
+    scamType: finalAi.scamType,
+    checks: reportChecks,
+    evidenceSources: { confirmedMaliciousLink: maliciousLinkFound }
+  });
+
+  const finalWhatToDo = dedupeAdviceList([
+    ...(Array.isArray(finalAi.whatToDo) ? finalAi.whatToDo : []),
+    ...(dynamicAnalysis.whatToDo || [])
+  ]);
+
   const report = {
     version: 1,
     generatedAt: new Date().toISOString(),
@@ -230,7 +258,7 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
     scamType: finalAi.scamType || null,
     headline: headline || null,
     primaryConcern: finalAi.primaryConcern || null,
-    whatToDo: finalAi.whatToDo || [],
+    whatToDo: finalWhatToDo,
     evidence: finalAi.evidence || [],
     ...(finalAi.flaggedPhrases ? { flaggedPhrases: finalAi.flaggedPhrases } : {}),
     evidenceSources: evidenceSources || {},
@@ -342,7 +370,7 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
     evidence: finalAi.signals.map(s => ({ quote: s.quote || s.label, interpretation: s.why })),
     flaggedPhrases: finalAi.flaggedPhrases,
     checks: finalAi.checks,
-    whatToDo: finalAi.whatToDo,
+    whatToDo: finalWhatToDo,
     extractedItems: {
       links: deterministic.links,
       phones: deterministic.phones,

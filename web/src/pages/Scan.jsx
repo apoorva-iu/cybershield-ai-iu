@@ -135,7 +135,10 @@ export function Scan({ embedded = false }) {
         setIsQuotaModalOpen(true);
         setIsSplit(false);
       } else {
-        const msg = x?.message ? String(x.message) : 'An error occurred while verifying the offer.';
+        let msg = x?.message ? String(x.message) : 'An error occurred while verifying the offer.';
+        if (msg.includes('AI_UNAVAILABLE') || x?.code === 'AI_UNAVAILABLE' || x?.status === 503) {
+          msg = 'AI screening service is temporarily unavailable. Please try again in a moment.';
+        }
         const isRateLimit = msg.toLowerCase().includes('too many scans') || msg.toLowerCase().includes('rate limit');
         setError({ message: msg, isRateLimit });
         setIsSplit(false);
@@ -254,7 +257,7 @@ export function Scan({ embedded = false }) {
                     {error.message}
                   </>
                 ) : (
-                  <span>{error.message}</span>
+                  <span>{String(error.message).includes('AI_UNAVAILABLE') ? 'AI screening service is temporarily unavailable. Please try again in a moment.' : error.message}</span>
                 )}
               </div>
             )}

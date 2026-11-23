@@ -124,10 +124,10 @@ function getAnonIdentity(req, res) {
  * Returns user plan record from DB or in-memory fallback.
  */
 async function getUserPlan(userId) {
-  if (!userId) return { plan: 'free', started_at: null, expires_at: null };
+  if (!userId) return { plan: 'free', started_at: null, expires_at: null, rawRow: null };
 
   const client = DB.getClient();
-  if (DB.getStatus() === 'connected' && client) {
+  if (client) {
     try {
       const { data, error } = await client
         .from('user_plans')
@@ -136,19 +136,77 @@ async function getUserPlan(userId) {
         .limit(1)
         .maybeSingle();
 
-      if (!error && data) {
-        return data;
+      if (error) {
+        console.warn('[quota] getUserPlan DB error:', error.message);
+        throw error;
       }
+      if (data) {
+        return { ...data, rawRow: data };
+      }
+      return { plan: 'free', started_at: null, expires_at: null, rawRow: null };
     } catch (err) {
       console.warn('[quota] getUserPlan DB error:', err.message);
+      throw err;
     }
   }
 
   if (memoryUserPlans.has(userId)) {
-    return memoryUserPlans.get(userId);
+    const mem = memoryUserPlans.get(userId);
+    return { ...mem, rawRow: mem };
   }
 
-  return { plan: 'free', started_at: null, expires_at: null };
+  return { plan: 'free', started_at: null, expires_at: null, rawRow: null };
+}
+
+let recoverPaymentFn = null;
+function getRecoverUserPayment() {
+  if (!recoverPaymentFn) {
+    try {
+      const billing = require('../billing/service');
+      recoverPaymentFn = billing.recoverUserPayment;
+    } catch {}
+  }
+  return recoverPaymentFn;
+}
+
+/**
+ * Unified plan status helper:
+ * Runs payment recovery, returns { plan, isPro, expiresAt, startedAt }.
+ * isPro is true only if user_plans is active and expires_at is in the future.
+ */
+async function getUserPlanStatus(userId) {
+  if (!userId) {
+    return {
+      plan: 'free',
+      isPro: false,
+      expiresAt: null,
+      startedAt: null,
+      rawRow: null
+    };
+  }
+
+  const recover = getRecoverUserPayment();
+  if (recover) {
+    try {
+      await recover(userId);
+    } catch (recErr) {
+      console.warn('[quota] payment recovery error:', recErr.message);
+    }
+  }
+
+  const userPlanRec = await getUserPlan(userId);
+  const plan = userPlanRec?.plan || 'free';
+  const now = Date.now();
+  const expiresAt = userPlanRec?.expires_at ? new Date(userPlanRec.expires_at) : null;
+  const isPro = plan === 'pro' && Boolean(expiresAt && now < expiresAt.getTime());
+
+  return {
+    plan: isPro ? 'pro' : 'free',
+    isPro,
+    expiresAt: expiresAt ? expiresAt.toISOString() : null,
+    startedAt: userPlanRec?.started_at || null,
+    rawRow: userPlanRec?.rawRow || null
+  };
 }
 
 /**
@@ -285,10 +343,10 @@ async function getEntitlement(req, res) {
   const { anonKeyHash } = getAnonIdentity(req, res);
 
   if (!isQuotaEnabled()) {
-    const userPlanRec = userId ? await getUserPlan(userId) : { plan: 'free' };
+    const planStatus = userId ? await getUserPlanStatus(userId) : { plan: 'free', isPro: false };
     return {
-      kind: userId ? (userPlanRec.plan === 'pro' ? 'pro' : 'free') : 'anonymous',
-      plan: userPlanRec.plan || 'free',
+      kind: userId ? (planStatus.isPro ? 'pro' : 'free') : 'anonymous',
+      plan: planStatus.plan,
       limit: null,
       used: 0,
       remaining: null,
@@ -319,15 +377,13 @@ async function getEntitlement(req, res) {
   }
 
   // Signed-in user: check plan
-  const userPlanRec = await getUserPlan(userId);
-  const plan = userPlanRec.plan || 'free';
-  const now = Date.now();
-  const expiresAt = userPlanRec.expires_at ? new Date(userPlanRec.expires_at) : null;
-  const isProActive = plan === 'pro' && (!expiresAt || now <= expiresAt.getTime());
+  const planStatus = await getUserPlanStatus(userId);
+  const { plan, isPro, expiresAt: expiresAtIso, startedAt: startedAtIso } = planStatus;
+  const isProActive = isPro;
 
   if (isProActive) {
     const limit = LIMITS.proLimit;
-    const startedAt = userPlanRec.started_at ? new Date(userPlanRec.started_at) : istWindow.start;
+    const startedAt = startedAtIso ? new Date(startedAtIso) : istWindow.start;
     const used = await countUsageEvents({ userId, sinceDate: startedAt });
     const remaining = Math.max(0, limit - used);
     const action = remaining === 0 ? 'renew' : null;
@@ -338,7 +394,7 @@ async function getEntitlement(req, res) {
       limit,
       used,
       remaining,
-      resetsAt: expiresAt ? expiresAt.toISOString() : null,
+      resetsAt: expiresAtIso || null,
       action
     };
   }
@@ -489,8 +545,34 @@ async function quotaMiddleware(req, res, next) {
  */
 async function usageRoute(req, res) {
   try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
+    const userId = req.user?.id || null;
+    const planStatus = await getUserPlanStatus(userId);
     const entitlement = await getEntitlement(req, res);
-    return res.json(entitlement);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const userPrefix = userId ? String(userId).slice(0, 8) : 'anon';
+      const planRow = planStatus.rawRow ? (planStatus.rawRow.plan || 'none') : 'none';
+      console.log(`[usage] user_id: ${userPrefix}, plan row: ${planRow}, expires_at: ${planStatus.expiresAt || 'none'}, isPro: ${planStatus.isPro}`);
+    }
+
+    const quota = {
+      limit: entitlement.limit,
+      used: entitlement.used,
+      remaining: entitlement.remaining,
+      resetsAt: entitlement.resetsAt,
+      action: entitlement.action,
+      unlimited: entitlement.unlimited || false
+    };
+
+    return res.json({
+      ...entitlement,
+      plan: planStatus.plan,
+      isPro: planStatus.isPro,
+      expiresAt: planStatus.expiresAt,
+      quota
+    });
   } catch (err) {
     console.error('[quota] usageRoute error:', err);
     return res.status(500).json({ error: 'Failed to fetch usage' });
@@ -528,6 +610,7 @@ module.exports = {
   getAnonIdentity,
   getEntitlement,
   getUserPlan,
+  getUserPlanStatus,
   quotaMiddleware,
   usageRoute,
   quotaRoute,

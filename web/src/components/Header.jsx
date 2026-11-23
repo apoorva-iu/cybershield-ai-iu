@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useAuth, getDisplayName, getShortDisplayName, UserAvatar } from '../auth';
 import { UsagePill } from './UsagePill';
-import { useBillingStatus } from '../lib/billing';
+import { usePlan } from '../lib/planContext';
 import { ThemeToggle } from '../lib/theme';
 import {
   Menu,
@@ -92,7 +92,7 @@ export function Header() {
   const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
 
   const { session, profile, signOut } = useAuth();
-  const { isPro, daysLeft } = useBillingStatus(session);
+  const { isPro, daysLeft, loading: planLoading } = usePlan('Header');
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -483,9 +483,13 @@ export function Header() {
                     <div className="account-menu-meta">
                       <div className="account-menu-user-row">
                         <strong className="item-title account-menu-full-text">{displayName}</strong>
-                        <span className={`account-plan-chip ${isPro ? 'chip-pro' : 'chip-free'}`}>
-                          {isPro ? `Pro · ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left` : 'Free'}
-                        </span>
+                        {planLoading ? (
+                          <span className="account-plan-chip chip-loading" style={{ opacity: 0.6 }}>Loading…</span>
+                        ) : (
+                          <span className={`account-plan-chip ${isPro ? 'chip-pro' : 'chip-free'}`}>
+                            {isPro ? `Pro · ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left` : 'Free'}
+                          </span>
+                        )}
                       </div>
                       {fullEmail && (
                         <span className="item-desc account-menu-full-text">{fullEmail}</span>

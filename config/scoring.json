@@ -1,7 +1,7 @@
 {
   "levels": {
-    "okBelow": 25,
-    "warnBelow": 55
+    "okBelow": 40,
+    "warnBelow": 70
   },
   "checkWeights": {
     "url": 20,
@@ -18,8 +18,8 @@
     "strongChecksFloor": 60,
     "minChecksForVerdict": 2,
     "singleCheckVerdictMin": 55,
-    "lowBelow": 25,
-    "mediumBelow": 55
+    "lowBelow": 40,
+    "mediumBelow": 70
   },
   "url": {
     "base": 10,

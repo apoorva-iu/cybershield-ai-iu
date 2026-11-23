@@ -1,0 +1,328 @@
+[
+  {
+    "id": "job-safe-1",
+    "tool": "job",
+    "category": "safe",
+    "snippet": "Google LLC - Senior Software Engineer (Cloud Infrastructure)",
+    "input": {
+      "url": "https://careers.google.com/jobs/results/109281",
+      "company": "Google LLC",
+      "email": "tech-recruiting@google.com",
+      "desc": "Senior Software Engineer - Cloud Infrastructure. Design, develop, test, deploy, maintain and improve software. Requirements: BS degree in CS or equivalent practical experience, 5+ years experience with distributed systems in Go, Java, or C++. Standard full-time corporate role."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "1997-09-15", "registrar": "MarkMonitor" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 85 },
+      "places": { "checked": true, "found": true, "name": "Google LLC", "address": "1600 Amphitheatre Pkwy, Mountain View, CA" },
+      "wikidata": { "checked": true, "found": true, "website": "https://about.google" }
+    }
+  },
+  {
+    "id": "job-safe-2",
+    "tool": "job",
+    "category": "safe",
+    "snippet": "Microsoft Corp - Azure Data Solutions Architect",
+    "input": {
+      "url": "https://careers.microsoft.com/us/en/job/182749",
+      "company": "Microsoft Corporation",
+      "email": "talent-acquisition@microsoft.com",
+      "desc": "Azure Data Solutions Architect. Partner with enterprise customers to build scalable cloud data platforms using Azure Synapse, Databricks, and SQL. 7+ years of customer-facing architecture experience required. Competitive base salary and standard stock awards."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "1991-05-02", "registrar": "MarkMonitor" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 90 },
+      "places": { "checked": true, "found": true, "name": "Microsoft Corporation", "address": "One Microsoft Way, Redmond, WA" },
+      "wikidata": { "checked": true, "found": true, "website": "https://www.microsoft.com" }
+    }
+  },
+  {
+    "id": "job-safe-3",
+    "tool": "job",
+    "category": "safe",
+    "snippet": "Infosys Limited - Technology Lead (Full Stack Java)",
+    "input": {
+      "url": "https://careers.infosys.com/jobdesc?jobId=48291",
+      "company": "Infosys Limited",
+      "email": "careers@infosys.com",
+      "desc": "Technology Lead - Full Stack Java. Location: Bangalore / Pune. Required skills: Java 17, Spring Boot, Microservices, Angular or React, AWS. 6-9 years of IT experience. Selection through technical interviews and HR rounds. No fees at any stage."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "1997-04-12", "registrar": "Network Solutions" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 80 },
+      "places": { "checked": true, "found": true, "name": "Infosys Limited", "address": "Electronics City, Bangalore, Karnataka" },
+      "wikidata": { "checked": true, "found": true, "website": "https://www.infosys.com" }
+    }
+  },
+  {
+    "id": "job-safe-4",
+    "tool": "job",
+    "category": "safe",
+    "snippet": "Tata Consultancy Services - Systems Engineer",
+    "input": {
+      "url": "https://ibegin.tcs.com/iBegin/jobs/29184",
+      "company": "Tata Consultancy Services",
+      "email": "recruitment.support@tcs.com",
+      "desc": "Systems Engineer opening in Banking Financial Services domain. Experience in SQL, Python data ETL pipelines, Linux systems administration. Direct employment on TCS payroll with full health benefits."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "1998-02-10", "registrar": "MarkMonitor" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 82 },
+      "places": { "checked": true, "found": true, "name": "Tata Consultancy Services", "address": "TCS House, Mumbai, Maharashtra" },
+      "wikidata": { "checked": true, "found": true, "website": "https://www.tcs.com" }
+    }
+  },
+  {
+    "id": "upi-safe-1",
+    "tool": "upi",
+    "category": "safe",
+    "snippet": "Split dinner bill at Barbeque Nation (Rs. 850)",
+    "text": "Hey Rahul, sending my share for last night dinner at Barbeque Nation (Rs. 850) to rahul@oksbi."
+  },
+  {
+    "id": "upi-safe-2",
+    "tool": "upi",
+    "category": "safe",
+    "snippet": "Monthly flat rent transfer (Rs. 22,000)",
+    "text": "Dear Landlord, transferred Rs. 22,000 for October rent to sharma.estate@icici. Reference UTR UPI/42918401928."
+  },
+  {
+    "id": "upi-safe-3",
+    "tool": "upi",
+    "category": "safe",
+    "snippet": "Auto rickshaw ride payment (Rs. 140)",
+    "text": "Paid Rs 140 for the auto rickshaw ride via PhonePe to suresh.auto@paytm. Thanks!"
+  },
+  {
+    "id": "msg-safe-1",
+    "tool": "message",
+    "category": "safe",
+    "snippet": "Flight arrival update to family",
+    "text": "Hi mom, I reached Bangalore safely. The flight was on time. Will call you once I reach the hotel."
+  },
+  {
+    "id": "msg-safe-2",
+    "tool": "message",
+    "category": "safe",
+    "snippet": "Amazon official order delivery notice",
+    "text": "Your package containing order #82910 has been delivered to your front door. Thanks for shopping with Amazon."
+  },
+  {
+    "id": "msg-safe-3",
+    "tool": "message",
+    "category": "safe",
+    "snippet": "Team sync scheduling on Google Meet",
+    "text": "Hey Priya, are you free for the project review sync today at 3:30 PM on Google Meet? Sending calendar invite."
+  },
+  {
+    "id": "job-mixed-1",
+    "tool": "job",
+    "category": "mixed",
+    "snippet": "Freelance Graphic Designer - CreativeSpark Studio",
+    "input": {
+      "url": "https://creativespark-designs.info/careers",
+      "company": "CreativeSpark Studio",
+      "email": "contact.creativespark@gmail.com",
+      "desc": "Looking for Freelance Graphic Designer to create social media creatives, banner ads and presentations. Send portfolio link. Pay per project basis via direct bank transfer."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2024-03-10", "registrar": "Namecheap" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 40 }
+    }
+  },
+  {
+    "id": "job-mixed-2",
+    "tool": "job",
+    "category": "mixed",
+    "snippet": "Remote Content Writer - Apex Media Blog",
+    "input": {
+      "url": "https://apexmedia-portal.net/jobs/writer",
+      "company": "Apex Media Portal",
+      "email": "apexmedia.editor@gmail.com",
+      "desc": "Remote Content Writer needed for tech news blog. 2 articles per day. Flexible hours. Send sample writing via email."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2026-08-15", "registrar": "GoDaddy" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 35 }
+    }
+  },
+  {
+    "id": "job-mixed-3",
+    "tool": "job",
+    "category": "mixed",
+    "snippet": "Virtual Customer Assistant - Nexa Retail",
+    "input": {
+      "url": "https://nexaretail-support.biz/apply",
+      "company": "Nexa Retail Support",
+      "email": "nexa.hiring@yahoo.com",
+      "desc": "Virtual Customer Assistant for e-commerce client management. Work from home 4 hours daily. Training provided. Connect with recruiter on Telegram @nexa_support for interview slot."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2024-01-15", "registrar": "Hostinger" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 30 }
+    }
+  },
+  {
+    "id": "upi-mixed-1",
+    "tool": "upi",
+    "category": "mixed",
+    "snippet": "Shared streaming subscription collect request (Rs. 450)",
+    "text": "Please approve the collect request of Rs. 450 for the shared Netflix annual subscription to user9912@paytm."
+  },
+  {
+    "id": "upi-mixed-2",
+    "tool": "upi",
+    "category": "mixed",
+    "snippet": "Freelance web design invoice payment (Rs. 4,500)",
+    "text": "Invoice #204 attached for website UI mockup. Please transfer Rs. 4,500 to design.studio@hdfc upon review."
+  },
+  {
+    "id": "upi-mixed-3",
+    "tool": "upi",
+    "category": "mixed",
+    "snippet": "Second-hand textbook courier payment (Rs. 350)",
+    "text": "Hi, I dispatched the engineering books via DTDC courier. Please transfer Rs. 350 for shipping to amit@ybl."
+  },
+  {
+    "id": "upi-mixed-4",
+    "tool": "upi",
+    "category": "mixed",
+    "snippet": "Weekend trip resort stay split (Rs. 1,200)",
+    "text": "Reminder: please clear the pending Rs. 1,200 for the Goa resort booking to vikram@axisbank by tonight."
+  },
+  {
+    "id": "msg-mixed-1",
+    "tool": "message",
+    "category": "mixed",
+    "snippet": "Unsolicited home appliances promotional SMS",
+    "text": "Special festive offer: Get 40% off on all home kitchen appliances this weekend only! Visit your nearest Vijay Sales store or check catalog."
+  },
+  {
+    "id": "msg-mixed-2",
+    "tool": "message",
+    "category": "mixed",
+    "snippet": "Cold tech recruiter outreach on LinkedIn",
+    "text": "Hello, came across your profile on GitHub. We have open roles in backend distributed systems. Reply if open to explore new opportunities."
+  },
+  {
+    "id": "msg-mixed-3",
+    "tool": "message",
+    "category": "mixed",
+    "snippet": "Cloud architecture webinar registration invite",
+    "text": "You are invited to attend our upcoming live tech webinar on Cloud Microservices this Thursday at 5 PM. Register using your corporate email."
+  },
+  {
+    "id": "job-scam-1",
+    "tool": "job",
+    "category": "scam",
+    "snippet": "Data Entry Operator with Rs. 2,500 refundable security fee",
+    "input": {
+      "url": "http://fast-data-careers-online.cc/job/entry",
+      "company": "Global Fast Data Services",
+      "email": "recruitment.fastdata@gmail.com",
+      "desc": "Immediate joining for Data Entry Executive. Salary Rs 45,000 per month. Candidate must deposit Rs. 2,500 refundable registration and security deposit for laptop dispatch before orientation."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2026-10-01", "registrar": "NameCheap" },
+      "places": { "checked": true, "found": false },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 10 }
+    }
+  },
+  {
+    "id": "job-scam-2",
+    "tool": "job",
+    "category": "scam",
+    "snippet": "Like YouTube videos and earn Rs 5,000 daily via Telegram",
+    "input": {
+      "url": "http://easy-daily-income-tasks.top/home",
+      "company": "Smart Media Marketing",
+      "email": "recruiter99@gmail.com",
+      "desc": "Work 30 minutes daily from mobile phone. Earn Rs 3,000 to Rs 8,000 per day by rating hotels on Google Maps and liking YouTube videos. Contact VIP Manager on Telegram @daily_task_earning to claim sign up bonus."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2026-11-05", "registrar": "Tucows" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 5 }
+    }
+  },
+  {
+    "id": "job-scam-3",
+    "tool": "job",
+    "category": "scam",
+    "snippet": "Remote Payment Processing Agent with crypto commission",
+    "input": {
+      "url": "http://global-crypto-dispatch-hub.site/agent",
+      "company": "Apex Swift Financial Hub",
+      "email": "hiring@global-crypto-dispatch-hub.site",
+      "desc": "Financial Disbursement Assistant. Receive corporate funds into your personal bank account via IMPS, purchase USDT on Binance and transfer to company wallet. Keep 10% daily commission. No experience needed."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2026-10-25", "registrar": "Porkbun" },
+      "virustotal": { "checked": true, "malicious": 0, "suspicious": 0, "harmless": 4 }
+    }
+  },
+  {
+    "id": "job-scam-4",
+    "tool": "job",
+    "category": "scam",
+    "snippet": "Confirmed malicious phishing employment portal (Score 100)",
+    "input": {
+      "url": "http://malicious-job-portal-phish.net/login",
+      "company": "Stripe Global Employment",
+      "email": "hr-verify@stripe-global-employment.org",
+      "desc": "Official Stripe careers verification portal. Upload passport, Aadhaar, and bank statements to confirm your offer."
+    },
+    "evidence": {
+      "rdap": { "checked": true, "createdAt": "2026-11-10", "registrar": "Unknown" },
+      "virustotal": { "checked": true, "malicious": 8, "suspicious": 3, "harmless": 2 },
+      "urlhaus": { "checked": true, "listed": true, "threat": "malware_download" }
+    }
+  },
+  {
+    "id": "upi-scam-1",
+    "tool": "upi",
+    "category": "scam",
+    "snippet": "Scan QR and enter UPI PIN to receive Rs. 5,000 reward",
+    "text": "Scan this QR code and enter your 6-digit UPI PIN to claim Rs. 5,000 cashback reward directly into your bank account immediately."
+  },
+  {
+    "id": "upi-scam-2",
+    "tool": "upi",
+    "category": "scam",
+    "snippet": "Accidental transfer Rs. 15,000 refund demand under FIR threat",
+    "text": "I mistakenly sent Rs. 15,000 to your Google Pay number! See payment screenshot. Transfer back Rs. 15,000 immediately to rahul.refund@paytm or I am filing a police FIR today."
+  },
+  {
+    "id": "upi-scam-3",
+    "tool": "upi",
+    "category": "scam",
+    "snippet": "KBC Lottery prize release processing fee of Rs. 1,500",
+    "text": "Congratulations! Your mobile number won Rs. 25,00,000 in KBC Lucky Draw. Pay government processing tax of Rs. 1,500 to kbc.claims@oksbi to release your cheque today."
+  },
+  {
+    "id": "msg-scam-1",
+    "tool": "message",
+    "category": "scam",
+    "snippet": "Electricity disconnection tonight at 9:30 PM notice",
+    "text": "Dear Customer, your electricity power will be disconnected tonight at 9:30 PM from the power station because your previous month bill was not updated. Immediately call Electricity Officer at 9876543210."
+  },
+  {
+    "id": "msg-scam-2",
+    "tool": "message",
+    "category": "scam",
+    "snippet": "CBI Cyber Cell digital arrest contraband extortion",
+    "text": "CBI Headquarters Notice: A parcel shipped in your name containing 5 passports and illegal contraband has been seized at Mumbai airport. A digital arrest warrant has been issued under your Aadhaar. Connect immediately on Skype or transfer funds to the RBI verification escrow account."
+  },
+  {
+    "id": "msg-scam-3",
+    "tool": "message",
+    "category": "scam",
+    "snippet": "SBI account blocked KYC link confirmed malicious (Score 100)",
+    "text": "Dear customer, your SBI NetBanking account is blocked today due to pending PAN card verification. Update immediately at http://malicious-sbi-phish-stealer.xyz/kyc to restore access.",
+    "links": [
+      {
+        "url": "http://malicious-sbi-phish-stealer.xyz/kyc",
+        "virustotal": { "checked": true, "malicious": 7, "suspicious": 2, "harmless": 0 },
+        "urlhaus": { "checked": true, "listed": true, "threat": "phishing" }
+      }
+    ]
+  }
+]

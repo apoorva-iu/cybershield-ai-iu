@@ -815,3 +815,96 @@ html.theme-ready .quota-modal-dialog {
   line-height: 1.4;
   animation: fadeRise 0.2s ease-out;
 }
+
+/* Upgrade / Payment Verification Modal */
+.upgrade-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 8, 20, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.upgrade-modal-card {
+  background: var(--surface, #0C2145);
+  border: 1px solid var(--border, #1F4A8A);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  padding: 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-sizing: border-box;
+}
+
+@keyframes modalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.upgrade-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim, #C9DAF5);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.upgrade-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text, #FFFFFF);
+}
+
+.upgrade-modal-header {
+  margin-bottom: 24px;
+}
+
+.upgrade-modal-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text, #FFFFFF);
+  margin: 0 0 8px;
+}
+
+.upgrade-modal-message {
+  font-size: 14.5px;
+  color: var(--text-dim, #C9DAF5);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.upgrade-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.upgrade-modal-actions .btn-card-primary {
+  width: auto;
+  min-width: 110px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  background: var(--primary, #4DA3FF);
+  color: #06142B;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}

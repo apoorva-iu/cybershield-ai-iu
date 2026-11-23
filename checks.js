@@ -161,10 +161,9 @@ function combine(checks, opts, argExpected) {
   const K = S.combine, W = S.checkWeights;
   const live = checks.filter(c => c.score != null);
   const total = live.reduce((a, c) => a + W[c.key], 0);
-  let score = total ? Math.round(live.reduce((a, c) => a + c.score * W[c.key], 0) / total) : null;
+  let rawScore = total ? Math.round(live.reduce((a, c) => a + c.score * W[c.key], 0) / total) : null;
   const hard = live.some(c => c.score >= K.hardSignalScore);
   const strong = live.filter(c => c.score >= K.strongCheckScore).length;
-  if (score != null) { if (hard) score = Math.max(score, K.hardSignalFloor); if (strong >= K.strongChecksNeeded) score = Math.max(score, K.strongChecksFloor); }
   const descOrUrl = live.some(c => c.key === 'desc' || c.key === 'url');
   const evidenceShare = Math.round(100 * total / Object.values(W).reduce((a, b) => a + b, 0));
 
@@ -197,9 +196,71 @@ function combine(checks, opts, argExpected) {
   }
 
   // A single check may give a verdict only when its evidence is already strong.
-  const tooThin = live.length < K.minChecksForVerdict && !(score != null && score >= K.singleCheckVerdictMin);
-  const level = (tooThin || !descOrUrl || score == null) ? 'unknown' : (score < K.lowBelow ? 'low' : score < K.mediumBelow ? 'medium' : 'high');
-  const finalScore = (tooThin || !descOrUrl || score == null) ? null : score;
+  const tooThin = live.length < K.minChecksForVerdict && !(rawScore != null && rawScore >= K.singleCheckVerdictMin);
+  if (tooThin || !descOrUrl || rawScore == null) {
+    return {
+      level: 'unknown',
+      score: null,
+      live: live.length,
+      confidence,
+      sourcesAnswered: answered,
+      sourcesExpected: expected
+    };
+  }
+
+  // Check for confirmed malicious link (URLhaus or VirusTotal)
+  const secCheck = checks.find(c => c.key === 'security');
+  const isMaliciousLink = secCheck && secCheck.score === 100;
+
+  let level = 'low';
+  let finalScore = 5;
+
+  if (isMaliciousLink) {
+    level = 'high';
+    finalScore = 100;
+  } else if (hard || (strong >= 2 && rawScore >= 60)) {
+    level = 'high';
+    // Smooth deterministic curve across 70 to 98
+    const flagged = live.filter(c => c.score >= 50).length;
+    const addChecks = Math.max(0, flagged - 1) * 6;
+    const rawAdd = Math.round((Math.max(0, rawScore - 50) / 50) * 12);
+    let computed = 72 + addChecks + rawAdd;
+
+    // Live checks agreement
+    const recCheck = checks.find(c => c.key === 'recruiter');
+    const compCheck = checks.find(c => c.key === 'company');
+    if ((recCheck && recCheck.score >= 60) || (compCheck && compCheck.score >= 50) || (secCheck && secCheck.score >= 55)) {
+      computed += 2;
+    }
+
+    // Signals conflict: url is known legitimate board or description has structured sections reduction
+    const urlCheck = checks.find(c => c.key === 'url');
+    if (urlCheck && urlCheck.score <= 10) {
+      computed -= 4; // conflict pulls toward medium
+    }
+
+    finalScore = Math.max(70, Math.min(98, computed));
+  } else if (strong >= 1 || rawScore >= 40) {
+    level = 'medium';
+    // Smooth deterministic curve across 40 to 69
+    const medRatio = Math.min(1.0, Math.max(0, (rawScore - 25) / 55));
+    let computed = Math.round(40 + medRatio * 28);
+
+    // Conflict pulls toward middle of Medium
+    const urlCheck = checks.find(c => c.key === 'url');
+    if (urlCheck && urlCheck.score <= 10 && computed > 50) {
+      computed -= 4;
+    }
+
+    finalScore = Math.max(40, Math.min(69, computed));
+  } else {
+    level = 'low';
+    // Smooth deterministic curve across 5 to 39
+    const lowRatio = Math.min(1.0, Math.max(0, rawScore / 35));
+    let computed = Math.round(5 + lowRatio * 32);
+    finalScore = Math.max(5, Math.min(39, computed));
+  }
+
   return {
     level,
     score: finalScore,

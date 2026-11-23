@@ -13,7 +13,8 @@ const L = require('./ledger');
 const DB = require('./db');
 const { analyzeDescription, analyzeDescriptionWithStatus } = require('./llm');
 const { createProof } = require('./detectors/proof');
-const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData, getUserPlan } = require('./detectors/quota');
+const { generateSpecificAnalysisText, dedupeAdviceList } = require('./detectors/analysis-text');
+const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData, getUserPlan, getUserPlanStatus } = require('./detectors/quota');
 const {
   hasExtensionKeyPrefix,
   createExtensionKey,
@@ -54,7 +55,22 @@ if (helmetCfg && helmetCfg.contentSecurityPolicy && helmetCfg.contentSecurityPol
   if (sbUrl && !currentConnect.includes(sbUrl)) {
     currentConnect.push(sbUrl);
   }
+  const rzpDomains = ['https://checkout.razorpay.com', 'https://api.razorpay.com', 'https://*.razorpay.com'];
+  rzpDomains.forEach(u => { if (!currentConnect.includes(u)) currentConnect.push(u); });
+  if (!currentConnect.includes('https://lumberjack.razorpay.com')) currentConnect.push('https://lumberjack.razorpay.com');
   d['connect-src'] = currentConnect;
+
+  const currentStyles = Array.isArray(d['style-src']) ? d['style-src'] : ["'self'", "'unsafe-inline'"];
+  rzpDomains.forEach(u => { if (!currentStyles.includes(u)) currentStyles.push(u); });
+  d['style-src'] = currentStyles;
+
+  const currentFrames = Array.isArray(d['frame-src']) ? d['frame-src'] : ["'self'"];
+  rzpDomains.forEach(u => { if (!currentFrames.includes(u)) currentFrames.push(u); });
+  d['frame-src'] = currentFrames;
+
+  const currentScripts = Array.isArray(d['script-src']) ? d['script-src'] : ["'self'", "'unsafe-inline'"];
+  rzpDomains.forEach(u => { if (!currentScripts.includes(u)) currentScripts.push(u); });
+  d['script-src'] = currentScripts;
 }
 app.use(helmet(helmetCfg));
 // Extension origins (chrome-extension://<id>) are permitted on allowed routes (POST /api/verify, POST /api/upi/check, POST /api/message/check).
@@ -64,7 +80,19 @@ const EXTENSION_ORIGIN_RE = /^chrome-extension:\/\/[a-z0-9_-]+$/i;
 app.use(cors((req, cb) => {
   const origin = req.header('Origin');
   if (!origin) return cb(null, { origin: false });
-  const allowed = Array.isArray(RT.security.allowedOrigins) ? RT.security.allowedOrigins : [];
+  const allowed = Array.isArray(RT.security.allowedOrigins) ? [...RT.security.allowedOrigins] : [];
+  if (process.env.PUBLIC_URL) {
+    try {
+      const pubOrigin = new URL(process.env.PUBLIC_URL).origin;
+      if (!allowed.includes(pubOrigin)) allowed.push(pubOrigin);
+    } catch {}
+  }
+  if (!allowed.includes('https://cybershield-ai-iu.onrender.com')) {
+    allowed.push('https://cybershield-ai-iu.onrender.com');
+  }
+  if (!allowed.includes('http://localhost:3000')) {
+    allowed.push('http://localhost:3000');
+  }
   const host = req.header('Host');
   const isSameOrigin = Boolean(host && (origin === 'http://' + host || origin === 'https://' + host));
   if (allowed.includes(origin) || isSameOrigin) {
@@ -409,10 +437,8 @@ async function requireAuth(req, res, next) {
 
 async function isUserProActive(userId) {
   if (!userId) return false;
-  const userPlanRec = await getUserPlan(userId);
-  const plan = (userPlanRec && userPlanRec.plan) || 'free';
-  const expiresAt = userPlanRec && userPlanRec.expires_at ? new Date(userPlanRec.expires_at) : null;
-  return plan === 'pro' && (!expiresAt || Date.now() <= expiresAt.getTime());
+  const status = await getUserPlanStatus(userId);
+  return Boolean(status && status.isPro);
 }
 
 async function optionalAuth(req, res, next) {
@@ -577,23 +603,28 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
   evidenceStatus.ai = ai ? 'ok' : ((aiOut && aiOut.status) || (inp.desc.trim() ? 'no key' : 'no description'));
 
   const isHighRisk = overall.level === 'high' || overall.level === 'bad' || overall.level === 'medium' || overall.level === 'warn';
-  const jobWhatToDo = isHighRisk ? [
-    'Do not transfer money for equipment, registration, training, or background checks. Legitimate employers never charge candidates.',
-    'Verify the opening directly on the organization\'s official careers portal, not through messaging apps.',
-    'Never download unverified remote-access tools or executable task files from recruiters.',
-    'Report suspected fraudulent postings to cybercrime.gov.in.'
-  ] : [
-    'Confirm job openings directly on the employer\'s official career portal.',
-    'Verify recruiter email addresses match the official corporate domain.'
-  ];
+  const combinedJobText = [inp.company, inp.email, inp.desc].filter(Boolean).join(' ');
+  const dynamicJobAnalysis = generateSpecificAnalysisText({
+    tool: 'job',
+    level: (overall.level === 'bad' || overall.level === 'high') ? 'high' : ((overall.level === 'warn' || overall.level === 'medium') ? 'medium' : overall.level),
+    text: combinedJobText,
+    checks: checks.map(c => ({ key: c.key, score: c.score })),
+    evidenceSources: {
+      confirmedMaliciousLink: Boolean(vt.malicious > 0 || uh.listed)
+    }
+  });
+
+  const jobHeadline = dynamicJobAnalysis.headline;
+  const jobPrimaryConcern = dynamicJobAnalysis.primaryConcern;
+  const jobWhatToDo = dynamicJobAnalysis.whatToDo;
 
   const report = {
     version: 1,
     generatedAt: new Date().toISOString(),
     tool: 'job',
     scamType: (ai && ai.scamType && ai.scamType !== 'none') ? ai.scamType : (isHighRisk ? 'job_task_scam' : null),
-    headline: C.LV[overall.level],
-    primaryConcern: Array.isArray(C.LV[overall.level]) ? (C.LV[overall.level][1] || C.LV[overall.level][0]) : C.LV[overall.level],
+    headline: jobHeadline,
+    primaryConcern: jobPrimaryConcern,
     whatToDo: jobWhatToDo,
     evidence: (ai && Array.isArray(ai.reasons)) ? ai.reasons.map(r => ({ quote: r, interpretation: 'AI reading' })) : [],
     evidenceSources: Object.fromEntries(Object.entries({ rdap: rd.checked, urlhaus: uh.checked, virustotal: vt.checked, places: pl.checked, wikidata: wd.checked, ai: Boolean(ai) }).filter(([_, v]) => v)),
@@ -606,7 +637,7 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
       score: overall.score,
       confidence: overall.confidence,
       confidenceBand: overall.confidence >= 75 ? 'High' : (overall.confidence >= 45 ? 'Medium' : 'Low'),
-      headline: C.LV[overall.level],
+      headline: jobHeadline,
       limitedEvidence: !!overall.limitedEvidence,
       sourcesAnswered: overall.sourcesAnswered,
       sourcesExpected: overall.sourcesExpected
@@ -676,7 +707,8 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
   res.json({
     report,
     level: overall.level,
-    headline: C.LV[overall.level],
+    headline: jobHeadline,
+    whatToDo: jobWhatToDo,
     live: overall.live,
     evidenceStatus,
     proofId,
@@ -705,18 +737,18 @@ app.get('/downloads/cyber-shield-extension.zip', (req, res) => {
 app.get('/api/extension/download', requireAuth, userLimiter, async (req, res) => {
   try {
     const userId = req.user.id;
-    const userPlanRec = await getUserPlan(userId);
-    const plan = userPlanRec.plan || 'free';
-    const now = Date.now();
-    const expiresAt = userPlanRec.expires_at ? new Date(userPlanRec.expires_at) : null;
-    const isProActive = plan === 'pro' && (!expiresAt || now <= expiresAt.getTime());
+    const isProActive = await isUserProActive(userId);
 
     if (!isProActive) {
       return res.status(403).json({ error: 'pro_required' });
     }
 
-    const zipPath = path.join(__dirname, 'private', 'cyber-shield-extension.zip');
-    if (!fs.existsSync(zipPath)) {
+    const possiblePaths = [
+      path.join(__dirname, 'private', 'cyber-shield-extension.zip'),
+      path.join(process.cwd(), 'private', 'cyber-shield-extension.zip')
+    ];
+    const zipPath = possiblePaths.find(p => fs.existsSync(p));
+    if (!zipPath) {
       return res.status(404).json({ error: 'Extension package not found' });
     }
 
@@ -745,7 +777,10 @@ app.get('/api/extension/key', requireAuth, userLimiter, async (req, res) => {
       createdAt: status.createdAt
     });
   } catch (err) {
-    return res.status(503).json({ error: err.message || 'Could not load extension key status' });
+    console.error(`[extension/key] GET failed: ${err.message || 'unknown'} (${err.code || 'NO_CODE'})`);
+    const isConn = err.code === 'DB_UNAVAILABLE' || err.code === 'ETIMEDOUT' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED' || err.message === 'Database unavailable';
+    const msg = isConn ? 'Database unavailable' : 'Could not load your key. Please try again.';
+    return res.status(503).json({ error: msg });
   }
 });
 
@@ -762,7 +797,10 @@ app.post('/api/extension/key', requireAuth, userLimiter, async (req, res) => {
       createdAt: created.createdAt
     });
   } catch (err) {
-    return res.status(503).json({ error: err.message || 'Could not generate extension key' });
+    console.error(`[extension/key] POST failed: ${err.message || 'unknown'} (${err.code || 'NO_CODE'})`);
+    const isConn = err.code === 'DB_UNAVAILABLE' || err.code === 'ETIMEDOUT' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED' || err.message === 'Database unavailable';
+    const msg = isConn ? 'Database unavailable' : 'Could not generate your key. Please try again.';
+    return res.status(503).json({ error: msg });
   }
 });
 
@@ -771,14 +809,17 @@ app.delete('/api/extension/key', requireAuth, userLimiter, async (req, res) => {
     await revokeExtensionKeys(req.user.id);
     return res.json({ ok: true, revoked: true });
   } catch (err) {
-    return res.status(503).json({ error: err.message || 'Could not revoke extension key' });
+    console.error(`[extension/key] DELETE failed: ${err.message || 'unknown'} (${err.code || 'NO_CODE'})`);
+    const isConn = err.code === 'DB_UNAVAILABLE' || err.code === 'ETIMEDOUT' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED' || err.message === 'Database unavailable';
+    const msg = isConn ? 'Database unavailable' : 'Could not revoke your key. Please try again.';
+    return res.status(503).json({ error: msg });
   }
 });
 
 app.use(createDetectorRouter(optionalAuth));
 app.use(createUpiRouter(optionalAuth));
 app.use(createMessageRouter(optionalAuth));
-app.use(createBillingRouter(requireAuth));
+app.use(createBillingRouter(requireAuth, optionalAuth));
 
 
 /* ---------- diagnose: open http://localhost:PORT/api/diagnose in the browser (local machine only) ---------- */

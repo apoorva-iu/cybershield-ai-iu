@@ -152,11 +152,44 @@ Reply with strict JSON only matching this schema:
       })
     });
 
-    if (!res.ok) {
+    let response = res;
+    if (!response.ok && (response.status === 404 || response.status === 429 || response.status === 503)) {
+      const fallbacks = (LLM_CFG.geminiFallbackModels || ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash']).filter(m => m !== modelName);
+      for (const fbModel of fallbacks) {
+        const fallbackUrl = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}${fbModel}:generateContent`;
+        const fbRes = await fetch(fallbackUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': key
+          },
+          signal: c.signal,
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            contents: [{
+              parts: [
+                { inlineData: { mimeType: cleanMime, data: buffer.toString('base64') } },
+                { text: "Transcribe all visible text into the required JSON schema." }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0,
+              responseMimeType: 'application/json'
+            }
+          })
+        });
+        if (fbRes.ok) {
+          response = fbRes;
+          break;
+        }
+      }
+    }
+
+    if (!response.ok) {
       return { ok: false, code: 503, error: 'AI_UNAVAILABLE' };
     }
 
-    const data = await res.json();
+    const data = await response.json();
     const rawOut = extractGeminiText(data);
     const parsed = parseJsonFromText(rawOut);
 

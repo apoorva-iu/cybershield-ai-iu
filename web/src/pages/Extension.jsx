@@ -4,6 +4,7 @@ import { Container } from '../components/ui';
 import { PageTransition } from '../components/wow';
 import { useAuth } from '../auth';
 import { useBillingStatus, startUpgrade } from '../lib/billing';
+import { usePlan } from '../lib/planContext';
 import {
   Download,
   CheckCircle2,
@@ -28,7 +29,8 @@ import {
 
 export function Extension() {
   const { session } = useAuth();
-  const { isPro, isPaymentsAvailable } = useBillingStatus(session);
+  const { isPro, loading: planLoading } = usePlan('Extension');
+  const { isPaymentsAvailable } = useBillingStatus(session);
   const [info, setInfo] = useState(null);
   const [activeTabMock, setActiveTabMock] = useState('message');
   const [downloading, setDownloading] = useState(false);
@@ -69,14 +71,23 @@ export function Extension() {
     fetch('/api/extension/key', {
       headers: { Authorization: `Bearer ${session.access_token}` }
     })
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => {
-        if (!mounted || !data) return;
-        setHasExtKey(Boolean(data.hasKey));
-        setExtKeyLast4(data.last4 || null);
-        setExtKeyCreatedAt(data.createdAt || null);
+      .then(async res => {
+        const data = await res.json().catch(() => null);
+        if (!mounted) return;
+        if (!res.ok) {
+          if (data?.error) setKeyError(data.error);
+          return;
+        }
+        if (data) {
+          setHasExtKey(Boolean(data.hasKey));
+          setExtKeyLast4(data.last4 || null);
+          setExtKeyCreatedAt(data.createdAt || null);
+        }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (!mounted) return;
+        setKeyError(err.message || 'Database unavailable');
+      });
     return () => { mounted = false; };
   }, [isPro, session?.access_token]);
 
@@ -356,6 +367,11 @@ export function Extension() {
                   Explore web tools
                 </Link>
               </div>
+            ) : planLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', minHeight: '260px', gap: '12px' }}>
+                <div className="spinner" />
+                <span style={{ fontSize: '14px', color: 'var(--text-dim)' }}>Checking your plan status…</span>
+              </div>
             ) : isPro ? (
               <div>
                 <button
@@ -377,8 +393,13 @@ export function Extension() {
                   }}
                 >
                   <Download size={20} />
-                  <span>{downloading ? 'Downloading...' : 'Download for Chrome, Edge and Brave'}</span>
+                  <span>{downloading ? 'Downloading...' : 'Download for Chrome and Edge'}</span>
                 </button>
+
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary, #94A3B8)', marginTop: '10px', marginBottom: '2px' }}>
+                  Works in Chrome and Edge on Windows, macOS and Linux.
+                </p>
+
 
                 {downloadError && (
                   <p style={{ fontSize: '13px', color: '#F87171', marginTop: '10px' }}>
@@ -774,7 +795,7 @@ export function Extension() {
                 )}
                 {info && (
                   <p style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '14px', marginBottom: 0 }}>
-                    Version {info.version}{formattedSize ? ` • ${formattedSize}` : ''} • Chrome, Edge &amp; Brave
+                    Version {info.version}{formattedSize ? ` • ${formattedSize}` : ''} • Chrome and Edge
                   </p>
                 )}
               </div>
@@ -1261,7 +1282,7 @@ export function Extension() {
                     Open extensions page
                   </h3>
                   <p style={{ fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.45 }}>
-                    Navigate to <code>chrome://extensions</code> (or <code>edge://extensions</code>, <code>brave://extensions</code>) and switch on <strong>Developer mode</strong> in the top-right.
+                    Navigate to <code>chrome://extensions</code> (or <code>edge://extensions</code>) and switch on <strong>Developer mode</strong> in the top-right.
                   </p>
                 </div>
               </div>
@@ -1409,7 +1430,7 @@ export function Extension() {
                   Which plan includes the extension?
                 </h3>
                 <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                  The browser extension is included with the Pro plan. Pro gives you 100 checks every 30 days and access to the extension for Chrome, Edge, and Brave.
+                  The browser extension is included with the Pro plan. Pro gives you 100 checks every 30 days and access to the extension for Chrome and Edge.
                 </p>
               </div>
 
@@ -1425,7 +1446,7 @@ export function Extension() {
                   Does it work on mobile phones?
                 </h3>
                 <p style={{ fontSize: '14px', color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                  No. Desktop and laptop browsers (Google Chrome, Microsoft Edge, Brave) are supported. Mobile browsers do not support desktop extension APIs. On phones, use the Cyber Shield website and screenshot scanner directly.
+                  No. Desktop and laptop browsers (Google Chrome, Microsoft Edge) are supported. Mobile browsers do not support desktop extension APIs. On phones, use the Cyber Shield website and screenshot scanner directly.
                 </p>
               </div>
 

@@ -31,14 +31,21 @@ WORDING POLICY AND BANNED CLAIMS:
 - Any claim asserting as a fact that something is fabricated, fake, forged, edited, or genuine is strictly prohibited.
 - Do not use complex technical or philosophical jargon.
 
-SCORE AND LEVEL CALIBRATION:
-- 0 to 29: "low" (Routine chat, normal family/friend messaging, or plain notice with no deceptive demands)
-- 30 to 69: "medium" (Ambiguous context, unsolicited contact, unfamiliar links, or unverified claims needing caution)
-- 70 to 100: "high" (Coercive urgency, demands for credentials/OTP/PIN/money, deceptive threats, impersonation, advance fees)
+SCORE AND LEVEL CALIBRATION & SEVERITY DEFINITIONS:
+- "high" (70 to 100): Coercive urgency, impersonation of authorities or utility companies, threats of arrest/disconnection/account blockage, demands for OTP/PIN/credentials, advance fees, or malicious links.
+  * Example 1: "Dear customer, your electricity power will be disconnected tonight at 9:30 PM due to unpaid bill. Call electricity officer immediately at 9876543210."
+  * Example 2: "CBI Cyber Cell: Illegal parcel containing contraband seized under your Aadhaar. Digital arrest warrant issued. Transfer funds to safety account for verification."
+- "medium" (40 to 69): Unsolicited contact, cold outreach, promotional messages with unknown links, or ambiguous claims that warrant caution but lack direct threats, fee demands, or credential harvesting.
+  * Example 1: "Exclusive pre-launch offer: Get 50% discount on summer collection. Browse catalog here: https://brand-promo.co/shop"
+  * Example 2: "Hello, I noticed your profile on LinkedIn and would like to discuss potential consulting collaboration. Are you open to a call this week?"
+- "low" (5 to 39): Routine conversations, personal chats, transparent transactional updates without urgent action demands or deceptive links.
+  * Example 1: "Hey, are we still meeting for lunch at 1 PM today?"
+  * Example 2: "Your order #8921 has been dispatched via BlueDart. Track delivery in your official app."
 - "unable": When context is insufficient, text is unreadable, or context is too ambiguous to judge (score is null).
 - Use the whole range; avoid round numbers unless specifically justified.
 
-EVIDENCE QUOTE INTEGRITY:
+EVIDENCE QUOTE INTEGRITY & SEPARATE SIGNALS:
+- You MUST list each issue or deceptive pattern found as a SEPARATE entry in the "signals" array.
 - Every entry in "signals" and "flaggedPhrases" that includes a quote or text field MUST be an EXACT, VERBATIM substring of the input text (preserving exact characters).
 - Do NOT paraphrase, summarize, or alter characters in quotes. If no exact substring exists, omit the quote.
 

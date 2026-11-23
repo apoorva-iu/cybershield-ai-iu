@@ -6,12 +6,14 @@ import { CheckCircle2, Sparkles, ChevronDown, ArrowRight } from 'lucide-react';
 import { PLAN_LIMITS, getPlans, getPricingFaq } from '../config/plans';
 import { useAuth, setReturnTo } from '../auth';
 import { startUpgrade, useBillingStatus, formatExpiryDate } from '../lib/billing';
+import { usePlan } from '../lib/planContext';
 import './pricing.css';
 
 export function Pricing() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const { isPro, expiresAt, paymentsMode, isPaymentsAvailable } = useBillingStatus(session);
+  const { isPro, expiresAt, loading: planLoading } = usePlan('Pricing');
+  const { paymentsMode, isPaymentsAvailable } = useBillingStatus(session);
   const [inProgress, setInProgress] = useState(false);
 
   // Accordion: strictly one open at a time (first FAQ item open by default)
@@ -63,7 +65,10 @@ export function Pricing() {
               let isDisabled = false;
 
               if (isProCard) {
-                if (!isPaymentsAvailable) {
+                if (planLoading) {
+                  buttonText = 'Checking plan…';
+                  isDisabled = true;
+                } else if (!isPaymentsAvailable) {
                   buttonText = 'Payments unavailable right now';
                   isDisabled = true;
                 } else if (inProgress) {
@@ -77,7 +82,9 @@ export function Pricing() {
               let badgeText = plan.status;
               let badgeClass = plan.id === 'free' ? 'badge-available' : 'badge-pro';
 
-              if (isProCard && isPro) {
+              if (planLoading) {
+                badgeText = plan.status;
+              } else if (isProCard && isPro) {
                 badgeText = 'Current plan';
                 badgeClass = 'badge-available badge-current';
               } else if (!isProCard && !isPro && session) {

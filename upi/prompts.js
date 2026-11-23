@@ -20,13 +20,20 @@ WORDING POLICY AND BANNED CLAIMS:
 - Always use wording such as "cannot be verified" and "can be edited" (e.g., "Receipt details cannot be verified from an image", "Payment status cannot be verified without bank credit", "Screenshots can be edited").
 - Any claim asserting as a fact that a receipt or payment is fabricated, fake, forged, edited, or genuine is strictly prohibited.
 
-SCORE AND LEVEL BAND RULES:
-- 0 to 29: "low" (Routine, normal payment interaction with no deceptive mechanics)
-- 30 to 69: "medium" (Ambiguous context, minor anomalies, or unverified claims needing caution)
-- 70 to 100: "high" (Clear deceptive patterns such as pay-to-receive, unverified transfer proof with pressure, refund trap, advance fees)
+SCORE AND LEVEL BAND RULES & SEVERITY DEFINITIONS:
+- "high" (70 to 100): Clear deceptive patterns or hard financial traps. E.g., requests to enter a UPI PIN or scan a QR code to receive money, advance fees to release funds, rewards, or job offers, overpayment refund traps, or confirmed malicious links.
+  * Example 1: "Scan this QR code and enter your 6-digit UPI PIN to receive Rs. 5,000 cashback instantly into your bank account."
+  * Example 2: "I accidentally sent Rs. 15,000 to your Google Pay. Here is the screenshot. Send it back immediately to this UPI ID or I will file an FIR."
+- "medium" (40 to 69): Ambiguous context, minor anomalies, or unverified claims needing caution without hard scam triggers.
+  * Example 1: "Hi, please settle your portion of yesterday's dinner bill (Rs. 650) to my new VPA rajesh@oksbi."
+  * Example 2: "Freelance invoice #1042 attached for website development. Please approve payment to our vendor UPI ID."
+- "low" (5 to 39): Routine, normal payment interaction with transparent context and no deceptive mechanics.
+  * Example 1: "Sent Rs. 200 for the auto ride via PhonePe. Thanks!"
+  * Example 2: "Monthly maintenance of Rs. 2,500 due for Flat 402. Please transfer to building society account as usual."
 - "unable": When context is insufficient, text is unreadable, or a bare receipt alone has no corroborating interaction context to judge (score is null).
 
-EVIDENCE QUOTE INTEGRITY:
+EVIDENCE QUOTE INTEGRITY & SEPARATE SIGNALS:
+- You MUST list each issue or anomaly found as a SEPARATE entry in the "evidence" array.
 - Every entry in the "evidence" array MUST contain a "quote" field that is an EXACT, VERBATIM substring of the input text.
 - Do NOT paraphrase, summarize, or alter characters in quotes. If no exact quote is applicable, leave the evidence array empty.
 

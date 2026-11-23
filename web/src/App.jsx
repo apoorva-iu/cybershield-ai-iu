@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth, setReturnTo } from './auth';
+import { PlanProvider } from './lib/planContext';
 
 // Keep Home and Scan eagerly loaded as requested
 import { Home } from './pages/Home';
@@ -199,8 +200,9 @@ export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <ScrollToTop />
-        <Routes>
+        <PlanProvider>
+          <ScrollToTop />
+          <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="scan" element={<ScanRedirect />} />
@@ -418,6 +420,7 @@ export function App() {
             />
           </Route>
         </Routes>
+        </PlanProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

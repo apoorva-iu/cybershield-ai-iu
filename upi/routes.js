@@ -132,7 +132,8 @@ function handleReadScreenshot(req, res) {
         return res.status(400).json({ error: visionResult.error });
       }
       return res.status(503).json({
-        error: 'AI_UNAVAILABLE',
+        error: 'We could not read this screenshot right now. Please try again or paste the text.',
+        code: 'AI_UNAVAILABLE',
         message: 'We could not read this screenshot right now. Please try again or paste the text.'
       });
     }

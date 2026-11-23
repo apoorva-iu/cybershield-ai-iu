@@ -198,10 +198,14 @@ Reply with strict JSON only matching this schema:
     attemptRes = await tryVisionCall(primaryUrl);
   }
 
-  // If still failed and not already using fallback model, try fallback model
-  if (!attemptRes.ok && modelName !== 'gemini-flash-lite-latest') {
-    const fallbackUrl = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}gemini-flash-lite-latest:generateContent`;
-    attemptRes = await tryVisionCall(fallbackUrl);
+  // If still failed and not already using fallback model, try fallback models
+  if (!attemptRes.ok) {
+    const fallbacks = (LLM_CFG.geminiFallbackModels || ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash']).filter(m => m !== modelName);
+    for (const fbModel of fallbacks) {
+      const fallbackUrl = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}${fbModel}:generateContent`;
+      attemptRes = await tryVisionCall(fallbackUrl);
+      if (attemptRes.ok) break;
+    }
   }
 
   if (!attemptRes.ok) {

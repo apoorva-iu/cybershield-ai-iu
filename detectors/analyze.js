@@ -6,6 +6,7 @@ const { createProof } = require('./proof');
 const { evaluateRules } = require('./rules');
 const { extractLinks, inspectLinks, extractEmails, extractPhoneNumbers, extractUpiIds, extractAmounts } = require('./evidence');
 const { analyzeTextWithGemini } = require('./gemini');
+const { generateSpecificAnalysisText, dedupeAdviceList } = require('./analysis-text');
 
 const upiConfig = require('../config/upi-rules.json');
 
@@ -40,23 +41,24 @@ function detectJobOffer(text) {
 function getWhatToDo(kind) {
   const common = [
     'Do not click unknown links or share OTP, passwords, or UPI PIN.',
-    'Report cyber fraud immediately at cybercrime.gov.in.',
-    'Call 1930 quickly if money was sent or compromised.'
+    'Report cyber fraud immediately at cybercrime.gov.in or call national helpline 1930.'
   ];
 
+  let rawList;
   if (kind === 'upi') {
-    return [
+    rawList = [
       'A UPI PIN is only needed to send money, never to receive it.',
       'Decline unknown collect requests or payment approvals.',
       ...common
     ];
+  } else {
+    rawList = [
+      'Verify official notices directly on the organization\'s official portal.',
+      'Never download remote-access apps (.apk, AnyDesk, TeamViewer) from chat links.',
+      ...common
+    ];
   }
-
-  return [
-    'Verify official notices directly on the organization\'s official portal.',
-    'Never download remote-access apps (.apk, AnyDesk, TeamViewer) from chat links.',
-    ...common
-  ];
+  return dedupeAdviceList(rawList);
 }
 
 function buildChecks(kind, {
@@ -622,15 +624,6 @@ async function handleAnalyze(req, res) {
     scamType = ruleResult.matchedRules[0].reason;
   }
 
-  // Headlines
-  const headlines = {
-    high: ['High Risk Scam Detected', 'Evidence suggests this message exhibits patterns common in financial fraud.'],
-    medium: ['Suspicious Patterns Detected', 'Evidence suggests caution is warranted before responding or transacting.'],
-    low: ['Low Risk Detected', 'Evidence suggests this message does not exhibit known scam patterns.'],
-    unable: ['Unable to Verify', 'Evidence suggests the input provides insufficient context to reliably assess risk.']
-  };
-  const headline = headlines[finalLevel] || headlines.low;
-
   // Build the 5 structured check objects required for each tool
   const checks = buildChecks(detectedKind, {
     text,
@@ -647,6 +640,19 @@ async function handleAnalyze(req, res) {
     aiScore,
     scamType
   });
+
+  const analysisText = generateSpecificAnalysisText({
+    tool: detectedKind,
+    level: finalLevel,
+    text,
+    scamType,
+    checks,
+    evidenceSources: {
+      confirmedMaliciousLink: linkInspections.some(l => (l.urlhaus && l.urlhaus.listed) || (l.virustotal && l.virustotal.malicious > 0))
+    }
+  });
+  const headline = analysisText.headline;
+  const whatToDo = analysisText.whatToDo;
 
   const extractedItems = {
     upiIds: upiIds.map(u => u.upiId),
@@ -667,7 +673,7 @@ async function handleAnalyze(req, res) {
     tool: detectedKind,
     scamType,
     headline,
-    whatToDo: getWhatToDo(detectedKind),
+    whatToDo,
     flaggedPhrases,
     evidenceSourceCount,
     evidenceSources: { rules: true, links: extractedLinks.length > 0, ai: Boolean(aiResult && aiResult.ok) },
@@ -747,7 +753,7 @@ async function handleAnalyze(req, res) {
     detectedKind,
     scamType,
     flaggedPhrases,
-    whatToDo: getWhatToDo(detectedKind),
+    whatToDo,
     suggestedTool,
     extractedText: null,
     proofId: proofResult.proofId,

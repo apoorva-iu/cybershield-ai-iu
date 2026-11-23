@@ -221,7 +221,7 @@ async function activateProPass(userId) {
 
   // Update in DB
   const client = DB.getClient();
-  if (DB.getStatus() === 'connected' && client) {
+  if (client) {
     try {
       await client.from('user_plans').upsert(record);
     } catch (err) {
@@ -230,6 +230,91 @@ async function activateProPass(userId) {
   }
 
   return record;
+}
+
+/**
+ * Payment recovery: if user has a payment_orders row with status 'paid'
+ * or 'created' from Razorpay but no active plan, check order with Razorpay
+ * and activate Pro (idempotent).
+ */
+async function recoverUserPayment(userId) {
+  if (!userId) return null;
+
+  try {
+    const currentPlan = await getUserPlan(userId);
+    const now = Date.now();
+    const expiresAt = currentPlan?.expires_at ? new Date(currentPlan.expires_at).getTime() : 0;
+    const isProActive = currentPlan?.plan === 'pro' && expiresAt > now;
+
+    // Check payment_orders for this user
+    let orders = [];
+    const client = DB.getClient();
+    if (client) {
+      try {
+        const { data, error } = await client
+          .from('payment_orders')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (!error && Array.isArray(data)) {
+          orders = data;
+        }
+      } catch (err) {
+        console.warn('[billing] recoverUserPayment DB error:', err.message);
+      }
+    }
+
+    // Merge in-memory orders
+    const memOrders = memoryPaymentOrders.filter((o) => o.user_id === userId);
+    for (const mo of memOrders) {
+      if (!orders.find((o) => o.razorpay_order_id === mo.razorpay_order_id)) {
+        orders.push(mo);
+      }
+    }
+
+    if (!orders.length) return null;
+
+    // 1. If user already has paid order but plan is NOT active, activate it
+    const paidOrder = orders.find((o) => o.status === 'paid');
+    if (paidOrder && !isProActive) {
+      console.log(`[billing] Recovering Pro for user ${userId} from paid order ${paidOrder.razorpay_order_id}`);
+      return await activateProPass(userId);
+    }
+
+    // 2. If user has 'created' order(s) and plan is not active, check with Razorpay
+    if (!isProActive) {
+      const createdOrders = orders.filter((o) => o.status === 'created' && o.razorpay_order_id);
+      const rzpClient = getRazorpayClient();
+      if (rzpClient && rzpClient.orders && typeof rzpClient.orders.fetch === 'function') {
+        for (const order of createdOrders) {
+          try {
+            const rzpOrder = await rzpClient.orders.fetch(order.razorpay_order_id);
+            if (
+              rzpOrder &&
+              (rzpOrder.status === 'paid' ||
+                (rzpOrder.amount_paid && rzpOrder.amount_paid >= (order.amount_paise || 100)))
+            ) {
+              console.log(
+                `[billing] Recovered paid order from Razorpay API for user ${userId}, order ${order.razorpay_order_id}`
+              );
+              await updatePaymentOrder(order.razorpay_order_id, {
+                status: 'paid',
+                paid_at: new Date()
+              });
+              return await activateProPass(userId);
+            }
+          } catch (fetchErr) {
+            console.warn('[billing] Razorpay order fetch check failed:', fetchErr.message);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[billing] recoverUserPayment error:', err.message);
+  }
+
+  return null;
 }
 
 /**
@@ -319,22 +404,13 @@ async function verifyOrderPayment({ userId, orderId, paymentId, signature }) {
     throw err;
   }
 
-  if (order.user_id !== userId) {
-    const err = new Error('Forbidden: order does not belong to user');
-    err.code = 'FORBIDDEN';
-    err.status = 403;
+  // Activate Pro using user_id saved on payment_orders row at creation, not only logged-in session
+  const targetUserId = order.user_id || userId;
+  if (!targetUserId) {
+    const err = new Error('No user associated with this order');
+    err.code = 'INVALID_ORDER';
+    err.status = 400;
     throw err;
-  }
-
-  // IDEMPOTENCY: If already paid, return success without extending again
-  if (order.status === 'paid') {
-    const currentPlan = await getUserPlan(userId);
-    return {
-      ok: true,
-      alreadyPaid: true,
-      plan: 'pro',
-      expiresAt: currentPlan.expires_at
-    };
   }
 
   const { keySecret } = getRazorpayConfig();
@@ -366,8 +442,27 @@ async function verifyOrderPayment({ userId, orderId, paymentId, signature }) {
     throw err;
   }
 
+  // IDEMPOTENCY: If already paid, ensure Pro is active and return success
+  if (order.status === 'paid') {
+    const currentPlan = await getUserPlan(targetUserId);
+    const now = Date.now();
+    const expiresAt = currentPlan?.expires_at ? new Date(currentPlan.expires_at).getTime() : 0;
+    const isProActive = currentPlan?.plan === 'pro' && expiresAt > now;
+    let planRecord = currentPlan;
+    if (!isProActive) {
+      planRecord = await activateProPass(targetUserId);
+    }
+    return {
+      ok: true,
+      alreadyPaid: true,
+      plan: 'pro',
+      expiresAt: planRecord?.expires_at || null,
+      userId: targetUserId
+    };
+  }
+
   // Activate Pro pass
-  const planRecord = await activateProPass(userId);
+  const planRecord = await activateProPass(targetUserId);
 
   // Mark order paid
   await updatePaymentOrder(orderId, {
@@ -379,7 +474,8 @@ async function verifyOrderPayment({ userId, orderId, paymentId, signature }) {
   return {
     ok: true,
     plan: 'pro',
-    expiresAt: planRecord.expires_at
+    expiresAt: planRecord.expires_at,
+    userId: targetUserId
   };
 }
 
@@ -459,21 +555,111 @@ async function processWebhook({ rawBody, signatureHeader }) {
     return { ok: true, ignored: true };
   }
 
-  if (order.status === 'paid') {
-    return { ok: true, alreadyPaid: true };
-  }
-
+  // Activate Pro pass from webhook if verify never arrives or plan is not active
   if (order.user_id) {
-    await activateProPass(order.user_id);
+    const currentPlan = await getUserPlan(order.user_id);
+    const now = Date.now();
+    const expiresAt = currentPlan?.expires_at ? new Date(currentPlan.expires_at).getTime() : 0;
+    const isProActive = currentPlan?.plan === 'pro' && expiresAt > now;
+    if (!isProActive || order.status !== 'paid') {
+      await activateProPass(order.user_id);
+    }
   }
 
-  await updatePaymentOrder(orderId, {
-    status: 'paid',
-    razorpay_payment_id: paymentId || order.razorpay_payment_id,
-    paid_at: new Date()
-  });
+  if (order.status !== 'paid') {
+    await updatePaymentOrder(orderId, {
+      status: 'paid',
+      razorpay_payment_id: paymentId || order.razorpay_payment_id,
+      paid_at: new Date()
+    });
+  }
 
   return { ok: true };
+}
+
+/**
+ * Checks payment status for an order:
+ * If order is paid in DB or Razorpay but plan isn't active, activates it.
+ * If still unknown, returns { status: 'unknown', orderId, message }.
+ */
+async function checkPaymentOrderStatus(orderId, userId) {
+  if (!orderId) {
+    return { status: 'unknown', error: 'Order ID required' };
+  }
+
+  const order = await findPaymentOrderByRazorpayOrderId(orderId);
+  const targetUserId = order?.user_id || userId;
+
+  // 1. If order exists and is already marked paid in DB
+  if (order && order.status === 'paid') {
+    if (targetUserId) {
+      const currentPlan = await getUserPlan(targetUserId);
+      const now = Date.now();
+      const expiresAt = currentPlan?.expires_at ? new Date(currentPlan.expires_at).getTime() : 0;
+      const isProActive = currentPlan?.plan === 'pro' && expiresAt > now;
+      let planRecord = currentPlan;
+      if (!isProActive) {
+        planRecord = await activateProPass(targetUserId);
+      }
+      return {
+        status: 'paid',
+        isPro: true,
+        expiresAt: planRecord?.expires_at || null,
+        orderId,
+        userId: targetUserId
+      };
+    }
+    return { status: 'paid', isPro: true, orderId };
+  }
+
+  // 2. Check directly with Razorpay API
+  const rzpClient = getRazorpayClient();
+  if (rzpClient && rzpClient.orders && typeof rzpClient.orders.fetch === 'function') {
+    try {
+      const rzpOrder = await rzpClient.orders.fetch(orderId);
+      if (
+        rzpOrder &&
+        (rzpOrder.status === 'paid' ||
+          (rzpOrder.amount_paid && rzpOrder.amount_paid >= (order?.amount_paise || 100)))
+      ) {
+        // Mark paid in DB
+        await updatePaymentOrder(orderId, {
+          status: 'paid',
+          paid_at: new Date()
+        });
+        let expiresAt = null;
+        if (targetUserId) {
+          const planRecord = await activateProPass(targetUserId);
+          expiresAt = planRecord?.expires_at || null;
+        }
+        return {
+          status: 'paid',
+          isPro: true,
+          expiresAt,
+          orderId,
+          userId: targetUserId
+        };
+      }
+      if (rzpOrder && (rzpOrder.status === 'attempted' || rzpOrder.status === 'created')) {
+        return {
+          status: 'pending',
+          isPro: false,
+          orderId,
+          message: 'Payment was not completed or is pending.'
+        };
+      }
+    } catch (err) {
+      console.warn('[billing] checkPaymentOrderStatus Razorpay error:', err.message);
+    }
+  }
+
+  // 3. Status is unknown
+  return {
+    status: 'unknown',
+    isPro: false,
+    orderId,
+    message: `Payment status could not be verified automatically. Contact support with your order ID: ${orderId}`
+  };
 }
 
 /**
@@ -546,8 +732,10 @@ module.exports = {
   updatePaymentOrder,
   anonymizeUserPaymentOrders,
   activateProPass,
+  recoverUserPayment,
   createOrder,
   verifyOrderPayment,
+  checkPaymentOrderStatus,
   processWebhook,
   getBillingStatus,
   memoryPaymentOrders

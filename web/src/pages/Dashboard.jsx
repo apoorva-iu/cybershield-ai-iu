@@ -17,6 +17,7 @@ import {
   Printer,
   Trash2,
   ExternalLink,
+  Download,
   CheckCircle2,
   AlertTriangle,
   LogOut,
@@ -30,6 +31,7 @@ import { CountUp } from '../components/wow';
 import { addToast } from '../components/Toast';
 import { ThemeToggle } from '../lib/theme';
 import { useBillingStatus, startUpgrade, formatExpiryDate } from '../lib/billing';
+import { usePlan } from '../lib/planContext';
 import { useUsage } from '../lib/useUsage';
 import { UsagePill } from '../components/UsagePill';
 import { Scan } from './Scan';
@@ -405,7 +407,7 @@ const SIDEBAR_ITEMS = [
 
 export function DashboardLayout() {
   const { authReady, session, profile, signOut } = useAuth();
-  const { isPro } = useBillingStatus(session);
+  const { isPro, loading: planLoading } = usePlan('DashboardLayout');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -539,7 +541,7 @@ export function DashboardLayout() {
             <strong className="dash-sidebar-user-name" title={displayName}>
               {displayName}
             </strong>
-            <span className="dash-sidebar-user-plan">{isPro ? 'Pro plan' : 'Free plan'}</span>
+            <span className="dash-sidebar-user-plan">{planLoading ? 'Loading…' : isPro ? 'Pro plan' : 'Free plan'}</span>
             <UsagePill variant="header" />
           </div>
         </div>
@@ -627,15 +629,15 @@ export function DashboardOverview() {
   const { session, profile } = useAuth();
   const displayName = getDisplayName(profile, session);
   const {
-    status: billingStatus,
     isPro,
     daysLeft,
     expiresAt,
-    checksUsed,
-    checksLimit,
-    paymentsMode,
-    isPaymentsAvailable
-  } = useBillingStatus(session);
+    quota,
+    loading: planLoading
+  } = usePlan('DashboardOverview');
+  const { paymentsMode, isPaymentsAvailable } = useBillingStatus(session);
+  const checksUsed = quota?.used || 0;
+  const checksLimit = quota?.limit || (isPro ? 100 : 5);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const handlePlanAction = () => {
@@ -751,64 +753,74 @@ export function DashboardOverview() {
       {/* Plan Card */}
       <section className="dash-card dash-plan-status-card" aria-labelledby="dash-plan-heading">
         <div className="dash-plan-card-body">
-          <div className="dash-plan-card-info">
-            <div className="dash-plan-card-badge-row">
-              <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
-                {isPro ? 'Pro' : 'Free'}
-              </span>
-              <UsagePill variant="tool" />
-              <span className="dash-plan-expiry-text">
-                {isPro && expiresAt
-                  ? `Active until ${formatExpiryDate(expiresAt)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`
-                  : 'Free tier · 5 checks per month'}
-              </span>
+          {planLoading ? (
+            <div className="dash-plan-card-info" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0' }}>
+              <div className="dash-skeleton" style={{ width: '90px', height: '22px', borderRadius: '9999px' }} />
+              <div className="dash-skeleton" style={{ width: '180px', height: '24px', borderRadius: '4px' }} />
+              <div className="dash-skeleton" style={{ width: '140px', height: '16px', borderRadius: '4px' }} />
             </div>
-            <h2 id="dash-plan-heading" className="dash-heading-md" style={{ margin: '6px 0 4px' }}>
-              {isPro ? 'Pro Screening Plan' : 'Free Screening Plan'}
-            </h2>
-            <p className="dash-text-secondary" style={{ margin: '0 0 10px' }}>
-              {checksUsed} of {checksLimit} checks used this period.
-            </p>
-            <div
-              className="dash-plan-progress-bar"
-              role="progressbar"
-              aria-valuenow={checksUsed}
-              aria-valuemin="0"
-              aria-valuemax={checksLimit}
-            >
-              <div
-                className="dash-plan-progress-fill"
-                style={{
-                  width: `${Math.min(100, Math.round(((checksUsed || 0) / (checksLimit || 1)) * 100))}%`
-                }}
-              />
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="dash-plan-card-info">
+                <div className="dash-plan-card-badge-row">
+                  <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
+                    {isPro ? 'Pro' : 'Free'}
+                  </span>
+                  <UsagePill variant="tool" />
+                  <span className="dash-plan-expiry-text">
+                    {isPro && expiresAt
+                      ? `Active until ${formatExpiryDate(expiresAt)} (${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left)`
+                      : 'Free tier · 5 checks per month'}
+                  </span>
+                </div>
+                <h2 id="dash-plan-heading" className="dash-heading-md" style={{ margin: '6px 0 4px' }}>
+                  {isPro ? 'Pro Screening Plan' : 'Free Screening Plan'}
+                </h2>
+                <p className="dash-text-secondary" style={{ margin: '0 0 10px' }}>
+                  {checksUsed} of {checksLimit} checks used this period.
+                </p>
+                <div
+                  className="dash-plan-progress-bar"
+                  role="progressbar"
+                  aria-valuenow={checksUsed}
+                  aria-valuemin="0"
+                  aria-valuemax={checksLimit}
+                >
+                  <div
+                    className="dash-plan-progress-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round(((checksUsed || 0) / (checksLimit || 1)) * 100))}%`
+                    }}
+                  />
+                </div>
+              </div>
 
-          <div className="dash-plan-card-action">
-            <button
-              type="button"
-              className="dash-btn-primary"
-              onClick={handlePlanAction}
-              disabled={upgradeLoading || !isPaymentsAvailable}
-              style={
-                upgradeLoading || !isPaymentsAvailable
-                  ? { opacity: 0.65, cursor: 'not-allowed' }
-                  : undefined
-              }
-            >
-              <CreditCard size={16} aria-hidden="true" />
-              <span>
-                {!isPaymentsAvailable
-                  ? 'Payments unavailable right now'
-                  : upgradeLoading
-                  ? 'Processing...'
-                  : isPro
-                  ? 'Add 30 days for Rs 1'
-                  : 'Upgrade for ₹1'}
-              </span>
-            </button>
-          </div>
+              <div className="dash-plan-card-action">
+                <button
+                  type="button"
+                  className="dash-btn-primary"
+                  onClick={handlePlanAction}
+                  disabled={upgradeLoading || !isPaymentsAvailable}
+                  style={
+                    upgradeLoading || !isPaymentsAvailable
+                      ? { opacity: 0.65, cursor: 'not-allowed' }
+                      : undefined
+                  }
+                >
+                  <CreditCard size={16} aria-hidden="true" />
+                  <span>
+                    {!isPaymentsAvailable
+                      ? 'Payments unavailable right now'
+                      : upgradeLoading
+                      ? 'Processing...'
+                      : isPro
+                      ? 'Add 30 days for Rs 1'
+                      : 'Upgrade for ₹1'}
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -1478,6 +1490,84 @@ export function DashboardScanDetail() {
     }
   };
 
+  const r = scan?.report || {};
+  const o = r.overall || {};
+  const inp = r.input || {};
+
+  const resolvedToolKind = (
+    scan?.tool ||
+    r.tool ||
+    inp.kind ||
+    (inp.url || inp.company || inp.recruiterEmail ? 'job' : 'message')
+  ).toLowerCase();
+
+  const rawInputText = inp.desc || inp.description || (typeof inp === 'string' ? inp : '');
+  const inputLength =
+    inp.inputLength ||
+    (rawInputText ? rawInputText.length : 0);
+
+  const handleDownloadReceipt = () => {
+    if (!scan) return;
+    const proofId = scan.proofId || id;
+    const rep = scan.report || {};
+    const overall = rep.overall || {};
+    const resolvedTool = resolvedToolKind || 'job';
+    const toolDisplayName = resolvedTool === 'upi'
+      ? 'UPI Payment Check'
+      : resolvedTool === 'message'
+      ? 'Message Scanner'
+      : 'Job Scam Check';
+    const verdictLabel = scan.level
+      ? `${scan.level.toUpperCase()} RISK`
+      : (overall.level ? `${overall.level.toUpperCase()} RISK` : 'UNKNOWN');
+    const riskScoreVal = scan.score != null
+      ? scan.score
+      : (overall.score != null ? overall.score : null);
+    const hashVal = scan.reportHash || scan.receipt?.reportHash || scan.hash || rep.reportHash || null;
+    const timeVal = scan.createdAt || scan.created_at || scan.timestamp || rep.generatedAt || new Date().toISOString();
+
+    const receiptData = scan.receipt || {
+      version: 1,
+      format: 'cybershield-verification-receipt-v1',
+      receiptId: proofId,
+      proofId: proofId,
+      reportHash: hashVal,
+      sha256: hashVal,
+      timestamp: timeVal,
+      toolName: toolDisplayName,
+      tool: resolvedTool,
+      verdict: verdictLabel,
+      riskScore: riskScoreVal,
+      score: riskScoreVal,
+      verificationStatus: scan.proofId ? 'verified_on_ledger' : 'unanchored',
+      block: scan.block != null ? scan.block : (scan.receipt?.block ?? null),
+      blockHash: scan.blockHash || scan.receipt?.blockHash || null,
+      report: scan.report || {
+        level: scan.level,
+        score: scan.score,
+        headline: scan.headline,
+        overall: overall,
+        checks: rep.checks || scan.checks || [],
+        input: rep.input || {}
+      },
+      subject: { tool: resolvedTool }
+    };
+
+    try {
+      const blob = new Blob([JSON.stringify(receiptData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipt-${proofId || 'verification'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download verification receipt:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dash-page-stack" role="status" aria-live="polite">
@@ -1512,22 +1602,6 @@ export function DashboardScanDetail() {
     );
   }
 
-  const r = scan.report || {};
-  const o = r.overall || {};
-  const inp = r.input || {};
-
-  const resolvedToolKind = (
-    scan.tool ||
-    r.tool ||
-    inp.kind ||
-    (inp.url || inp.company || inp.recruiterEmail ? 'job' : 'message')
-  ).toLowerCase();
-
-  const rawInputText = inp.desc || inp.description || (typeof inp === 'string' ? inp : '');
-  const inputLength =
-    inp.inputLength ||
-    (rawInputText ? rawInputText.length : 0);
-
   return (
     <div className="scan-page dash-detail-page dash-page-stack">
       {/* Top Action Bar (Single location on History page, hidden in print) */}
@@ -1538,15 +1612,15 @@ export function DashboardScanDetail() {
         </Link>
 
         <div className="dash-detail-actions">
-          {scan.proofId && (
-            <Link
-              to={`/verify?proof=${encodeURIComponent(scan.proofId)}`}
-              className="dash-btn-outline"
-            >
-              <ExternalLink size={14} />
-              <span>Verify this proof</span>
-            </Link>
-          )}
+          <button
+            type="button"
+            className="dash-btn-outline"
+            onClick={handleDownloadReceipt}
+            title="Download signed verification receipt (.json)"
+          >
+            <Download size={14} />
+            <span>Download Verification Receipt</span>
+          </button>
           <button
             type="button"
             className="dash-btn-primary"
@@ -1579,19 +1653,15 @@ export function DashboardScanDetail() {
           </strong>
         </div>
         <div className="dash-offer-meta-item">
-          <span className="dash-offer-meta-label">Input length</span>
-          <span className="dash-offer-meta-val">{inputLength} characters</span>
-        </div>
-        <div className="dash-offer-meta-item">
           <span className="dash-offer-meta-label">Scanned on</span>
           <span className="dash-offer-meta-val">{formatScanDateTime(scan.createdAt || scan.created_at)}</span>
         </div>
-        {scan.proofId && (
-          <div className="dash-offer-meta-item">
-            <span className="dash-offer-meta-label">Proof ID</span>
-            <span className="dash-offer-meta-val mono">{scan.proofId}</span>
-          </div>
-        )}
+        <div className="dash-offer-meta-item">
+          <span className="dash-offer-meta-label">Proof ID</span>
+          <span className="dash-offer-meta-val mono">
+            {scan.proofId || <span style={{ color: 'var(--text-dim, #94A3B8)', fontStyle: 'italic', fontWeight: 'normal' }}>Not available for this report</span>}
+          </span>
+        </div>
       </div>
 
       {/* Shared Unified Scan Result Component (Why, Checks, What to do, Proof) */}
@@ -1600,6 +1670,7 @@ export function DashboardScanDetail() {
         rawInput={rawInputText}
         toolKind={resolvedToolKind}
         isHistory={true}
+        downloadReceipt={handleDownloadReceipt}
       />
 
       {confirmOpen && (
@@ -1623,9 +1694,10 @@ export function DashboardPlan() {
     isPro,
     expiresAt,
     daysLeft,
-    paymentsMode,
-    isPaymentsAvailable
-  } = useBillingStatus(session);
+    quota,
+    loading: planLoading
+  } = usePlan('DashboardPlan');
+  const { paymentsMode, isPaymentsAvailable } = useBillingStatus(session);
   const { usage, usageText } = useUsage();
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
@@ -1637,9 +1709,28 @@ export function DashboardPlan() {
     });
   };
 
-  const checksUsed = usage?.used ?? (isPro ? 0 : 1);
-  const checksLimit = usage?.allowance ?? (isPro ? 100 : 5);
+  const checksUsed = quota?.used ?? (usage?.used ?? (isPro ? 0 : 1));
+  const checksLimit = quota?.limit ?? (usage?.allowance ?? (isPro ? 100 : 5));
   const percentUsed = Math.min(100, Math.round((checksUsed / checksLimit) * 100));
+
+  if (planLoading) {
+    return (
+      <div className="dash-page-stack dash-plan-stack">
+        <header className="dash-page-header">
+          <div>
+            <h1 className="dash-heading-lg">Plans &amp; Subscription</h1>
+            <p className="dash-text-secondary">
+              Manage your screening allowance, active tier, and payment pass.
+            </p>
+          </div>
+        </header>
+        <div className="dash-plan-hero-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '180px', gap: '12px' }}>
+          <div className="spinner" />
+          <span style={{ fontSize: '14px', color: 'var(--text-dim)' }}>Checking your plan status…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dash-page-stack dash-plan-stack">
@@ -1781,7 +1872,7 @@ export function DashboardPlan() {
             </li>
             <li>
               <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
-              <span>Browser extension (Chrome, Edge, Brave)</span>
+              <span>Browser extension (Chrome, Edge)</span>
             </li>
             <li>
               <CheckCircle2 size={16} className="tier-check-icon icon-pro" aria-hidden="true" />
@@ -1833,7 +1924,7 @@ export function DashboardPlan() {
 
 export function DashboardSettings() {
   const { session, profile, updateDisplayName, signOut } = useAuth();
-  const { isPro, daysLeft, expiresAt } = useBillingStatus(session);
+  const { isPro, daysLeft, expiresAt, loading: planLoading } = usePlan('DashboardSettings');
   const { usage } = useUsage();
   const navigate = useNavigate();
 
@@ -1994,10 +2085,14 @@ export function DashboardSettings() {
           <div>
             <span className="dash-plan-label">Active Tier</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-              <strong style={{ fontSize: '16px', color: 'var(--text)' }}>{isPro ? 'Pro Pass' : 'Free Tier'}</strong>
-              <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
-                {isPro ? `${daysLeft} days left` : '5 checks / month'}
-              </span>
+              <strong style={{ fontSize: '16px', color: 'var(--text)' }}>
+                {planLoading ? 'Loading plan…' : isPro ? 'Pro Pass' : 'Free Tier'}
+              </strong>
+              {!planLoading && (
+                <span className={`feature-pill-badge ${isPro ? 'pill-pro' : 'pill-active'}`}>
+                  {isPro ? `${daysLeft} days left` : '5 checks / month'}
+                </span>
+              )}
             </div>
             {isPro && expiresAt && (
               <span style={{ fontSize: '12.5px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>

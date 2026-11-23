@@ -342,8 +342,8 @@ export function ToolDetail() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        if (res.status === 503 || data?.code === 'AI_UNAVAILABLE') {
-          throw new Error('Screenshot reading is not available right now. Paste the text instead.');
+        if (res.status === 503 || data?.code === 'AI_UNAVAILABLE' || data?.error === 'AI_UNAVAILABLE' || (typeof data?.error === 'string' && data.error.includes('AI_UNAVAILABLE'))) {
+          throw new Error('Screenshot reading is temporarily unavailable. Paste the text instead.');
         }
         if (res.status === 400) {
           throw new Error(data?.error || 'Invalid screenshot. Please try another image.');
@@ -462,7 +462,12 @@ export function ToolDetail() {
         setQuotaExceeded(true);
         setError(err.message || 'You have reached the free check limit.');
       } else {
-        setError(err?.message || 'Analysis failed. Please try again.');
+        const raw = String(err?.message || '');
+        if (raw.includes('AI_UNAVAILABLE') || err?.code === 'AI_UNAVAILABLE' || err?.status === 503) {
+          setError('Analysis service is temporarily busy. Please try again in a moment or edit the text.');
+        } else {
+          setError(err?.message || 'Analysis failed. Please try again.');
+        }
       }
     } finally {
       setLoading(false);
@@ -585,7 +590,7 @@ export function ToolDetail() {
                 {screenshotError && (
                   <div className="tool-inline-error" role="alert">
                     <AlertTriangle size={15} style={{ flexShrink: 0 }} aria-hidden="true" />
-                    <span>{screenshotError}</span>
+                    <span>{String(screenshotError).includes('AI_UNAVAILABLE') ? 'Screenshot reading is temporarily unavailable. Paste the text instead.' : screenshotError}</span>
                   </div>
                 )}
 
@@ -628,7 +633,7 @@ export function ToolDetail() {
                       <AlertTriangle size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
                       <div>
                         <strong>{quotaExceeded ? 'Quota Exceeded' : 'Screening Notice'}</strong>
-                        <p>{error}</p>
+                        <p>{String(error).includes('AI_UNAVAILABLE') ? 'AI screening service is temporarily unavailable. Please try again in a moment or edit the text.' : error}</p>
                         {quotaExceeded && (
                           <div style={{ marginTop: '8px' }}>
                             <Link to="/pricing" className="btn-upgrade-quota">

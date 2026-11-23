@@ -75,7 +75,7 @@ export function getPlans(limits = PLAN_LIMITS) {
       features: [
         { text: 'Everything in Free' },
         { text: `Up to ${limits.proChecks} checks in ${limits.proDays} days` },
-        { text: 'Browser extension (Chrome, Edge, Brave)' },
+        { text: 'Browser extension (Chrome, Edge)' },
         { text: 'Saved history and receipts for every check' },
         { text: 'Same Proof ID verification and downloads' }
       ]
@@ -105,7 +105,7 @@ export function getPricingFaq(limits = PLAN_LIMITS) {
     {
       id: 'faq-pro',
       question: 'What does Pro include?',
-      answer: `Pro is a ${limits.proDays}-day pass with up to ${limits.proChecks} checks and access to the browser extension (Chrome, Edge, Brave), for a one-time payment of ₹${limits.proPriceRupees}. It does not renew automatically.`
+      answer: `Pro is a ${limits.proDays}-day pass with up to ${limits.proChecks} checks and access to the browser extension (Chrome, Edge), for a one-time payment of ₹${limits.proPriceRupees}. It does not renew automatically.`
     },
     {
       id: 'faq-payment',

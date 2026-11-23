@@ -135,8 +135,19 @@ function formatScamTypeChip(type) {
   return /scam|pattern|trap|fraud/i.test(titled) ? titled : `${titled} scam`;
 }
 
-function formatScamType(type) {
+function formatScamType(type, inputContext = '') {
   if (!type || type === 'unknown' || type === 'none' || type === 'unclear') return null;
+  const lower = String(type).toLowerCase();
+  if (lower === 'other' || lower === 'other scam' || lower === 'other_scam') {
+    const ctx = String(inputContext).toLowerCase();
+    if (ctx.includes('whatsapp') || ctx.includes('telegram') || ctx.includes('chat') || ctx.includes('redirect')) {
+      return 'Suspicious Off-Platform Redirect';
+    }
+    if (ctx.includes('http') || ctx.includes('link') || ctx.includes('click')) {
+      return 'Suspicious Link Solicitation';
+    }
+    return 'Unverified Outreach Scam';
+  }
   const map = {
     job_task_scam: 'Job / task offer scam',
     otp_impersonation: 'OTP / bank impersonation',
@@ -474,7 +485,7 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
   const visibleAi = aiList.filter(item => isPrinting || expanded || item.globalIdx < 3);
 
   return (
-    <div className={`usr-check-box usr-check-state-${badge.state}`}>
+    <div className={`usr-check-box usr-check-state-${badge.state} h-auto min-h-0`}>
       {/* Card Header: Check name on left, Status pill on right */}
       <div className="usr-check-header">
         <div className="usr-check-header-left">
@@ -510,7 +521,7 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
               </div>
             )}
           </>
-        ) : (
+        ) : filteredFindings.length > 0 ? (
           <ul className="usr-check-findings-list">
             {filteredFindings
               .map((f, idx) => {
@@ -526,6 +537,10 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
               })
               .map(renderFindingRow)}
           </ul>
+        ) : (
+          <p className="usr-proof-na" style={{ margin: '6px 0 0', fontStyle: 'italic', color: 'var(--text-dim, #94A3B8)', fontSize: '13px' }}>
+            Not available for this report
+          </p>
         )}
       </div>
 
@@ -533,7 +548,7 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
       {hasMore && !isPrinting && (
         <button
           type="button"
-          className="usr-check-toggle-btn no-print"
+          className="usr-check-toggle-btn mt-3 inline-flex items-center gap-1.5 no-print"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
         >
@@ -633,6 +648,20 @@ export function UnifiedScanResult({
     (inp.url || inp.company || inp.recruiterEmail ? 'job' : 'message')
   ).toLowerCase();
 
+  // Input text under evaluation (defined early to prevent TDZ ReferenceError)
+  const textToAnalyze = rawInput || inp.description || inp.desc || (typeof inp === 'string' ? inp : '') || '';
+
+  // Explanation for "Unable to verify" or summarized rationale
+  const explanation =
+    res.explanation ||
+    report.explanation ||
+    overall.explanation ||
+    res.primaryConcern ||
+    report.primaryConcern ||
+    (typeof res.reason === 'string' ? res.reason : null) ||
+    (typeof report.reason === 'string' ? report.reason : null) ||
+    '';
+
   // Normalized risk level
   const rawLevel = String(res.level || overall.level || 'unknown').toLowerCase();
   const level =
@@ -658,7 +687,7 @@ export function UnifiedScanResult({
 
   // Scam type
   const scamType = res.scamType || report.scamType || null;
-  const scamTypeFormatted = formatScamType(scamType);
+  const scamTypeFormatted = formatScamType(scamType, textToAnalyze);
 
   // Headline
   let headlineTitle = '';
@@ -675,6 +704,24 @@ export function UnifiedScanResult({
       level === 'high' ? 'High risk detected' :
       level === 'medium' ? 'Suspicious patterns detected' :
       level === 'low' ? 'Low risk detected' : 'Unable to verify';
+  }
+
+  if ((level === 'unable' || level === 'unknown') && !headlineSub && explanation) {
+    headlineSub = explanation;
+  }
+
+  if (headlineTitle && typeof headlineTitle === 'string') {
+    const htLower = headlineTitle.trim().toLowerCase();
+    if (htLower === 'other scam' || htLower === 'other' || htLower === 'other_scam') {
+      const ctx = String(textToAnalyze || '').toLowerCase();
+      if (ctx.includes('whatsapp') || ctx.includes('telegram') || ctx.includes('chat') || ctx.includes('redirect')) {
+        headlineTitle = 'Suspicious Off-Platform Redirect';
+      } else if (ctx.includes('http') || ctx.includes('link') || ctx.includes('click')) {
+        headlineTitle = 'Suspicious Link Solicitation';
+      } else {
+        headlineTitle = 'Unverified Outreach Scam';
+      }
+    }
   }
 
   // Checks
@@ -729,7 +776,6 @@ export function UnifiedScanResult({
     ? res.flaggedPhrases
     : [];
 
-  const textToAnalyze = rawInput || inp.description || inp.desc || (typeof inp === 'string' ? inp : '');
   const highlighted = useMemo(
     () => highlightCheckedText(textToAnalyze, evidenceItems),
     [textToAnalyze, evidenceItems]
@@ -937,12 +983,6 @@ export function UnifiedScanResult({
 
           <span className="usr-chip usr-chip-tool">{toolLabel}</span>
 
-          {confidenceBandStr && (
-            <span className="usr-chip usr-chip-confidence">
-              <span>Confidence: {confidenceBandStr} ({confidenceNum}%)</span>
-            </span>
-          )}
-
           {sourcesRanCount > 0 && (
             <div className="usr-popover-anchor">
               <button
@@ -1074,28 +1114,40 @@ export function UnifiedScanResult({
     <div className="usr-tab-panel">
       {/* Job Offer Details (if job scan) */}
       {(cleanCompany || inp.url || inp.recruiterEmail) && (
-        <div className="usr-job-meta-box">
+        <div className="usr-job-meta-box bg-slate-50/70 border border-slate-200/80 rounded-xl p-4">
           <div className="usr-card-subhead">Job Offer Details Analyzed</div>
-          <div className="usr-job-meta-grid">
+          <div className="usr-job-meta-grid flex flex-col gap-3">
             {cleanCompany && (
-              <div className="usr-job-meta-item">
-                <Building size={14} className="usr-meta-icon" />
-                <span className="usr-meta-label">Company:</span>
-                <strong className="usr-meta-val">{cleanCompany}</strong>
+              <div className="usr-job-meta-item flex items-center gap-3 min-w-0">
+                <div className="usr-job-meta-label-wrap shrink-0 whitespace-nowrap w-28 flex items-center gap-2 text-slate-500 text-sm">
+                  <Building size={16} className="usr-meta-icon" />
+                  <span className="usr-meta-label">Company:</span>
+                </div>
+                <div className="usr-job-meta-val min-w-0 flex-1 text-slate-900 font-medium text-sm break-all">
+                  <strong>{cleanCompany}</strong>
+                </div>
               </div>
             )}
             {inp.url && (
-              <div className="usr-job-meta-item">
-                <Link2 size={14} className="usr-meta-icon" />
-                <span className="usr-meta-label">Job URL:</span>
-                <span className="usr-meta-val mono">{inp.url}</span>
+              <div className="usr-job-meta-item flex items-center gap-3 min-w-0">
+                <div className="usr-job-meta-label-wrap shrink-0 whitespace-nowrap w-28 flex items-center gap-2 text-slate-500 text-sm">
+                  <Link2 size={16} className="usr-meta-icon" />
+                  <span className="usr-meta-label">Job URL:</span>
+                </div>
+                <div className="usr-job-meta-val min-w-0 flex-1 text-slate-900 font-medium text-sm break-all mono">
+                  {inp.url}
+                </div>
               </div>
             )}
             {inp.recruiterEmail && (
-              <div className="usr-job-meta-item">
-                <Mail size={14} className="usr-meta-icon" />
-                <span className="usr-meta-label">Recruiter:</span>
-                <span className="usr-meta-val mono">{inp.recruiterEmail}</span>
+              <div className="usr-job-meta-item flex items-center gap-3 min-w-0">
+                <div className="usr-job-meta-label-wrap shrink-0 whitespace-nowrap w-28 flex items-center gap-2 text-slate-500 text-sm">
+                  <Mail size={16} className="usr-meta-icon" />
+                  <span className="usr-meta-label">Recruiter:</span>
+                </div>
+                <div className="usr-job-meta-val min-w-0 flex-1 text-slate-900 font-medium text-sm break-all mono">
+                  {inp.recruiterEmail}
+                </div>
               </div>
             )}
           </div>
@@ -1139,25 +1191,35 @@ export function UnifiedScanResult({
         </div>
       ) : null}
 
+      {/* Explanation for Unable to verify / Unknown scans, or when no analyzed text or evidence quotes exist */}
+      {(level === 'unable' || level === 'unknown' || (!textToAnalyze && evidenceItems.length === 0)) && (
+        <div className="usr-card usr-checked-text-card">
+          <div className="usr-card-subhead">Verification Explanation</div>
+          <p className="usr-proof-na" style={{ margin: '8px 0 0', color: 'var(--text, #E6EDF7)', fontSize: '14px', lineHeight: 1.55 }}>
+            {explanation || headlineSub || 'Not available for this report'}
+          </p>
+        </div>
+      )}
+
       {/* Extracted Artifacts */}
       {hasExtractedItems && (
         <div className="usr-extracted-section">
           <div className="usr-extracted-title">Extracted Identity &amp; Payment Signals</div>
           <div className="usr-extracted-chips-row">
             {upiIds.map((u, i) => (
-              <span key={`upi-${i}`} className="usr-found-chip mono">UPI: {typeof u === 'string' ? u : u.upiId || u}</span>
+              <span key={`upi-${i}`} className="usr-found-chip mono" style={{ background: '#E0F2FE', border: '1px solid #7DD3FC', color: '#0B2545', fontWeight: 700 }}>UPI: {typeof u === 'string' ? u : u.upiId || u}</span>
             ))}
             {amounts.map((a, i) => (
-              <span key={`amt-${i}`} className="usr-found-chip mono">Amount: {typeof a === 'string' ? a : (a.formatted || a.raw || a)}</span>
+              <span key={`amt-${i}`} className="usr-found-chip mono" style={{ background: '#E0F2FE', border: '1px solid #7DD3FC', color: '#0B2545', fontWeight: 700 }}>Amount: {typeof a === 'string' ? a : (a.formatted || a.raw || a)}</span>
             ))}
             {links.map((l, i) => (
-              <span key={`lnk-${i}`} className="usr-found-chip mono">Link: {typeof l === 'string' ? l : l.url || l}</span>
+              <span key={`lnk-${i}`} className="usr-found-chip mono" style={{ background: '#E0F2FE', border: '1px solid #7DD3FC', color: '#0B2545', fontWeight: 700 }}>Link: {typeof l === 'string' ? l : l.url || l}</span>
             ))}
             {phones.map((p, i) => (
-              <span key={`ph-${i}`} className="usr-found-chip mono">Phone: {typeof p === 'string' ? p : p.normalized || p}</span>
+              <span key={`ph-${i}`} className="usr-found-chip mono" style={{ background: '#E0F2FE', border: '1px solid #7DD3FC', color: '#0B2545', fontWeight: 700 }}>Phone: {typeof p === 'string' ? p : p.normalized || p}</span>
             ))}
             {emails.map((e, i) => (
-              <span key={`em-${i}`} className="usr-found-chip mono">Email: {typeof e === 'string' ? e : e.email || e}</span>
+              <span key={`em-${i}`} className="usr-found-chip mono" style={{ background: '#E0F2FE', border: '1px solid #7DD3FC', color: '#0B2545', fontWeight: 700 }}>Email: {typeof e === 'string' ? e : e.email || e}</span>
             ))}
           </div>
         </div>
@@ -1249,7 +1311,7 @@ export function UnifiedScanResult({
   const renderChecksPanel = () => (
     <div className="usr-tab-panel">
       {sortedApplicableChecks.length > 0 && (
-        <div className="usr-checks-grid">
+        <div className="usr-checks-grid flex flex-col gap-3">
           {sortedApplicableChecks.map((c, idx) => (
             <UnifiedCheckCard
               key={c.key || c.title || idx}
@@ -1264,6 +1326,14 @@ export function UnifiedScanResult({
       {notApplicableChecks.length > 0 && (
         <div className="usr-checks-na-line">
           Not applicable to this input: {notApplicableChecks.map((c) => c.title || c.key).join(', ')}
+        </div>
+      )}
+
+      {sortedApplicableChecks.length === 0 && notApplicableChecks.length === 0 && (
+        <div className="usr-card usr-empty-checks-card" style={{ padding: '24px', textAlign: 'center' }}>
+          <p className="usr-proof-na" style={{ color: 'var(--text-dim, #94A3B8)', margin: 0, fontStyle: 'italic' }}>
+            Not available for this report
+          </p>
         </div>
       )}
     </div>
@@ -1363,76 +1433,83 @@ export function UnifiedScanResult({
           <div className="usr-proof-grid">
 
             {/* Proof ID */}
-            {proofId ? (
-              <div className="usr-proof-cell">
-                <label>Proof ID</label>
-                <div className="usr-proof-val">
-                  <span className="mono usr-proof-id-text">{proofId}</span>
-                  {!forPrint && (
-                    <button
-                      type="button"
-                      className="usr-btn-copy-code no-print"
-                      onClick={handleCopyProof}
-                      title="Copy Proof ID"
-                    >
-                      {copiedProof ? <Check size={13} /> : <Copy size={13} />}
-                      <span>{copiedProof ? 'Copied' : 'Copy'}</span>
-                    </button>
-                  )}
-                </div>
+            <div className="usr-proof-cell">
+              <label>Proof ID</label>
+              <div className="usr-proof-val">
+                {proofId ? (
+                  <>
+                    <span className="mono usr-proof-id-text">{proofId}</span>
+                    {!forPrint && (
+                      <button
+                        type="button"
+                        className="usr-btn-copy-code no-print"
+                        onClick={handleCopyProof}
+                        title="Copy Proof ID"
+                      >
+                        {copiedProof ? <Check size={13} /> : <Copy size={13} />}
+                        <span>{copiedProof ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span className="usr-proof-na">Not available for this report</span>
+                )}
               </div>
-            ) : null}
+            </div>
 
             {/* Block number */}
-            {blockIndex != null ? (
-              <div className="usr-proof-cell">
-                <label>Block number</label>
-                <div className="usr-proof-val mono">#{blockIndex}</div>
+            <div className="usr-proof-cell">
+              <label>Block number</label>
+              <div className="usr-proof-val mono">
+                {blockIndex != null ? `#${blockIndex}` : <span className="usr-proof-na font-normal">Not available for this report</span>}
               </div>
-            ) : proofId ? (
-              <div className="usr-proof-cell">
-                <label>Block number</label>
-                <div className="usr-proof-val usr-proof-na">Not available for this report</div>
-              </div>
-            ) : null}
+            </div>
 
             {/* Time */}
-            {utcStr && (
-              <div className="usr-proof-cell">
-                <label>Time</label>
-                <div className="usr-proof-val usr-proof-time-wrap">
-                  <span>{utcStr}</span>
-                  {istStr && <span className="usr-proof-local-time">{istStr}</span>}
-                </div>
+            <div className="usr-proof-cell">
+              <label>Time</label>
+              <div className="usr-proof-val usr-proof-time-wrap">
+                {utcStr ? (
+                  <>
+                    <span>{utcStr}</span>
+                    {istStr && <span className="usr-proof-local-time">{istStr}</span>}
+                  </>
+                ) : (
+                  <span className="usr-proof-na">Not available for this report</span>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Ledger status */}
-            {proofId && !forPrint && (
+            {!forPrint && (
               <div className="usr-proof-cell">
                 <label>Ledger status</label>
                 <div className="usr-proof-val usr-proof-status-row">
-                  {ledgerStatus ? (
-                    <span className={`usr-ledger-badge ${ledgerStatus.ok ? 'usr-ledger-ok' : 'usr-ledger-fail'}`}>
-                      {ledgerStatus.ok ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
-                      <span>{ledgerStatus.label}</span>
-                    </span>
+                  {proofId ? (
+                    ledgerStatus ? (
+                      <span className={`usr-ledger-badge ${ledgerStatus.ok ? 'usr-ledger-ok' : 'usr-ledger-fail'}`}>
+                        {ledgerStatus.ok ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
+                        <span>{ledgerStatus.label}</span>
+                      </span>
+                    ) : (
+                      <>
+                        <span className="usr-proof-na">Not checked yet</span>
+                        <button
+                          type="button"
+                          className="usr-btn-check-ledger no-print"
+                          onClick={handleCheckLedger}
+                          disabled={ledgerChecking}
+                          aria-label="Check ledger now"
+                        >
+                          {ledgerChecking
+                            ? <Loader2 size={12} className="usr-spin" />
+                            : <Clock size={12} />}
+                          <span>{ledgerChecking ? 'Checking…' : 'Check now'}</span>
+                        </button>
+                      </>
+                    )
                   ) : (
-                    <>
-                      <span className="usr-proof-na">Not checked yet</span>
-                      <button
-                        type="button"
-                        className="usr-btn-check-ledger no-print"
-                        onClick={handleCheckLedger}
-                        disabled={ledgerChecking}
-                        aria-label="Check ledger now"
-                      >
-                        {ledgerChecking
-                          ? <Loader2 size={12} className="usr-spin" />
-                          : <Clock size={12} />}
-                        <span>{ledgerChecking ? 'Checking…' : 'Check now'}</span>
-                      </button>
-                    </>
+                    <span className="usr-proof-na">Not available for this report</span>
                   )}
                 </div>
                 {ledgerStatus && !ledgerStatus.ok && ledgerStatus.detail && (
@@ -1442,46 +1519,54 @@ export function UnifiedScanResult({
             )}
 
             {/* Report hash (SHA-256) */}
-            {reportHash && (
-              <div className="usr-proof-cell usr-proof-cell-full">
-                <label>Report hash (SHA-256)</label>
-                <div className="usr-proof-val">
-                  <span className="usr-proof-hash mono" title={reportHash}>{shortenHash(reportHash)}</span>
-                  {!forPrint && (
-                    <button
-                      type="button"
-                      className="usr-btn-copy-code no-print"
-                      onClick={handleCopyReportHash}
-                      title="Copy full report hash"
-                    >
-                      {copiedReportHash ? <Check size={13} /> : <Copy size={13} />}
-                      <span>{copiedReportHash ? 'Copied' : 'Copy'}</span>
-                    </button>
-                  )}
-                </div>
+            <div className="usr-proof-cell usr-proof-cell-full">
+              <label>Report hash (SHA-256)</label>
+              <div className="usr-proof-val">
+                {reportHash ? (
+                  <>
+                    <span className="usr-proof-hash mono" title={reportHash}>{shortenHash(reportHash)}</span>
+                    {!forPrint && (
+                      <button
+                        type="button"
+                        className="usr-btn-copy-code no-print"
+                        onClick={handleCopyReportHash}
+                        title="Copy full report hash"
+                      >
+                        {copiedReportHash ? <Check size={13} /> : <Copy size={13} />}
+                        <span>{copiedReportHash ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span className="usr-proof-na">Not available for this report</span>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Block hash */}
-            {blockHash && (
-              <div className="usr-proof-cell usr-proof-cell-full">
-                <label>Block hash</label>
-                <div className="usr-proof-val">
-                  <span className="usr-proof-hash mono" title={blockHash}>{shortenHash(blockHash)}</span>
-                  {!forPrint && (
-                    <button
-                      type="button"
-                      className="usr-btn-copy-code no-print"
-                      onClick={handleCopyHash}
-                      title="Copy full block hash"
-                    >
-                      {copiedHash ? <Check size={13} /> : <Copy size={13} />}
-                      <span>{copiedHash ? 'Copied' : 'Copy'}</span>
-                    </button>
-                  )}
-                </div>
+            <div className="usr-proof-cell usr-proof-cell-full">
+              <label>Block hash</label>
+              <div className="usr-proof-val">
+                {blockHash ? (
+                  <>
+                    <span className="usr-proof-hash mono" title={blockHash}>{shortenHash(blockHash)}</span>
+                    {!forPrint && (
+                      <button
+                        type="button"
+                        className="usr-btn-copy-code no-print"
+                        onClick={handleCopyHash}
+                        title="Copy full block hash"
+                      >
+                        {copiedHash ? <Check size={13} /> : <Copy size={13} />}
+                        <span>{copiedHash ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span className="usr-proof-na">Not available for this report</span>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Previous block hash */}
             {prevHash && (
@@ -1607,10 +1692,10 @@ export function UnifiedScanResult({
         <div className="usr-print-section-heading">Checks ({applicableChecks.length})</div>
         {renderChecksPanel()}
 
-        <div className="usr-print-section-heading">What to do</div>
+        <div className="usr-print-section-heading">What to Do Next</div>
         {renderActionsPanel()}
 
-        <div className="usr-print-section-heading">Proof</div>
+        <div className="usr-print-section-heading">Verification Proof &amp; Evidence</div>
         {renderProofPanel(true)}
 
         <div className="usr-legal-footer">Screening aid, not a legal finding.</div>

@@ -7,15 +7,25 @@ const { createProof } = require('../detectors/proof');
 const { inspectLinks } = require('../detectors/evidence');
 const { parseDeterministicItems, shouldShowUpiSafetyNote } = require('./parser');
 const { buildPass1Prompt, buildPass2Prompt } = require('./prompts');
-const { runPassWithRetry } = require('./ai');
+const { runPassWithRetry, getCachedAnalysis, setCachedAnalysis } = require('./ai');
 const { resolvePassDisagreement, sanitizeBannedClaims } = require('./validator');
 const { getPassesCount } = require('./config');
 const { evaluateUpiScoreAndConfidence } = require('./scoring');
+const { generateSpecificAnalysisText, dedupeAdviceList } = require('../detectors/analysis-text');
 
 async function performUpiCheck({ text, turns, source, readability, reqUser, hostname }) {
   const cleanText = String(text || '').trim();
 
-  // 1. Deterministic extractions (Zero AI)
+  // 1. In-memory 10-minute cache check
+  const cached = getCachedAnalysis(cleanText);
+  if (cached) {
+    return {
+      isUnavailable: false,
+      response: { ...cached.response, cached: true }
+    };
+  }
+
+  // 2. Deterministic extractions (Zero AI)
   const deterministic = parseDeterministicItems(cleanText);
   const showUpiSafetyNote = shouldShowUpiSafetyNote(cleanText);
 
@@ -145,14 +155,29 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
     findings: c.summary ? [{ text: c.summary, severity: c.state === 'flag' || c.state === 'fail' ? 'warn' : (c.state === 'warning' || c.state === 'warn' ? 'warn' : 'info') }] : []
   }));
 
+  const dynamicAnalysis = generateSpecificAnalysisText({
+    tool: 'upi',
+    level: finalAi.level,
+    text: cleanText,
+    signals: finalAi.evidence,
+    scamType: finalAi.scamType,
+    checks: reportChecks,
+    evidenceSources: { confirmedMaliciousLink: maliciousLinkFound }
+  });
+
+  const finalWhatToDo = dedupeAdviceList([
+    ...(Array.isArray(finalAi.whatToDo) ? finalAi.whatToDo : []),
+    ...(dynamicAnalysis.whatToDo || [])
+  ]);
+
   const report = {
     version: 1,
     generatedAt: new Date().toISOString(),
     tool: 'upi',
     scamType: finalAi.scamType || null,
-    primaryConcern: finalAi.primaryConcern || null,
-    headline: finalAi.primaryConcern || finalAi.headline || 'Payment check complete.',
-    whatToDo: finalAi.whatToDo || [],
+    primaryConcern: finalAi.primaryConcern || dynamicAnalysis.primaryConcern || null,
+    headline: finalAi.primaryConcern || dynamicAnalysis.headline || 'Payment check complete.',
+    whatToDo: finalWhatToDo,
     evidence: finalAi.evidence || [],
     ...(finalAi.flaggedPhrases ? { flaggedPhrases: finalAi.flaggedPhrases } : {}),
     evidenceSources: {
@@ -241,43 +266,47 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
     }
   }
 
+  const finalResponse = {
+    level: finalAi.level,
+    score: finalAi.score,
+    scoreBreakdown: finalAi.scoreBreakdown,
+    confidence: finalAi.confidence,
+    confidenceBand: finalAi.confidenceBand,
+    confidenceFactors: finalAi.confidenceFactors,
+    primaryConcern: finalAi.primaryConcern,
+    scamType: finalAi.scamType,
+    evidence: finalAi.evidence,
+    checks: finalAi.checks,
+    whatToDo: finalWhatToDo,
+    extractedItems: {
+      upiIds: deterministic.upiIds,
+      amounts: deterministic.amounts,
+      links: deterministic.links,
+      phones: deterministic.phones,
+      emails: deterministic.emails,
+      handleInfo: deterministic.handleInfo
+    },
+    evidenceSources: {
+      aiPasses: successfulPasses,
+      linkLookups
+    },
+    proofId: proofResult.proofId,
+    receipt: proofResult.receipt,
+    ledgerProof: proofResult.receipt,
+    block: proofResult.blk ? proofResult.blk.index : null,
+    blockHash: proofResult.blk ? proofResult.blk.hash : null,
+    prevHash: proofResult.blk ? proofResult.blk.prevHash : null,
+    reportHash: proofResult.reportHash || (proofResult.blk ? proofResult.blk.reportHash : null),
+    timestamp: proofResult.blk ? proofResult.blk.timestamp : null,
+    saved,
+    showUpiSafetyNote
+  };
+
+  setCachedAnalysis(cleanText, { response: finalResponse });
+
   return {
     isUnavailable: false,
-    response: {
-      level: finalAi.level,
-      score: finalAi.score,
-      scoreBreakdown: finalAi.scoreBreakdown,
-      confidence: finalAi.confidence,
-      confidenceBand: finalAi.confidenceBand,
-      confidenceFactors: finalAi.confidenceFactors,
-      primaryConcern: finalAi.primaryConcern,
-      scamType: finalAi.scamType,
-      evidence: finalAi.evidence,
-      checks: finalAi.checks,
-      whatToDo: finalAi.whatToDo,
-      extractedItems: {
-        upiIds: deterministic.upiIds,
-        amounts: deterministic.amounts,
-        links: deterministic.links,
-        phones: deterministic.phones,
-        emails: deterministic.emails,
-        handleInfo: deterministic.handleInfo
-      },
-      evidenceSources: {
-        aiPasses: successfulPasses,
-        linkLookups
-      },
-      proofId: proofResult.proofId,
-      receipt: proofResult.receipt,
-      ledgerProof: proofResult.receipt,
-      block: proofResult.blk ? proofResult.blk.index : null,
-      blockHash: proofResult.blk ? proofResult.blk.hash : null,
-      prevHash: proofResult.blk ? proofResult.blk.prevHash : null,
-      reportHash: proofResult.reportHash || (proofResult.blk ? proofResult.blk.reportHash : null),
-      timestamp: proofResult.blk ? proofResult.blk.timestamp : null,
-      saved,
-      showUpiSafetyNote
-    }
+    response: finalResponse
   };
 }
 

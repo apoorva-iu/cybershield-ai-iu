@@ -26,8 +26,8 @@ function isBandConsistent(level, score) {
     return score === null || (typeof score === 'number' && score >= 0 && score <= 100);
   }
   if (typeof score !== 'number' || isNaN(score)) return false;
-  if (level === 'low') return score >= 0 && score <= 29;
-  if (level === 'medium') return score >= 30 && score <= 69;
+  if (level === 'low') return score >= 0 && score < 35;
+  if (level === 'medium') return score >= 35 && score < 70;
   if (level === 'high') return score >= 70 && score <= 100;
   return false;
 }
@@ -284,7 +284,7 @@ function validatePassResult(result, rawInput) {
     : (typeof result.confidence === 'number' ? Math.max(0, Math.min(1, result.confidence)) : 0.5);
 
   const rawScamType = String(result.scamType || '').trim();
-  const scamType = SCAM_TYPES.includes(rawScamType) ? rawScamType : (level === 'low' ? 'none' : 'Other scam');
+  const scamType = SCAM_TYPES.includes(rawScamType) ? (rawScamType === 'Other scam' ? 'Unverified Outreach Scam' : rawScamType) : (level === 'low' ? 'none' : 'Unverified Outreach Scam');
 
   const rawAction = String(result.requestedAction || '').trim();
   const requestedAction = REQUESTED_ACTIONS.includes(rawAction) ? rawAction : (level === 'low' ? 'none' : 'none');

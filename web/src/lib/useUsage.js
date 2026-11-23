@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../api';
+import { usePlan } from './planContext';
 
 const USAGE_EVENT = 'cs:usage-updated';
 
@@ -51,47 +52,14 @@ export function formatUsageText(usage) {
 }
 
 export function useUsage() {
-  const [usage, setUsage] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const refreshUsage = useCallback(async () => {
-    try {
-      const data = await apiFetch('/api/usage');
-      if (data) {
-        setUsage(data);
-        setError(null);
-      }
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshUsage();
-
-    const handleUpdate = () => {
-      refreshUsage();
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener(USAGE_EVENT, handleUpdate);
-      window.addEventListener('focus', handleUpdate);
-      return () => {
-        window.removeEventListener(USAGE_EVENT, handleUpdate);
-        window.removeEventListener('focus', handleUpdate);
-      };
-    }
-  }, [refreshUsage]);
+  const planCtx = usePlan('useUsage');
 
   return {
-    usage,
-    loading,
-    error,
-    refreshUsage,
-    usageText: formatUsageText(usage)
+    usage: planCtx.usage,
+    loading: planCtx.loading,
+    error: planCtx.error,
+    refreshUsage: planCtx.refresh,
+    usageText: formatUsageText(planCtx.usage)
   };
 }
 
