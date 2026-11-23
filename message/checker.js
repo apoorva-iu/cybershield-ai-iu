@@ -225,16 +225,139 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
   const headlineSentence = finalAi.primaryConcern || finalAi.explanation || 'Message evaluation complete.';
   const headline = [headlineTitle, headlineSentence];
 
+function buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound = false } = {}) {
+  const existing = Array.isArray(c.findings) ? c.findings : [];
+  const findings = [];
+  const seenTexts = new Set();
+
+  function addFinding(text, evidence, severity, source = null) {
+    if (!text || typeof text !== 'string') return;
+    const cleanT = text.trim();
+    if (!cleanT || seenTexts.has(cleanT.toLowerCase())) return;
+
+    let validEvidence = null;
+    let validSource = source;
+    if (evidence && typeof evidence === 'string') {
+      const trimmedEv = evidence.trim();
+      if (/^(RDAP|VirusTotal|URLhaus|Google Places|Wikidata|Lookup)/i.test(trimmedEv)) {
+        validEvidence = trimmedEv;
+        validSource = validSource || trimmedEv;
+      } else if (cleanText && cleanText.includes(trimmedEv)) {
+        validEvidence = trimmedEv;
+      }
+    }
+
+    if (evidence && !validEvidence) {
+      return;
+    }
+
+    const sev = String(severity || '').toLowerCase();
+    const normalizedSev = (sev === 'fail' || sev === 'flag' || sev === 'bad')
+      ? 'flag'
+      : (sev === 'warn' || sev === 'warning' || sev === 'caution')
+      ? 'caution'
+      : 'pass';
+
+    seenTexts.add(cleanT.toLowerCase());
+    findings.push({
+      text: cleanT,
+      evidence: validEvidence,
+      source: validSource,
+      severity: normalizedSev
+    });
+  }
+
+  for (const f of existing) {
+    addFinding(f.text, f.evidence, f.severity, f.source);
+    if (findings.length >= 4) break;
+  }
+
+  const signals = Array.isArray(finalAi?.signals) ? finalAi.signals : [];
+  const phrases = Array.isArray(finalAi?.flaggedPhrases) ? finalAi.flaggedPhrases : [];
+
+  if (c.key === 'links_and_apps') {
+    if (maliciousLinkFound) {
+      addFinding('Link or domain flagged as malicious or suspicious by threat intelligence.', 'VirusTotal', 'flag', 'VirusTotal');
+    }
+    for (const s of signals) {
+      if (findings.length >= 4) break;
+      if (/(link|url|http|t\.me|telegram|whatsapp|apk|app|download|install)/i.test(s.label + ' ' + s.why + ' ' + (s.quote || ''))) {
+        addFinding(s.why || s.label, s.quote, s.weight >= 0.7 ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'request_or_demand') {
+    for (const s of signals) {
+      if (findings.length >= 4) break;
+      if (/(pay|fee|deposit|money|upi|transfer|fund|task|registration|account|bank|card|recharge|crypto)/i.test(s.label + ' ' + s.why + ' ' + (s.quote || ''))) {
+        addFinding(s.why || s.label, s.quote, s.weight >= 0.7 ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'urgency_and_pressure') {
+    for (const s of signals) {
+      if (findings.length >= 4) break;
+      if (/(urgent|hurry|today|now|expire|immediate|quick|deadline|warning|suspended|limited)/i.test(s.label + ' ' + s.why + ' ' + (s.quote || ''))) {
+        addFinding(s.why || s.label, s.quote, s.weight >= 0.7 ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'message_wording') {
+    for (const s of signals) {
+      if (findings.length >= 4) break;
+      if (/(salary|income|daily|earn|part-time|full-time|offer|hiring|greeting|template|grammar|congratulations)/i.test(s.label + ' ' + s.why + ' ' + (s.quote || ''))) {
+        addFinding(s.why || s.label, s.quote, s.weight >= 0.7 ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'sender_details') {
+    for (const s of signals) {
+      if (findings.length >= 4) break;
+      if (/(phone|number|country code|recruiter|hr|manager|identity|unknown|unverified)/i.test(s.label + ' ' + s.why + ' ' + (s.quote || ''))) {
+        addFinding(s.why || s.label, s.quote, s.weight >= 0.7 ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'conversation_pattern') {
+    for (const s of signals) {
+      if (findings.length >= 4) break;
+      if (/(redirect|off-platform|chat|telegram|whatsapp|group|contact manager|task scam)/i.test(s.label + ' ' + s.why + ' ' + (s.quote || ''))) {
+        addFinding(s.why || s.label, s.quote, s.weight >= 0.7 ? 'flag' : 'caution');
+      }
+    }
+  }
+
+  for (const p of phrases) {
+    if (findings.length >= 4) break;
+    const phraseText = p.text || '';
+    if (phraseText && cleanText.includes(phraseText)) {
+      if (c.key === 'links_and_apps' && /(http|t\.me|telegram|whatsapp|apk|app)/i.test(phraseText + ' ' + p.reason)) {
+        addFinding(p.reason || 'Flagged link or application directive', phraseText, p.severity === 'high' ? 'flag' : 'caution');
+      } else if (c.key === 'request_or_demand' && /(pay|fee|deposit|money|upi|task|transfer|recharge)/i.test(phraseText + ' ' + p.reason)) {
+        addFinding(p.reason || 'Flagged financial request', phraseText, p.severity === 'high' ? 'flag' : 'caution');
+      } else if (c.key === 'urgency_and_pressure' && /(urgent|hurry|today|now|immediately)/i.test(phraseText + ' ' + p.reason)) {
+        addFinding(p.reason || 'Urgent pressure indicator', phraseText, p.severity === 'high' ? 'flag' : 'caution');
+      }
+    }
+  }
+
+  if (findings.length === 0) {
+    const sev = c.state === 'fail' ? 'flag' : (c.state === 'warn' ? 'caution' : 'pass');
+    const quote = (c.quote && cleanText.includes(c.quote)) ? c.quote : null;
+    addFinding(c.reason || 'Check evaluated based on submitted text.', quote, sev);
+  }
+
+  return findings;
+}
+
   // 8. Structure the report for receipt and ledger proof
-  const reportChecks = (finalAi.checks || []).map(c => ({
-    key: c.key,
-    title: c.title,
-    state: c.state,
-    score: c.state === 'fail' ? 80 : (c.state === 'warn' ? 45 : 10),
-    findings: c.reason ? [{ text: c.reason, severity: c.state === 'fail' ? 'warn' : 'info' }] : [],
-    summary: c.reason,
-    reason: c.reason
-  }));
+  const reportChecks = (finalAi.checks || []).map(c => {
+    const checkFindings = buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound });
+    return {
+      key: c.key,
+      title: c.title,
+      state: c.state,
+      score: c.state === 'fail' ? 80 : (c.state === 'warn' ? 45 : 10),
+      findings: checkFindings,
+      summary: c.reason,
+      reason: c.reason
+    };
+  });
 
   const dynamicAnalysis = generateSpecificAnalysisText({
     tool: 'message',
@@ -369,7 +492,7 @@ async function performMessageCheck({ text, turns, source, readability, reqUser, 
     signals: finalAi.signals,
     evidence: finalAi.signals.map(s => ({ quote: s.quote || s.label, interpretation: s.why })),
     flaggedPhrases: finalAi.flaggedPhrases,
-    checks: finalAi.checks,
+    checks: reportChecks,
     whatToDo: finalWhatToDo,
     extractedItems: {
       links: deterministic.links,

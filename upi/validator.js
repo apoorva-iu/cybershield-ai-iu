@@ -80,11 +80,39 @@ function validatePassResult(result, rawInput) {
     for (const c of result.checks) {
       if (c && typeof c.key === 'string') {
         const state = VALID_CHECK_STATES.has(c.state) ? c.state : 'not_applicable';
+        const validFindings = [];
+        if (Array.isArray(c.findings)) {
+          for (const f of c.findings) {
+            if (f && typeof f.text === 'string' && f.text.trim()) {
+              let fEvidence = null;
+              if (typeof f.evidence === 'string' && f.evidence.trim()) {
+                const trimmed = f.evidence.trim();
+                if (/^(RDAP|VirusTotal|URLhaus|UPI|Bank|NPCI|Lookup)/i.test(trimmed) || isExactSubstring(trimmed, rawInput)) {
+                  fEvidence = trimmed;
+                }
+              }
+              const sev = String(f.severity || '').toLowerCase();
+              const normalizedSev = (sev === 'fail' || sev === 'flag' || sev === 'bad')
+                ? 'flag'
+                : (sev === 'warn' || sev === 'warning' || sev === 'caution')
+                ? 'caution'
+                : 'pass';
+
+              validFindings.push({
+                text: f.text.trim(),
+                evidence: fEvidence,
+                severity: normalizedSev
+              });
+            }
+          }
+        }
+
         checksMap.set(c.key, {
           key: c.key,
           title: String(c.title || c.key),
           state,
-          summary: String(c.summary || '')
+          summary: String(c.summary || ''),
+          findings: validFindings
         });
       }
     }
@@ -104,7 +132,8 @@ function validatePassResult(result, rawInput) {
       key,
       title: defaultTitles[key] || key,
       state: 'not_applicable',
-      summary: 'No specific observations for this check.'
+      summary: 'No specific observations for this check.',
+      findings: []
     };
   });
 
@@ -183,11 +212,21 @@ function resolvePassDisagreement(p1, p2) {
     const severity = { 'flag': 4, 'warning': 3, 'pass': 2, 'not_applicable': 1 };
     const bestState = (severity[c1.state] || 1) >= (severity[c2.state] || 1) ? c1.state : c2.state;
     const summary = c1.summary && c1.summary.length > c2.summary.length ? c1.summary : (c2.summary || c1.summary);
+    const combinedFindings = [...(c1.findings || []), ...(c2.findings || [])];
+    const seenFindingTexts = new Set();
+    const mergedFindings = [];
+    for (const f of combinedFindings) {
+      if (f && f.text && !seenFindingTexts.has(f.text.toLowerCase().trim())) {
+        seenFindingTexts.add(f.text.toLowerCase().trim());
+        mergedFindings.push(f);
+      }
+    }
     return {
       key,
       title: c1.title || c2.title,
       state: bestState,
-      summary
+      summary,
+      findings: mergedFindings
     };
   });
 

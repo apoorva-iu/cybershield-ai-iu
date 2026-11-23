@@ -618,6 +618,63 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
   const jobPrimaryConcern = dynamicJobAnalysis.primaryConcern;
   const jobWhatToDo = dynamicJobAnalysis.whatToDo;
 
+  function formatJobFinding(n, inpData, cKey) {
+    const rawText = String(n.t || '').trim();
+    let text = rawText;
+    let evidence = null;
+    let source = null;
+
+    if (/^RDAP:\s*/i.test(rawText)) {
+      source = 'RDAP';
+      evidence = 'RDAP';
+      text = rawText.replace(/^RDAP:\s*/i, '');
+    } else if (/^VirusTotal:\s*/i.test(rawText)) {
+      source = 'VirusTotal';
+      evidence = 'VirusTotal';
+      text = rawText.replace(/^VirusTotal:\s*/i, '');
+    } else if (/^URLhaus\b/i.test(rawText)) {
+      source = 'URLhaus';
+      evidence = 'URLhaus';
+    } else if (/Google Places/i.test(rawText)) {
+      source = 'Google Places';
+      evidence = 'Google Places';
+    }
+
+    const quoteMatch = rawText.match(/Found:\s*["“]([^"”]+)["”]/i) || rawText.match(/["“]([^"”]{3,})["”]/);
+    if (quoteMatch && quoteMatch[1]) {
+      const q = quoteMatch[1].trim();
+      const fullJobInput = [inpData.desc, inpData.company, inpData.email, inpData.url].filter(Boolean).join(' ');
+      if (fullJobInput.includes(q)) {
+        evidence = q;
+        text = rawText.replace(/Found:\s*["“][^"”]+["”]/i, '').replace(/\s{2,}/g, ' ').trim();
+      }
+    }
+
+    if (!evidence) {
+      if (cKey === 'recruiter' && inpData.email) {
+        evidence = inpData.email;
+      } else if (cKey === 'url' && inpData.url) {
+        evidence = inpData.url;
+      } else if (cKey === 'company' && inpData.company && !source) {
+        evidence = inpData.company;
+      }
+    }
+
+    const sevStr = String(n.s || '').toLowerCase();
+    const severity = (sevStr === 'bad' || sevStr === 'fail')
+      ? 'flag'
+      : (sevStr === 'warn' || sevStr === 'warning')
+      ? 'caution'
+      : 'pass';
+
+    return {
+      text,
+      evidence,
+      source,
+      severity
+    };
+  }
+
   const report = {
     version: 1,
     generatedAt: new Date().toISOString(),
@@ -631,7 +688,13 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
     evidenceSourceCount: numLive,
     confidenceBand: overall.confidence >= 75 ? 'High' : (overall.confidence >= 45 ? 'Medium' : 'Low'),
     input: { url: inp.url, company: inp.company, recruiterEmail: inp.email, descriptionSha256: inp.desc.trim() ? L.sha(inp.desc.trim()) : null },
-    checks: checks.map(c => ({ key: c.key, title: c.title, state: c.state, score: c.score, findings: c.notes.map(n => ({ severity: n.s, text: n.t })) })),
+    checks: checks.map(c => ({
+      key: c.key,
+      title: c.title,
+      state: c.state,
+      score: c.score,
+      findings: c.notes.map(n => formatJobFinding(n, inp, c.key))
+    })),
     overall: {
       level: overall.level,
       score: overall.score,
@@ -1259,46 +1322,62 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
   const maxScanIdLen = RT.security.maxLengths.scanId;
   const scanId = String(req.params.id || '').trim();
   if (!scanId || scanId.length > maxScanIdLen || !SCAN_ID_RE.test(scanId)) {
-    return res.status(404).json({ error: 'Scan not found' });
+    console.warn('[Scan detail] Invalid scan ID:', scanId);
+    return res.status(400).json({ error: 'Invalid scan ID' });
   }
   const client = DB.getClient();
-  if (!client) return res.status(503).json({ error: 'Database unavailable' });
+  if (!client) {
+    console.error('[Scan detail] Database unavailable for scan:', scanId);
+    return res.status(503).json({ error: 'Database error' });
+  }
   const scansTable = cfg.runtime.database.tables.scans;
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
-  const matchCol = isUuid ? 'id' : 'proof_id';
   try {
-    const { data, error } = await client
+    let q = client
       .from(scansTable)
-      .select('id, created_at, user_id, proof_id, level, score, confidence, report, limited_evidence')
-      .eq(matchCol, scanId)
-      .eq('user_id', req.user.id)
-      .limit(1);
-    if (error) return res.status(503).json({ error: 'Could not load scan' });
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row || row.user_id !== req.user.id) {
-      return res.status(404).json({ error: 'Scan not found' });
+      .select('id, created_at, user_id, proof_id, level, score, confidence, report, limited_evidence');
+    if (isUuid) {
+      q = q.or(`id.eq.${scanId},proof_id.eq.${scanId}`);
+    } else {
+      q = q.eq('proof_id', scanId);
     }
-    const rep = row.report || {};
-    if (rep.input && typeof rep.input.company === 'string' && isHostOrUrl(rep.input.company)) {
+    const { data, error } = await q.limit(1);
+    if (error) {
+      console.error('[Scan detail] Database error loading scan:', scanId, error?.message || 'Query failed');
+      return res.status(503).json({ error: 'Database error' });
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      console.warn('[Scan detail] Scan not found for this user (no record):', scanId, 'user:', req.user.id?.slice(0, 8));
+      return res.status(404).json({ error: 'Scan not found for this user' });
+    }
+    if (row.user_id !== req.user.id) {
+      console.warn('[Scan detail] Scan not found for this user (different owner):', scanId, 'owner:', row.user_id?.slice(0, 8), 'user:', req.user.id?.slice(0, 8));
+      return res.status(404).json({ error: 'Scan not found for this user' });
+    }
+    const rep = (row.report && typeof row.report === 'object') ? row.report : {};
+    if (rep.input && typeof rep.input === 'object' && typeof rep.input.company === 'string' && isHostOrUrl(rep.input.company)) {
       rep.input.company = '';
     }
-    const o = rep.overall || {};
-    const defaultHeadline = rep.headline || o.headline || rep.primaryConcern || o.primaryConcern || C.LV[row.level] || null;
+    const o = (rep.overall && typeof rep.overall === 'object') ? rep.overall : {};
+    const defaultHeadline = rep.headline || o.headline || rep.primaryConcern || o.primaryConcern || (row.level && C.LV ? C.LV[row.level] : null) || null;
 
     // Look up ledger block by proof_id (owner-only, read-only) to surface block number and hashes
     let blockData = null;
     if (row.proof_id) {
       try {
         const store = L.getStorage();
-        const blk = await store.getByProofId(row.proof_id);
-        if (blk) {
-          blockData = {
-            block: blk.index,
-            blockHash: blk.hash,
-            prevHash: blk.prevHash,
-            reportHash: blk.reportHash,
-            blockTimestamp: blk.timestamp
-          };
+        if (store && typeof store.getByProofId === 'function') {
+          const blk = await store.getByProofId(row.proof_id);
+          if (blk) {
+            blockData = {
+              block: blk.index,
+              blockHash: blk.hash,
+              prevHash: blk.prevHash,
+              reportHash: blk.reportHash,
+              blockTimestamp: blk.timestamp
+            };
+          }
         }
       } catch (_ledgerErr) {
         // Non-fatal: ledger may not be accessible; proceed without block data
@@ -1308,12 +1387,12 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
     return res.json({
       id: row.id,
       createdAt: row.created_at,
-      level: row.level,
+      level: row.level || 'unknown',
       score: row.score != null ? row.score : null,
       confidence: row.confidence != null ? row.confidence : null,
       limitedEvidence: !!row.limited_evidence,
-      proofId: row.proof_id,
-      tool: rep.tool || rep.input?.kind || 'job',
+      proofId: row.proof_id || null,
+      tool: rep.tool || (rep.input && typeof rep.input === 'object' ? rep.input.kind : null) || 'job',
       headline: defaultHeadline,
       scamType: rep.scamType || null,
       primaryConcern: rep.primaryConcern || o.primaryConcern || null,
@@ -1325,11 +1404,12 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
       confidenceBand: rep.confidenceBand || o.confidenceBand || (row.confidence != null ? (row.confidence >= 75 ? 'High' : (row.confidence >= 45 ? 'Medium' : 'Low')) : null),
       confidenceFactors: rep.confidenceFactors || o.confidenceFactors || null,
       scoreBreakdown: rep.scoreBreakdown || o.scoreBreakdown || null,
-      report: row.report,
+      report: row.report || {},
       ...(blockData || {})
     });
   } catch (err) {
-    return res.status(503).json({ error: 'Could not load scan' });
+    console.error('[Scan detail] Database error loading scan:', scanId, err?.message || 'Unexpected error');
+    return res.status(503).json({ error: 'Database error' });
   }
 });
 
@@ -1337,26 +1417,37 @@ app.delete('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
   const maxScanIdLen = RT.security.maxLengths.scanId;
   const scanId = String(req.params.id || '').trim();
   if (!scanId || scanId.length > maxScanIdLen || !SCAN_ID_RE.test(scanId)) {
-    return res.status(404).json({ error: 'Scan not found' });
+    console.warn('[Scan delete] Invalid scan ID:', scanId);
+    return res.status(400).json({ error: 'Invalid scan ID' });
   }
   const client = DB.getClient();
-  if (!client) return res.status(503).json({ error: 'Database unavailable' });
+  if (!client) {
+    console.error('[Scan delete] Database unavailable for scan:', scanId);
+    return res.status(503).json({ error: 'Database error' });
+  }
   const scansTable = cfg.runtime.database.tables.scans;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
+  const matchCol = isUuid ? 'id' : 'proof_id';
   try {
     const { data, error } = await client
       .from(scansTable)
       .delete()
-      .eq('id', scanId)
+      .eq(matchCol, scanId)
       .eq('user_id', req.user.id)
       .select('id');
-    if (error) return res.status(503).json({ error: 'Could not delete scan' });
+    if (error) {
+      console.error('[Scan delete] Database error deleting scan:', scanId, error.message);
+      return res.status(503).json({ error: 'Database error' });
+    }
     const deletedRows = Array.isArray(data) ? data : (data ? [data] : []);
     if (deletedRows.length === 0) {
-      return res.status(404).json({ error: 'Scan not found' });
+      console.warn('[Scan delete] Scan not found for this user:', scanId, 'user:', req.user.id?.slice(0, 8));
+      return res.status(404).json({ error: 'Scan not found for this user' });
     }
     return res.json({ ok: true, deleted: true, id: scanId });
   } catch (err) {
-    return res.status(503).json({ error: 'Could not delete scan' });
+    console.error('[Scan delete] Database error deleting scan:', scanId, err?.message);
+    return res.status(503).json({ error: 'Database error' });
   }
 });
 

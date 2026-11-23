@@ -76,7 +76,14 @@ Respond with a single valid JSON object strictly matching this schema:
       "title": string,
       "state": "pass" | "warn" | "fail" | "not_applicable",
       "reason": string (one plain sentence citing the text; never not_applicable when the text contains what the check examines),
-      "quote": string (optional exact verbatim substring)
+      "quote": string (optional exact verbatim substring),
+      "findings": [
+        {
+          "text": string (one plain sentence reason),
+          "evidence": string (verbatim exact substring from input, or verified lookup name),
+          "severity": "flag" | "caution" | "pass"
+        }
+      ]
     }
   ],
   "flaggedPhrases": [

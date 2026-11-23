@@ -264,7 +264,7 @@ export class DashboardRouteErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('Dashboard route error:', error, info);
+    console.error('Dashboard route error:', error?.message || error, info?.componentStack || info);
   }
 
   componentDidUpdate(prevProps) {
@@ -1420,9 +1420,9 @@ export function DashboardScanDetail() {
         } else if (err?.status === 401) {
           setErrorMsg('Add your key in the extension popup');
         } else if (err?.status === 404) {
-          setErrorMsg('This scan could not be found or no longer exists.');
+          setErrorMsg(err?.message || 'This scan could not be found or no longer exists.');
         } else {
-          setErrorMsg("Couldn't load the report, try again");
+          setErrorMsg(err?.message || "Couldn't load the report, try again");
         }
       })
       .finally(() => {

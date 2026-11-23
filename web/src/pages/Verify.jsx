@@ -864,7 +864,11 @@ function BcReportView({ result: res, bcMode, bcUploadedReceipt, onReset }) {
               const state = c?.state || 'unknown';
               const scoreVal = typeof c?.score === 'number' ? Math.min(100, Math.max(0, c.score)) : null;
               const fillWidth = scoreVal == null ? 0 : Math.max(4, scoreVal);
-              const findings = Array.isArray(c?.findings) ? c.findings : [];
+              const findings = Array.isArray(c?.findings) && c.findings.length > 0
+                ? c.findings
+                : (Array.isArray(c?.notes) && c.notes.length > 0
+                ? c.notes
+                : (c?.detail || c?.reason || c?.summary ? [{ text: c.detail || c.reason || c.summary }] : []));
               return (
                 <div key={i} className="check">
                   <div className="chead">
@@ -884,12 +888,15 @@ function BcReportView({ result: res, bcMode, bcUploadedReceipt, onReset }) {
                     )}
                   </div>
                   <ul className="notes">
-                    {findings.map((n, j) => (
-                      <li key={j}>
-                        <b className={`d-${n?.severity || n?.type || 'info'}`} />
-                        <span>{n?.text}</span>
-                      </li>
-                    ))}
+                    {findings.map((n, j) => {
+                      const text = typeof n === 'string' ? n : (n?.text || n?.reason || n?.detail || n?.t || '');
+                      return (
+                        <li key={j}>
+                          <b className={`d-${n?.severity || n?.s || n?.type || 'info'}`} />
+                          <span>{text}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               );

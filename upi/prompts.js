@@ -56,25 +56,53 @@ Respond with a single valid JSON object strictly matching this schema:
       "key": "payment_direction",
       "title": "Payment direction",
       "state": "pass" | "flag" | "warning" | "not_applicable",
-      "summary": string
+      "summary": string,
+      "findings": [
+        {
+          "text": string (one sentence reason),
+          "evidence": string (verbatim exact substring from input, or verified source),
+          "severity": "flag" | "caution" | "pass"
+        }
+      ]
     },
     {
       "key": "proof_authenticity",
       "title": "Proof authenticity",
       "state": "pass" | "flag" | "warning" | "not_applicable",
-      "summary": string
+      "summary": string,
+      "findings": [
+        {
+          "text": string (one sentence reason),
+          "evidence": string (verbatim exact substring from input, or verified source),
+          "severity": "flag" | "caution" | "pass"
+        }
+      ]
     },
     {
       "key": "urgency_and_pressure",
       "title": "Urgency and pressure",
       "state": "pass" | "flag" | "warning" | "not_applicable",
-      "summary": string
+      "summary": string,
+      "findings": [
+        {
+          "text": string (one sentence reason),
+          "evidence": string (verbatim exact substring from input, or verified source),
+          "severity": "flag" | "caution" | "pass"
+        }
+      ]
     },
     {
       "key": "channel_and_identity",
       "title": "Channel and identity",
       "state": "pass" | "flag" | "warning" | "not_applicable",
-      "summary": string
+      "summary": string,
+      "findings": [
+        {
+          "text": string (one sentence reason),
+          "evidence": string (verbatim exact substring from input, or verified source),
+          "severity": "flag" | "caution" | "pass"
+        }
+      ]
     }
   ],
   "whatToDo": [

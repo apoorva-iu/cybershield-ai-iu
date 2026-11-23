@@ -144,16 +144,113 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
   // Ensure post-validation sanitization across all AI fields
   sanitizeBannedClaims(finalAi);
 
+function buildUpiCheckFindings(c, cleanText, finalAi, { maliciousLinkFound = false } = {}) {
+  const existing = Array.isArray(c.findings) ? c.findings : [];
+  const findings = [];
+  const seenTexts = new Set();
+
+  function addFinding(text, evidence, severity, source = null) {
+    if (!text || typeof text !== 'string') return;
+    const cleanT = text.trim();
+    if (!cleanT || seenTexts.has(cleanT.toLowerCase())) return;
+
+    let validEvidence = null;
+    let validSource = source;
+    if (evidence && typeof evidence === 'string') {
+      const trimmedEv = evidence.trim();
+      if (/^(RDAP|VirusTotal|URLhaus|Google Places|Wikidata|Lookup|UPI|NPCI|Bank)/i.test(trimmedEv)) {
+        validEvidence = trimmedEv;
+        validSource = validSource || trimmedEv;
+      } else if (cleanText && cleanText.includes(trimmedEv)) {
+        validEvidence = trimmedEv;
+      }
+    }
+
+    if (evidence && !validEvidence) {
+      return;
+    }
+
+    const sev = String(severity || '').toLowerCase();
+    const normalizedSev = (sev === 'fail' || sev === 'flag' || sev === 'bad')
+      ? 'flag'
+      : (sev === 'warn' || sev === 'warning' || sev === 'caution')
+      ? 'caution'
+      : 'pass';
+
+    seenTexts.add(cleanT.toLowerCase());
+    findings.push({
+      text: cleanT,
+      evidence: validEvidence,
+      source: validSource,
+      severity: normalizedSev
+    });
+  }
+
+  for (const f of existing) {
+    addFinding(f.text, f.evidence, f.severity, f.source);
+    if (findings.length >= 4) break;
+  }
+
+  const evidenceList = Array.isArray(finalAi?.evidence) ? finalAi.evidence : [];
+
+  if (c.key === 'payment_direction') {
+    for (const ev of evidenceList) {
+      if (findings.length >= 4) break;
+      const combined = ((ev.interpretation || '') + ' ' + (ev.quote || '')).toLowerCase();
+      if (/(receive|collect|refund|credit|pin|pay to receive|direction|request money)/i.test(combined)) {
+        addFinding(ev.interpretation, ev.quote, /(pin|pay to receive|send money to receive)/i.test(combined) ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'proof_authenticity') {
+    for (const ev of evidenceList) {
+      if (findings.length >= 4) break;
+      const combined = ((ev.interpretation || '') + ' ' + (ev.quote || '')).toLowerCase();
+      if (/(proof|screenshot|utr|reference|receipt|transaction id|success|edited|fake|font|missing bank)/i.test(combined)) {
+        addFinding(ev.interpretation, ev.quote, /(fake|edited|missing bank|invalid)/i.test(combined) ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'urgency_and_pressure') {
+    for (const ev of evidenceList) {
+      if (findings.length >= 4) break;
+      const combined = ((ev.interpretation || '') + ' ' + (ev.quote || '')).toLowerCase();
+      if (/(urgent|hurry|freeze|block|within|immediate|fast|deadline|now)/i.test(combined)) {
+        addFinding(ev.interpretation, ev.quote, /(freeze|block|immediate)/i.test(combined) ? 'flag' : 'caution');
+      }
+    }
+  } else if (c.key === 'channel_and_identity') {
+    if (maliciousLinkFound) {
+      addFinding('Link or payment gateway flagged as malicious or suspicious by threat intelligence.', 'VirusTotal', 'flag', 'VirusTotal');
+    }
+    for (const ev of evidenceList) {
+      if (findings.length >= 4) break;
+      const combined = ((ev.interpretation || '') + ' ' + (ev.quote || '')).toLowerCase();
+      if (/(channel|telegram|whatsapp|merchant|vpa|handle|personal|unknown|identity)/i.test(combined)) {
+        addFinding(ev.interpretation, ev.quote, /(telegram|whatsapp)/i.test(combined) ? 'flag' : 'caution');
+      }
+    }
+  }
+
+  if (findings.length === 0) {
+    const sev = (c.state === 'flag' || c.state === 'fail') ? 'flag' : ((c.state === 'warning' || c.state === 'warn') ? 'caution' : 'pass');
+    addFinding(c.summary || 'Payment check evaluated on provided transaction data.', null, sev);
+  }
+
+  return findings;
+}
+
   // 6. Structure the report for receipt and ledger proof
-  const reportChecks = (finalAi.checks || []).map(c => ({
-    key: c.key,
-    title: c.title,
-    state: c.state,
-    score: c.state === 'flag' || c.state === 'fail' ? 85 : (c.state === 'warning' || c.state === 'warn' ? 50 : 10),
-    summary: c.summary,
-    reason: c.summary,
-    findings: c.summary ? [{ text: c.summary, severity: c.state === 'flag' || c.state === 'fail' ? 'warn' : (c.state === 'warning' || c.state === 'warn' ? 'warn' : 'info') }] : []
-  }));
+  const reportChecks = (finalAi.checks || []).map(c => {
+    const checkFindings = buildUpiCheckFindings(c, cleanText, finalAi, { maliciousLinkFound });
+    return {
+      key: c.key,
+      title: c.title,
+      state: c.state,
+      score: c.state === 'flag' || c.state === 'fail' ? 85 : (c.state === 'warning' || c.state === 'warn' ? 50 : 10),
+      summary: c.summary,
+      reason: c.summary,
+      findings: checkFindings
+    };
+  });
 
   const dynamicAnalysis = generateSpecificAnalysisText({
     tool: 'upi',
@@ -276,7 +373,7 @@ async function performUpiCheck({ text, turns, source, readability, reqUser, host
     primaryConcern: finalAi.primaryConcern,
     scamType: finalAi.scamType,
     evidence: finalAi.evidence,
-    checks: finalAi.checks,
+    checks: reportChecks,
     whatToDo: finalWhatToDo,
     extractedItems: {
       upiIds: deterministic.upiIds,

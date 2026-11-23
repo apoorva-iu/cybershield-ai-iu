@@ -116,12 +116,41 @@ function validateChecks(checksInput, rawInput) {
             quote = c.quote.trim();
           }
         }
+
+        const validFindings = [];
+        if (Array.isArray(c.findings)) {
+          for (const f of c.findings) {
+            if (f && typeof f.text === 'string' && f.text.trim()) {
+              let fEvidence = null;
+              if (typeof f.evidence === 'string' && f.evidence.trim()) {
+                const trimmedEv = f.evidence.trim();
+                if (/^(RDAP|VirusTotal|URLhaus|Google Places|Wikidata|Lookup)/i.test(trimmedEv) || isExactSubstring(trimmedEv, rawInput)) {
+                  fEvidence = trimmedEv;
+                }
+              }
+              const sev = String(f.severity || '').toLowerCase();
+              const normalizedSev = (sev === 'fail' || sev === 'flag' || sev === 'bad')
+                ? 'flag'
+                : (sev === 'warn' || sev === 'warning' || sev === 'caution')
+                ? 'caution'
+                : 'pass';
+
+              validFindings.push({
+                text: f.text.trim(),
+                evidence: fEvidence,
+                severity: normalizedSev
+              });
+            }
+          }
+        }
+
         checksMap.set(c.key, {
           key: c.key,
           title: CHECK_TITLES[c.key] || c.title || c.key,
           state,
           reason: String(c.reason || 'Evaluation completed.').trim(),
-          quote
+          quote,
+          findings: validFindings
         });
       }
     }
@@ -135,7 +164,8 @@ function validateChecks(checksInput, rawInput) {
       key,
       title: CHECK_TITLES[key] || key,
       state: 'not_applicable',
-      reason: 'No specific observations noted for this check in the submitted text.'
+      reason: 'No specific observations noted for this check in the submitted text.',
+      findings: []
     };
   });
 }
@@ -394,12 +424,22 @@ function resolvePassDisagreement(p1, p2) {
     const s2 = severityOrder[c2.state] || 1;
     const bestState = s1 >= s2 ? c1.state : c2.state;
     const reason = c1.reason && c1.reason.length > (c2.reason || '').length ? c1.reason : (c2.reason || c1.reason);
+    const combinedFindings = [...(c1.findings || []), ...(c2.findings || [])];
+    const seenFindingTexts = new Set();
+    const mergedFindings = [];
+    for (const f of combinedFindings) {
+      if (f && f.text && !seenFindingTexts.has(f.text.toLowerCase().trim())) {
+        seenFindingTexts.add(f.text.toLowerCase().trim());
+        mergedFindings.push(f);
+      }
+    }
     return {
       key,
       title: CHECK_TITLES[key] || c1.title || key,
       state: bestState,
       reason,
-      quote: c1.quote || c2.quote
+      quote: c1.quote || c2.quote,
+      findings: mergedFindings
     };
   });
 
