@@ -75,41 +75,47 @@ async function analyzeDescriptionWithStatus(text) {
 
     for (let i = 0; i < models.length; i++) {
       const model = models[i];
-      const hasMore = i < models.length - 1;
-      const timeoutMs = hasMore ? Math.min(LLM.timeoutMs, LLM.attemptTimeoutMs || 8000) : LLM.timeoutMs;
-      const c = new AbortController();
-      const t = setTimeout(() => c.abort(), timeoutMs);
-      try {
-        const url = `${LLM.geminiUrl}${model}:generateContent`;
-        const r = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          signal: c.signal,
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: sys }] },
-            contents: [{ parts: [{ text: content }] }],
-            generationConfig: { temperature: LLM.temperature, responseMimeType: 'application/json' }
-          })
-        });
-        if (!r.ok) {
-          lastStatus = mapHttpReason(r.status);
-          console.warn(`Gemini API error (${model}):`, r.status, lastStatus);
-          if (lastStatus === 'bad key') break;
-          continue;
+      const timeoutMs = 20000;
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, 800));
         }
-        const data = await r.json();
-        const textOut = extractGeminiText(data);
-        const parsed = parseLlmJson(textOut);
-        if (parsed) {
-          return { result: parsed, status: 'ok' };
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), timeoutMs);
+        try {
+          const url = `${LLM.geminiUrl}${model}:generateContent`;
+          const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+            signal: c.signal,
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: sys }] },
+              contents: [{ parts: [{ text: content }] }],
+              generationConfig: { temperature: LLM.temperature, responseMimeType: 'application/json' }
+            })
+          });
+          if (!r.ok) {
+            lastStatus = mapHttpReason(r.status);
+            console.warn(`[gemini] call failed (${model}): ${r.status} ${lastStatus}`);
+            if (lastStatus === 'bad key') break;
+            continue;
+          }
+          const data = await r.json();
+          const textOut = extractGeminiText(data);
+          const parsed = parseLlmJson(textOut);
+          if (parsed) {
+            return { result: parsed, status: 'ok' };
+          }
+          lastStatus = 'bad response';
+        } catch (err) {
+          lastStatus = mapErrReason(err);
+          console.warn(`[gemini] call failed (${model}): ${lastStatus}`);
+        } finally {
+          clearTimeout(t);
         }
-        lastStatus = 'bad response';
-      } catch (err) {
-        lastStatus = mapErrReason(err);
-        console.warn(`Gemini fetch failed (${model}):`, lastStatus);
-      } finally {
-        clearTimeout(t);
       }
+      if (lastStatus === 'bad key') break;
     }
     return { result: null, status: lastStatus };
   }

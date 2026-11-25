@@ -1285,21 +1285,23 @@ import { downloadReceipt } from '../shared/receipt-export.js';
       chrome.runtime.sendMessage({ type: 'CHECK', checkType, payload }, (res) => {
         if (!activeBubble) return;
         if (!res || !res.ok) {
-          if (res && (res.code === 'quota_exceeded' || res.error === 'quota_exceeded')) {
+          if (res && (res.code === 'quota_exceeded' || res.error === 'quota_exceeded' || res.error === 'Check limit reached' || res.status === 429)) {
             showBubbleQuotaExceeded(res);
-          } else if (res && res.code === 'pro_required') {
+          } else if (res && (res.code === 'pro_required' || res.status === 403)) {
             showBubbleProRequired(res);
-          } else if (res && (res.code === 'missing_key' || res.code === 'invalid_extension_key' || res.code === 'key_revoked')) {
-            showBubbleKeyError(res.code === 'missing_key' ? 'Add your key in the extension popup' : (res.error || 'Key was revoked. Add a new key'));
+          } else if (res && (res.code === 'missing_key' || res.code === 'invalid_extension_key' || res.code === 'key_revoked' || res.status === 401)) {
+            showBubbleKeyError(res.code === 'missing_key' ? 'Add your key in the extension popup' : 'Key not valid, generate a new one');
+          } else if (res && (res.status === 0 || res.code === 'server_unreachable' || (res.error && res.error.toLowerCase().includes('reach')))) {
+            showBubbleError('Server not reachable');
           } else {
-            showBubbleError(res ? res.error : 'Could not reach Cyber Shield.');
+            showBubbleError(res && res.error ? res.error : 'Server not reachable');
           }
         } else {
           showBubbleResult(res.data, checkType, payload);
         }
       });
     } else {
-      showBubbleError('Extension runtime unavailable.');
+      showBubbleError('Server not reachable');
     }
   }
 
@@ -1343,6 +1345,18 @@ import { downloadReceipt } from '../shared/receipt-export.js';
   function showBubbleError(errorMsg) {
     if (!activeBubble) return;
 
+    let displayMsg = errorMsg || 'Server not reachable';
+    const lower = String(displayMsg).toLowerCase();
+    if (lower.includes('reach') || lower.includes('offline') || lower.includes('network') || lower.includes('failed to fetch') || lower.includes('connect')) {
+      displayMsg = 'Server not reachable';
+    } else if (lower.includes('revoked') || lower.includes('invalid') || (lower.includes('key') && !lower.includes('add your key'))) {
+      displayMsg = 'Key not valid, generate a new one';
+    } else if (lower.includes('pro')) {
+      displayMsg = 'Free account: Pro required';
+    } else if (lower.includes('quota') || lower.includes('limit') || lower.includes('too many')) {
+      displayMsg = 'Check limit reached';
+    }
+
     activeBubble.innerHTML = `
       <div class="cs-header">
         <div class="cs-brand">
@@ -1359,7 +1373,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
       <div class="cs-bubble-body">
         <div class="cs-err-box" role="alert">
-          <span>${escapeHtml(errorMsg)}</span>
+          <span>${escapeHtml(displayMsg)}</span>
         </div>
       </div>
 
@@ -1416,7 +1430,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
       <div class="cs-bubble-body">
         <div class="cs-quota-box" role="alert">
-          <span>Free checks used for this month. Open Cyber Shield to sign in or upgrade.</span>
+          <span>Check limit reached</span>
           <button type="button" class="cs-upgrade-btn" id="cs-open-site-btn">Open Cyber Shield &rarr;</button>
         </div>
       </div>
@@ -1502,7 +1516,7 @@ import { downloadReceipt } from '../shared/receipt-export.js';
 
       <div class="cs-bubble-body">
         <div class="cs-quota-box" role="alert">
-          <span>${escapeHtml((proRes && proRes.error) || 'Extension is a Pro feature')}</span>
+          <span>Free account: Pro required</span>
           <a href="${escapeHtml(upgradeUrl)}" target="_blank" rel="noopener noreferrer" class="cs-upgrade-btn" id="cs-pro-upgrade-link">Upgrade to Pro &rarr;</a>
         </div>
       </div>
@@ -1581,10 +1595,23 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     const isUnable = rawLevel === 'unable' || (checkType !== 'job' && rawLevel === 'unknown') || data.mode === 'ai_unavailable' || data.reason === 'ai_unavailable';
 
     if (isUnable) {
-      const sentence = data.message ||
-        (Array.isArray(data.headline) ? (data.headline[1] || data.headline[0]) : data.headline) ||
-        data.primaryConcern ||
-        'We could not verify this text right now. Please try again or check the full report.';
+      let sentence = 'We could not analyze this right now. Please try again in a minute.';
+      const r = String(data.reason || '').toLowerCase();
+      if (r === 'quota' || data.code === 'quota_exceeded') {
+        sentence = 'Check limit reached';
+      } else if (r === 'no_key' || r === 'bad_key' || r === 'invalid_key' || r === 'key_revoked') {
+        sentence = 'Key not valid, generate a new one';
+      } else if (r === 'pro_required') {
+        sentence = 'Free account: Pro required';
+      } else if (r === 'timeout' || r === 'network_error' || r === 'server_unreachable') {
+        sentence = 'Server not reachable';
+      } else if (data.message && typeof data.message === 'string') {
+        sentence = data.message;
+      } else if (Array.isArray(data.headline) ? (data.headline[1] || data.headline[0]) : data.headline) {
+        sentence = Array.isArray(data.headline) ? (data.headline[1] || data.headline[0]) : data.headline;
+      } else if (data.primaryConcern) {
+        sentence = data.primaryConcern;
+      }
 
       activeBubble.innerHTML = `
         <div class="cs-header">
@@ -1895,7 +1922,8 @@ import { downloadReceipt } from '../shared/receipt-export.js';
     }
 
     const proofId = data.proofId || (data.receipt && data.receipt.proofId) || (data.ledgerProof && data.ledgerProof.proofId) || '';
-    const savedReportId = data.scanId || proofId;
+    const isSaved = Boolean(data && data.saved === true);
+    const savedReportId = isSaved ? (data.scanId || proofId) : null;
 
     // Format reasons & quoted evidence HTML
     const findingsHtml = displayReasons.map(f => `
@@ -1941,6 +1969,12 @@ import { downloadReceipt } from '../shared/receipt-export.js';
           <div class="cs-headline-title">${escapeHtml(headlineTitle)}</div>
           ${headlineSentence ? `<div class="cs-headline-sub">${escapeHtml(headlineSentence)}</div>` : ''}
         </div>
+
+        ${!isSaved ? `
+          <div class="cs-unsaved-warning" style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 8px 10px; border-radius: 6px; font-size: 12px; line-height: 1.4; margin: 8px 0; text-align: left;">
+            This check ran but could not be saved to your account. Run it again.
+          </div>
+        ` : ''}
 
         ${checkType === 'job' ? `
           <div class="cs-findings-section">

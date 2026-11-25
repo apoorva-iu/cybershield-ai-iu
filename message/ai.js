@@ -78,64 +78,18 @@ function parseJsonFromText(rawText) {
   }
 }
 
-async function callGeminiApi(promptText, modelName, apiKey, timeoutMs) {
-  const url = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}${modelName}:generateContent`;
+async function callGeminiApi(promptText, modelName, apiKey, timeoutMs = 20000) {
+  const primaryModel = modelName || getAnalysisModel() || 'gemini-flash-lite-latest';
+  const secondModel = (Array.isArray(LLM_CFG.geminiFallbackModels) && LLM_CFG.geminiFallbackModels.find(m => m && m !== primaryModel)) || 'gemini-2.5-flash-lite';
+  const effectiveTimeout = timeoutMs || 20000;
 
-  const c = new AbortController();
-  const t = setTimeout(() => c.abort(), timeoutMs);
-
-  try {
-    liveCallCount++;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      signal: c.signal,
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-        contents: [{ parts: [{ text: promptText }] }],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: 'application/json'
-        }
-      })
-    });
-
-    if (!res.ok) {
-      if (res.status === 429 || res.status === 503) {
-        const jitter = Math.floor(Math.random() * 800) + 1200;
-        await new Promise(r => setTimeout(r, jitter));
-
-        liveCallCount++;
-        const retryRes = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
-          signal: c.signal,
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: 'application/json'
-            }
-          })
-        });
-
-        if (retryRes.ok) {
-          const data = await retryRes.json();
-          return { ok: true, text: extractGeminiText(data) };
-        }
-      }
-
-      // Try fallback model if configured and different
-      const fallbackModel = modelName === 'gemini-flash-lite-latest' ? 'gemini-3.1-flash-lite' : 'gemini-flash-lite-latest';
-      const fallbackUrl = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}${fallbackModel}:generateContent`;
-      const fallbackRes = await fetch(fallbackUrl, {
+  async function executeCall(targetModel) {
+    const url = `${LLM_CFG.geminiUrl || 'https://generativelanguage.googleapis.com/v1beta/models/'}${targetModel}:generateContent`;
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), effectiveTimeout);
+    try {
+      liveCallCount++;
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,27 +105,45 @@ async function callGeminiApi(promptText, modelName, apiKey, timeoutMs) {
           }
         })
       });
-      if (fallbackRes.ok) {
-        const data = await fallbackRes.json();
-        return { ok: true, text: extractGeminiText(data) };
+
+      if (!res.ok) {
+        return { ok: false, status: res.status, reason: res.status === 429 ? 'quota' : `http_${res.status}` };
       }
 
-      return { ok: false, status: res.status, reason: res.status === 429 ? 'quota' : `http_${res.status}` };
+      const data = await res.json();
+      return { ok: true, text: extractGeminiText(data) };
+    } catch (err) {
+      const isTimeout = err && (err.name === 'AbortError' || err.code === 'ETIMEDOUT');
+      return { ok: false, status: 0, reason: isTimeout ? 'timeout' : 'network_error' };
+    } finally {
+      clearTimeout(t);
     }
-
-    const data = await res.json();
-    return { ok: true, text: extractGeminiText(data) };
-  } catch (err) {
-    const isTimeout = err && (err.name === 'AbortError' || err.code === 'ETIMEDOUT');
-    return { ok: false, reason: isTimeout ? 'timeout' : 'network_error' };
-  } finally {
-    clearTimeout(t);
   }
+
+  // 1. Initial attempt with primary model
+  let result = await executeCall(primaryModel);
+  if (result.ok) return result;
+
+  // 2. Retry primary model once with a short delay (~800ms)
+  await new Promise(r => setTimeout(r, 800));
+  result = await executeCall(primaryModel);
+  if (result.ok) return result;
+
+  // 3. Fall back to the second model already configured, with a timeout of about 20 seconds
+  if (secondModel && secondModel !== primaryModel) {
+    const fallbackResult = await executeCall(secondModel);
+    if (fallbackResult.ok) return fallbackResult;
+    console.warn(`[gemini] call failed (${secondModel}): ${fallbackResult.status || 0} ${fallbackResult.reason || 'failed'}`);
+    return fallbackResult;
+  }
+
+  console.warn(`[gemini] call failed (${primaryModel}): ${result.status || 0} ${result.reason || 'failed'}`);
+  return result;
 }
 
 async function runPassWithRetry(promptText, rawInput, passNum = 1) {
   const apiKey = env('GEMINI_API_KEY');
-  const timeoutMs = LLM_CFG.timeoutMs || 25000;
+  const timeoutMs = 20000;
   const modelName = getAnalysisModel();
 
   let currentPrompt = promptText;

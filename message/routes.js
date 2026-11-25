@@ -202,11 +202,15 @@ async function handleMessageCheck(req, res) {
     });
 
     if (checkResult.isUnavailable) {
+      const reason = (checkResult.errorResponse && checkResult.errorResponse.reason) || 'ai_unavailable';
+      console.warn(`[message/check] failure: 200 ${reason}`);
       return res.json(checkResult.errorResponse);
     }
 
     return res.json(checkResult.response);
   } catch (err) {
+    const errCode = (err && (err.code || err.name)) || 'internal_error';
+    console.warn(`[message/check] failure: 500 ${errCode}`);
     return res.status(500).json({ error: 'Internal error processing message check: ' + (err.message || 'unknown') });
   }
 }

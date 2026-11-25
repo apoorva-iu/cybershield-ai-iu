@@ -1,6 +1,6 @@
 'use strict';
 const createDetectorRouter = require('./routes');
-const { createProof } = require('./proof');
+const { createProof, prepareProof, commitProof, saveScanRow, extractErrorCode } = require('./proof');
 const { quotaMiddleware, isQuotaEnabled, setQuotaEnabled, resetQuotaMemory, getUsage } = require('./quota');
 const { handleExtractText } = require('./extract-text');
 const { handleAnalyze } = require('./analyze');
@@ -11,6 +11,10 @@ const { extractTextFromImage, analyzeTextWithGemini } = require('./gemini');
 module.exports = {
   createDetectorRouter,
   createProof,
+  prepareProof,
+  commitProof,
+  saveScanRow,
+  extractErrorCode,
   quotaMiddleware,
   isQuotaEnabled,
   setQuotaEnabled,

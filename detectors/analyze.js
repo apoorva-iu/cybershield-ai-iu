@@ -2,7 +2,7 @@
 const cfg = require('../config');
 const L = require('../ledger');
 const DB = require('../db');
-const { createProof } = require('./proof');
+const { createProof, prepareProof, commitProof, saveScanRow, extractErrorCode } = require('./proof');
 const { evaluateRules } = require('./rules');
 const { extractLinks, inspectLinks, extractEmails, extractPhoneNumbers, extractUpiIds, extractAmounts } = require('./evidence');
 const { analyzeTextWithGemini } = require('./gemini');
@@ -696,11 +696,10 @@ async function handleAnalyze(req, res) {
     sources
   };
 
-  // Create proof using shared proof creator
-  const proofResult = await createProof(report, finalLevel, req.hostname);
+  // Prepare proof
+  const prepared = prepareProof(report, finalLevel);
 
-
-  // Save to DB
+  // Save to DB first (before ledger append)
   let saved = false;
   const dbCfg = cfg.runtime.database;
   const userId = (req.user && typeof req.user.id === 'string') ? req.user.id : null;
@@ -716,8 +715,8 @@ async function handleAnalyze(req, res) {
       }
 
       const scanRow = {
-        proof_id: proofResult.proofId,
-        proof_key: proofResult.proofKey,
+        proof_id: prepared.proofId,
+        proof_key: prepared.proofKey,
         level: finalLevel,
         score: finalScore,
         confidence: report.overall.confidence,
@@ -727,18 +726,14 @@ async function handleAnalyze(req, res) {
         expires_at: expiresAt
       };
 
-      const client = DB.getClient();
-      if (client && DB.getStatus() === 'connected') {
-        const tableName = dbCfg.tables.scans;
-        const { error } = await client.from(tableName).insert(scanRow);
-        if (!error) saved = true;
-      } else if (process.env.npm_lifecycle_event && process.env.npm_lifecycle_event.startsWith('test')) {
-        saved = Boolean(userId);
-      }
+      saved = await saveScanRow(scanRow);
     } catch (err) {
-      console.warn('[database] analyze save scan failed:', err.message);
+      console.warn('[database] scan insert failed: ' + extractErrorCode(err));
     }
   }
+
+  // Commit proof & ledger append
+  const proofResult = await commitProof(prepared, req.hostname);
 
   // Record quota if anonymous
   if (req.recordQuotaUsage) {
@@ -756,13 +751,17 @@ async function handleAnalyze(req, res) {
     whatToDo,
     suggestedTool,
     extractedText: null,
-    proofId: proofResult.proofId,
-    accessCode: proofResult.accessCode,
+    proofId: prepared.proofId,
+    accessCode: prepared.accessCode,
     block: proofResult.blk ? proofResult.blk.index : null,
     blockHash: proofResult.blk ? proofResult.blk.hash : null,
     timestamp: proofResult.blk ? proofResult.blk.timestamp : null,
     receipt: proofResult.receipt,
-    saved
+    saved,
+    proofSaved: proofResult.proofSaved,
+    proofStatus: proofResult.proofStatus,
+    proofPending: !proofResult.proofSaved,
+    ...(!proofResult.proofSaved && proofResult.proofReason ? { proofReason: proofResult.proofReason, reason: proofResult.proofReason } : {})
   });
 }
 

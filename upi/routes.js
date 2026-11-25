@@ -202,11 +202,15 @@ async function handleUpiCheck(req, res) {
     });
 
     if (checkResult.isUnavailable) {
+      const reason = (checkResult.errorResponse && checkResult.errorResponse.reason) || 'ai_unavailable';
+      console.warn(`[upi/check] failure: 200 ${reason}`);
       return res.json(checkResult.errorResponse);
     }
 
     return res.json(checkResult.response);
   } catch (err) {
+    const errCode = (err && (err.code || err.name)) || 'internal_error';
+    console.warn(`[upi/check] failure: 500 ${errCode}`);
     return res.status(500).json({ error: 'Internal error processing UPI check: ' + (err.message || 'unknown') });
   }
 }

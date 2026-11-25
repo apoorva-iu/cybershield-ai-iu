@@ -12,7 +12,7 @@ const C = require('./checks');
 const L = require('./ledger');
 const DB = require('./db');
 const { analyzeDescription, analyzeDescriptionWithStatus } = require('./llm');
-const { createProof } = require('./detectors/proof');
+const { createProof, prepareProof, commitProof, saveScanRow, extractErrorCode } = require('./detectors/proof');
 const { generateSpecificAnalysisText, dedupeAdviceList } = require('./detectors/analysis-text');
 const { generateComplaintText } = require('./detectors/complaint');
 const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData, getUserPlan, getUserPlanStatus } = require('./detectors/quota');
@@ -127,6 +127,9 @@ app.use(cors((req, cb) => {
     }
   }
 
+  if (typeof origin === 'string' && EXTENSION_ORIGIN_RE.test(origin)) {
+    console.warn('[cors] rejected: 403 origin_not_allowed');
+  }
   return cb(null, { origin: false });
 }));
 
@@ -451,6 +454,7 @@ async function optionalAuth(req, res, next) {
       try {
         const lookup = await findActiveExtensionKey(token);
         if (!lookup.active || !lookup.userId || isUserDeleted(lookup.userId)) {
+          console.warn('[auth] extension key invalid: 401 invalid_extension_key');
           return res.status(401).json({
             error: 'invalid_extension_key',
             message: 'Key not valid, generate a new one'
@@ -460,6 +464,7 @@ async function optionalAuth(req, res, next) {
         const reqPath = (req.path || '').replace(/\/+$/, '') || '/';
         const isUsageCheck = reqPath === '/api/usage' || reqPath === '/api/quota';
         if (!proActive && !isUsageCheck) {
+          console.warn('[auth] extension key rejected: 403 pro_required');
           return res.status(403).json({
             error: 'pro_required',
             message: 'Extension is a Pro feature',
@@ -473,6 +478,7 @@ async function optionalAuth(req, res, next) {
         };
         return next();
       } catch (err) {
+        console.warn('[auth] extension key verify failed: 503 db_error');
         return res.status(503).json({ error: 'Could not verify extension key' });
       }
     }
@@ -719,16 +725,7 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
     sources: used
   };
 
-  const {
-    reportHash,
-    proofId,
-    accessCode,
-    proofKey,
-    blk,
-    proofSaved,
-    proofReason,
-    receipt
-  } = await createProof(report, overall.level, req.hostname);
+  const prepared = prepareProof(report, overall.level);
 
   let saved = false;
   const dbCfg = cfg.runtime.database;
@@ -744,8 +741,8 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
       }
 
       const scanRow = {
-        proof_id: proofId,
-        proof_key: proofKey,
+        proof_id: prepared.proofId,
+        proof_key: prepared.proofKey,
         level: overall.level,
         score: overall.score != null ? overall.score : null,
         confidence: overall.confidence != null ? overall.confidence : null,
@@ -755,24 +752,13 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
         expires_at: expiresAt
       };
 
-      const client = DB.getClient();
-      if (!client) {
-        console.warn('[database] save scan failed: database disconnected');
-      } else {
-        const tableName = dbCfg.tables.scans;
-        const { error } = await client.from(tableName).insert(scanRow);
-        if (error) {
-          const safeReason = error.code || (error.message && error.message.replace(/https?:\/\/\S+/gi, '[url]')) || 'insert failed';
-          console.warn('[database] save scan failed: ' + safeReason);
-        } else {
-          saved = true;
-        }
-      }
+      saved = await saveScanRow(scanRow);
     } catch (err) {
-      const safeReason = (err && (err.code || err.message)) ? String(err.code || err.message).replace(/https?:\/\/\S+/gi, '[url]') : 'insert error';
-      console.warn('[database] save scan failed: ' + safeReason);
+      console.warn('[database] scan insert failed: ' + extractErrorCode(err));
     }
   }
+
+  const proofResult = await commitProof(prepared, req.hostname);
 
   if (req.recordQuotaUsage) {
     await req.recordQuotaUsage();
@@ -785,17 +771,19 @@ if (!inp.url && !inp.desc.trim()) return res.status(400).json({ error: 'Provide 
     whatToDo: jobWhatToDo,
     live: overall.live,
     evidenceStatus,
-    proofId,
-    accessCode,
-    block: blk ? blk.index : null,
-    blockHash: blk ? blk.hash : null,
-    prevHash: blk ? blk.prevHash : null,
-    reportHash: reportHash || (blk ? blk.reportHash : null),
-    timestamp: blk ? blk.timestamp : null,
-    receipt,
+    proofId: prepared.proofId,
+    accessCode: prepared.accessCode,
+    block: proofResult.blk ? proofResult.blk.index : null,
+    blockHash: proofResult.blk ? proofResult.blk.hash : null,
+    prevHash: proofResult.blk ? proofResult.blk.prevHash : null,
+    reportHash: proofResult.reportHash || (proofResult.blk ? proofResult.blk.reportHash : null),
+    timestamp: proofResult.blk ? proofResult.blk.timestamp : null,
+    receipt: proofResult.receipt,
     saved,
-    proofSaved,
-    ...(!proofSaved && proofReason ? { proofReason, reason: proofReason } : {})
+    proofSaved: proofResult.proofSaved,
+    proofStatus: proofResult.proofStatus,
+    proofPending: !proofResult.proofSaved,
+    ...(!proofResult.proofSaved && proofResult.proofReason ? { proofReason: proofResult.proofReason, reason: proofResult.proofReason } : {})
   });
 });
 

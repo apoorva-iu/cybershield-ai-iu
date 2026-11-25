@@ -445,6 +445,7 @@ async function quotaMiddleware(req, res, next) {
     const entitlement = await getEntitlement(req, res);
 
     if (entitlement.remaining <= 0) {
+      console.warn('[quota] check blocked: 429 quota_exceeded');
       return res.status(429).json({
         error: 'quota_exceeded',
         code: 'QUOTA_EXCEEDED',

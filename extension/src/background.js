@@ -130,7 +130,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             ok: false,
             status: 401,
             code: 'key_revoked',
-            error: 'Key was revoked. Add a new key'
+            error: 'Key not valid, generate a new one'
           });
           return;
         }
@@ -140,30 +140,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             ok: false,
             status: 403,
             code: (json && json.error) || 'pro_required',
-            error: (json && (json.message || json.error)) || 'Extension is a Pro feature',
+            error: 'Free account: Pro required',
             upgradeUrl: (json && json.upgradeUrl) || '/#/pricing'
           });
           return;
         }
 
         if (res.status === 429) {
-          if (json && (json.error === 'quota_exceeded' || json.code === 'QUOTA_EXCEEDED')) {
-            sendResponse({
-              ok: false,
-              status: 429,
-              code: 'quota_exceeded',
-              error: 'quota_exceeded',
-              action: json.action,
-              limit: json.limit,
-              used: json.used,
-              resetsAt: json.resetsAt
-            });
-            return;
-          }
           sendResponse({
             ok: false,
             status: 429,
-            error: 'Too many checks right now. Please try again in a minute.'
+            code: 'quota_exceeded',
+            error: 'Check limit reached',
+            action: json && json.action,
+            limit: json && json.limit,
+            used: json && json.used,
+            resetsAt: json && json.resetsAt
           });
           return;
         }
@@ -178,12 +170,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
 
         if (!res.ok) {
-          const errMsg = (json && (json.message || json.error))
-            ? String(json.message || json.error)
-            : `Check failed (${res.status})`;
+          const isServerUnreachable = res.status >= 502 && res.status <= 504;
+          const errMsg = isServerUnreachable
+            ? 'Server not reachable'
+            : ((json && (json.message || json.error)) ? String(json.message || json.error) : `Check failed (${res.status})`);
           sendResponse({
             ok: false,
             status: res.status,
+            code: isServerUnreachable ? 'server_unreachable' : 'http_error',
             error: errMsg
           });
           return;
@@ -199,7 +193,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({
           ok: false,
           status: 0,
-          error: 'Could not reach Cyber Shield.'
+          code: 'server_unreachable',
+          error: 'Server not reachable'
         });
       }
     };

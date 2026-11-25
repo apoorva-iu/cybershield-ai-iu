@@ -3,7 +3,7 @@
 const L = require('../ledger');
 const cfg = require('../config');
 const DB = require('../db');
-const { createProof } = require('../detectors/proof');
+const { createProof, prepareProof, commitProof, saveScanRow, extractErrorCode } = require('../detectors/proof');
 const { inspectLinks } = require('../detectors/evidence');
 const { parseDeterministicItems } = require('./parser');
 const { buildPass1Prompt, buildPass2Prompt } = require('./prompts');
@@ -421,10 +421,10 @@ function buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound =
     scoreBreakdown: finalAi.scoreBreakdown
   };
 
-  // 9. Generate proof & receipt using the existing createProof function
-  const proofResult = await createProof(report, finalAi.level, hostname);
+  // 9. Prepare proof
+  const prepared = prepareProof(report, finalAi.level);
 
-  // 10. Database saving if signed in (free tool, does not consume user quota)
+  // 10. Database saving first (before ledger append)
   let saved = false;
   const dbCfg = cfg.runtime.database;
   const userId = (reqUser && typeof reqUser.id === 'string') ? reqUser.id : null;
@@ -440,8 +440,8 @@ function buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound =
       }
 
       const scanRow = {
-        proof_id: proofResult.proofId,
-        proof_key: proofResult.proofKey,
+        proof_id: prepared.proofId,
+        proof_key: prepared.proofKey,
         level: finalAi.level === 'unable' ? 'unknown' : finalAi.level,
         score: finalAi.score != null ? finalAi.score : null,
         confidence: typeof finalAi.confidence === 'number'
@@ -453,18 +453,14 @@ function buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound =
         expires_at: expiresAt
       };
 
-      const client = DB.getClient();
-      if (client && DB.getStatus() === 'connected') {
-        const tableName = dbCfg.tables.scans;
-        const { error } = await client.from(tableName).insert(scanRow);
-        if (!error) saved = true;
-      } else if (process.env.npm_lifecycle_event && process.env.npm_lifecycle_event.startsWith('test')) {
-        saved = Boolean(userId);
-      }
+      saved = await saveScanRow(scanRow);
     } catch (err) {
-      console.warn('[database] message check save scan failed:', err.message);
+      console.warn('[database] scan insert failed: ' + extractErrorCode(err));
     }
   }
+
+  // 11. Commit proof & ledger append
+  const proofResult = await commitProof(prepared, hostname);
 
   const resultResponse = {
     report,
@@ -503,8 +499,8 @@ function buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound =
     },
     mode: 'normal',
     tool: 'message',
-    proofId: proofResult.proofId,
-    accessCode: proofResult.accessCode,
+    proofId: prepared.proofId,
+    accessCode: prepared.accessCode,
     block: proofResult.blk ? proofResult.blk.index : null,
     blockHash: proofResult.blk ? proofResult.blk.hash : null,
     prevHash: proofResult.blk ? proofResult.blk.prevHash : null,
@@ -512,7 +508,11 @@ function buildMessageCheckFindings(c, cleanText, finalAi, { maliciousLinkFound =
     timestamp: report.generatedAt,
     receipt: proofResult.receipt,
     ledgerProof: proofResult.receipt,
-    saved
+    saved,
+    proofSaved: proofResult.proofSaved,
+    proofStatus: proofResult.proofStatus,
+    proofPending: !proofResult.proofSaved,
+    ...(!proofResult.proofSaved && proofResult.proofReason ? { proofReason: proofResult.proofReason, reason: proofResult.proofReason } : {})
   };
 
   // Cache in 10-minute cache
