@@ -24,6 +24,26 @@ function extractGeminiText(data) {
   return (parts[0] && typeof parts[0].text === 'string') ? parts[0].text : null;
 }
 
+function formatDateTimeIST(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return String(dateInput);
+  try {
+    const day = d.toLocaleDateString('en-GB', { day: '2-digit', timeZone: 'Asia/Kolkata' });
+    const month = d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'Asia/Kolkata' });
+    const year = d.toLocaleDateString('en-GB', { year: 'numeric', timeZone: 'Asia/Kolkata' });
+    let timeStr = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    }).toLowerCase();
+    return `${day} ${month} ${year}, ${timeStr} IST`;
+  } catch {
+    return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
+  }
+}
+
 function buildScanFacts(row) {
   const rep = (row && row.report && typeof row.report === 'object') ? row.report : {};
   const inp = (rep.input && typeof rep.input === 'object') ? rep.input : {};
@@ -63,6 +83,7 @@ function buildScanFacts(row) {
   const rawDesc = inp.desc || inp.description || (typeof inp === 'string' ? inp : '');
   const scamType = rep.scamType || rep.primaryConcern || overall.primaryConcern || category;
   const headline = rep.headline || overall.headline || 'Suspicious incident detected';
+  const formattedScanDate = formatDateTimeIST(row.created_at || (rep && rep.generatedAt) || new Date());
 
   return {
     category,
@@ -70,7 +91,7 @@ function buildScanFacts(row) {
     headline,
     riskLevel: row.level || overall.level || 'high',
     riskScore: row.score != null ? row.score : (overall.score != null ? overall.score : null),
-    scanDate: row.created_at || new Date().toISOString(),
+    scanDate: formattedScanDate,
     proofId: row.proof_id || null,
     company: inp.company || null,
     phones,
@@ -86,7 +107,7 @@ const SYSTEM_INSTRUCTION = `You are an official incident reporting assistant hel
 
 CRITICAL RULES:
 1. Tone must be formal, objective, clear, and strictly factual.
-2. Rely EXCLUSIVELY on the incident facts provided. DO NOT fabricate or invent names, phone numbers, UPI IDs, banks, transaction numbers, amounts, dates, or details.
+2. Rely EXCLUSIVELY on the incident facts provided. DO NOT fabricate or invent names, phone numbers, UPI IDs, banks, transaction numbers, amounts, dates, or details. Keep it factual and never invent facts.
 3. For any citizen personal information or transaction details not in the incident facts, you MUST provide explicit bracketed placeholders so the citizen can fill them in before submitting to the portal.
    Required standard placeholders to include:
    [Your full name]
@@ -101,7 +122,8 @@ CRITICAL RULES:
 4. Explicitly list all suspect identifiers found in the incident facts (suspect phone numbers, UPI IDs, fraudulent links/URLs, impersonated organization names). If none was found in evidence, write "Not provided in evidence".
 5. Output PLAIN TEXT ONLY. DO NOT use markdown bolding (no asterisks **), headers (no #), bullet asterisks (*), or code fences. Use clean plain text formatting with CAPITALIZED SECTION HEADERS and clear line breaks.
 6. DO NOT use the word d-r-a-f-t or refer to this document as an unfinalized or preliminary submission.
-7. End with a formal request for investigation, account freezing (under Section 102 CrPC / BNSS), and appropriate action under the Information Technology Act 2000 and Bharatiya Nyaya Sanhita (BNS).`;
+7. Format every date and time in the complaint as a readable local time (for example "23 Nov 2026, 11:22 am IST"). NEVER print raw ISO timestamps (such as 2026-11-23T...).
+8. Do not cite specific section numbers of laws (such as CrPC, BNSS, IPC, or IT Act sections); use general wording such as "under the applicable provisions of the Information Technology Act and the Bharatiya Nyaya Sanhita". End with a formal prayer / request for investigation, account freezing, and appropriate legal action under the applicable provisions of the Information Technology Act and the Bharatiya Nyaya Sanhita.`;
 
 function buildUserPrompt(facts) {
   return `Please prepare a formal cyber crime complaint based on the following verified incident facts:
@@ -110,7 +132,7 @@ INCIDENT FACTS:
 - Incident Category: ${facts.category}
 - Specific Scam Classification: ${facts.scamType}
 - Assessment: ${String(facts.riskLevel).toUpperCase()} RISK (Risk Score: ${facts.riskScore != null ? facts.riskScore : 'N/A'}/100)
-- Date Detected: ${facts.scanDate}
+- Date and Time Detected: ${facts.scanDate}
 - Verification Reference: ${facts.proofId || 'Not anchored'}
 - Suspect Company / Entity Impersonated: ${facts.company || 'Not specified'}
 - Suspect Phone Numbers: ${facts.phones.length > 0 ? facts.phones.join(', ') : 'None in evidence'}
@@ -121,7 +143,7 @@ INCIDENT FACTS:
 ${facts.findings.length > 0 ? facts.findings.map(f => '  - ' + f).join('\n') : '  - Suspicious scam patterns identified.'}
 ${facts.rawSample ? `- Text / Message Sample from Incident:\n"""\n${facts.rawSample}\n"""` : ''}
 
-Generate the complaint now in plain text format with clear numbered sections.`;
+Generate the complaint now in plain text format with clear numbered sections from Complainant details through Prayer, date, place and name. Use readable local dates (such as "23 Nov 2026, 11:22 am IST") and never print raw ISO timestamps. Do not cite specific section numbers of laws.`;
 }
 
 function sanitizeComplaintText(text) {
@@ -134,6 +156,12 @@ function sanitizeComplaintText(text) {
   // Guarantee no usage of preliminary/tentative terms
   const disallowed = ['d', 'r', 'a', 'f', 't'].join('');
   cleaned = cleaned.replace(new RegExp('\\b' + disallowed + '\\b', 'gi'), 'complaint');
+
+  // Convert any stray raw ISO timestamps to readable IST dates
+  cleaned = cleaned.replace(/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\b/g, (iso) => {
+    return formatDateTimeIST(iso);
+  });
+
   return cleaned;
 }
 

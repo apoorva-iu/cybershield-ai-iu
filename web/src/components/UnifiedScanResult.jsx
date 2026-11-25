@@ -36,6 +36,213 @@ import './unified-scan-result.css';
    Helpers for Formatting
    -------------------------------------------------------------------------- */
 
+function formatDateTimeIST(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return String(dateInput);
+  try {
+    const day = d.toLocaleDateString('en-GB', { day: '2-digit', timeZone: 'Asia/Kolkata' });
+    const month = d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'Asia/Kolkata' });
+    const year = d.toLocaleDateString('en-GB', { year: 'numeric', timeZone: 'Asia/Kolkata' });
+    let timeStr = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    }).toLowerCase();
+    return `${day} ${month} ${year}, ${timeStr} IST`;
+  } catch {
+    return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
+  }
+}
+
+function printComplaintDocument({ title, proofId, dateFormatted, reportedMessage, complaintText }) {
+  if (typeof window === 'undefined') return;
+
+  const existing = document.getElementById('usr-complaint-print-frame');
+  if (existing) {
+    try {
+      existing.remove();
+    } catch {
+      // ignore
+    }
+  }
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'usr-complaint-print-frame';
+  iframe.style.position = 'fixed';
+  iframe.style.top = '-9999px';
+  iframe.style.left = '-9999px';
+  iframe.style.width = '0px';
+  iframe.style.height = '0px';
+  iframe.style.border = 'none';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
+
+  const esc = (str) => {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${esc(title || 'Cyber crime complaint')}</title>
+  <style>
+    @page {
+      margin: 0;
+      size: A4 portrait;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #FFFFFF;
+      color: #0F172A;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      height: auto;
+      overflow: visible;
+    }
+    .print-container {
+      padding: 20mm 18mm;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+    .complaint-header {
+      border-bottom: 2px solid #0F172A;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .complaint-title {
+      font-size: 18pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: #0F172A;
+      margin: 0 0 8px 0;
+    }
+    .complaint-meta {
+      font-size: 10pt;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+    .complaint-sub {
+      font-size: 9pt;
+      color: #64748B;
+      margin-top: 4px;
+    }
+    .reported-section {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-left: 4px solid #0284C7;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin-bottom: 22px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .reported-heading {
+      font-size: 11pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #0369A1;
+      margin: 0 0 8px 0;
+    }
+    .reported-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 10pt;
+      line-height: 1.5;
+      color: #1E293B;
+      margin: 0;
+    }
+    .complaint-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 11pt;
+      line-height: 1.65;
+      color: #0F172A;
+      margin: 16px 0;
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+    .complaint-footer {
+      margin-top: 30px;
+      border-top: 1px solid #CBD5E1;
+      padding-top: 12px;
+      font-size: 9pt;
+      color: #64748B;
+      display: flex;
+      justify-content: space-between;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-container">
+    <div class="complaint-header">
+      <h1 class="complaint-title">Cyber crime complaint</h1>
+      <div class="complaint-meta">
+        ${proofId ? `<div><strong>Proof ID:</strong> ${esc(proofId)}</div>` : ''}
+        <div><strong>Date:</strong> ${esc(dateFormatted)}</div>
+      </div>
+      <div class="complaint-sub">
+        National Cyber Crime Reporting Portal (cybercrime.gov.in)
+      </div>
+    </div>
+
+    ${reportedMessage ? `
+    <div class="reported-section">
+      <div class="reported-heading">Message reported</div>
+      <p class="reported-body">${esc(reportedMessage)}</p>
+    </div>
+    ` : ''}
+
+    <div class="complaint-body">${esc(complaintText)}</div>
+
+    <div class="complaint-footer">
+      <div>National Cyber Crime Helpline: Dial 1930</div>
+      <div>Official Portal: cybercrime.gov.in</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  setTimeout(() => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch (err) {
+      console.error('Error printing complaint via iframe', err);
+    }
+  }, 250);
+}
+
 function renderHighlightedComplaint(text) {
   if (!text) return null;
   const parts = text.split(/(\[[^\]]+\])/g);
@@ -641,6 +848,15 @@ export function UnifiedScanResult({
   const [complaintError, setComplaintError] = useState(null);
   const [copiedComplaint, setCopiedComplaint] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const complaintTextareaRef = useRef(null);
+
+  useEffect(() => {
+    if (isEditingComplaint && complaintTextareaRef.current) {
+      const el = complaintTextareaRef.current;
+      el.style.height = 'auto';
+      el.style.height = `${Math.max(el.scrollHeight, 260)}px`;
+    }
+  }, [isEditingComplaint, complaintText]);
 
   useEffect(() => {
     if (result?.complaintText) setComplaintText(result.complaintText);
@@ -899,6 +1115,37 @@ export function UnifiedScanResult({
     [textToAnalyze, evidenceItems]
   );
 
+  const reportedMessage = useMemo(() => {
+    const orig = (rawInput || inp.description || inp.desc || (typeof inp === 'string' ? inp : '') || inp.text || inp.message || '').trim();
+    if (orig) return orig;
+
+    const quotes = [];
+    if (Array.isArray(evidenceItems)) {
+      for (const ev of evidenceItems) {
+        const q = typeof ev === 'string' ? ev : (ev?.quote || ev?.text);
+        if (q && typeof q === 'string' && q.trim() && !quotes.includes(q.trim())) {
+          quotes.push(q.trim());
+        }
+      }
+    }
+    if (Array.isArray(applicableChecks)) {
+      for (const c of applicableChecks) {
+        if (Array.isArray(c?.findings)) {
+          for (const f of c.findings) {
+            const q = f?.evidence || f?.quote;
+            if (q && typeof q === 'string' && q.trim() && !quotes.includes(q.trim())) {
+              quotes.push(q.trim());
+            }
+          }
+        }
+      }
+    }
+    if (quotes.length > 0) {
+      return quotes.map((q) => `"${q}"`).join('\n\n');
+    }
+    return '';
+  }, [rawInput, inp, evidenceItems, applicableChecks]);
+
   // Sources
   const rawSources = Array.isArray(report.sources) ? report.sources : (Array.isArray(res.sources) ? res.sources : []);
   const evidenceSources = res.evidenceSources || report.evidenceSources || null;
@@ -946,22 +1193,7 @@ export function UnifiedScanResult({
   const blockTimestamp = res.blockTimestamp || null;
   const isSaved = res.saved === true || isHistory;
   const timeFormatted = blockTimestamp || res.createdAt || res.timestamp || report.generatedAt || new Date().toISOString();
-  const scanDateFormatted = (() => {
-    try {
-      const d = new Date(timeFormatted);
-      if (isNaN(d.getTime())) return String(timeFormatted);
-      return d.toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch {
-      return String(timeFormatted);
-    }
-  })();
+  const scanDateFormatted = formatDateTimeIST(timeFormatted);
 
   // "Check now" — calls /api/proof/verify with proofId + blockHash
   const handleCheckLedger = useCallback(async () => {
@@ -1094,17 +1326,13 @@ export function UnifiedScanResult({
   const handleDownloadComplaintPdf = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!complaintText) return;
-    document.body.classList.add('print-complaint-only');
-    const oldTitle = document.title;
-    document.title = `Cyber-crime-complaint${proofId ? `-${proofId}` : ''}`;
-    const cleanup = () => {
-      document.body.classList.remove('print-complaint-only');
-      document.title = oldTitle;
-      window.removeEventListener('afterprint', cleanup);
-    };
-    window.addEventListener('afterprint', cleanup);
-    window.print();
-    setTimeout(cleanup, 2000);
+    printComplaintDocument({
+      title: 'Cyber crime complaint',
+      proofId: proofId || null,
+      dateFormatted: formatDateTimeIST(complaintCreatedAt || timeFormatted),
+      reportedMessage,
+      complaintText
+    });
   };
 
   const handlePrintPdf = handlePrintFullReport;
@@ -1649,13 +1877,17 @@ export function UnifiedScanResult({
 
         {isEditingComplaint ? (
           <textarea
+            ref={complaintTextareaRef}
             className="usr-complaint-textarea"
             value={complaintText}
             onChange={(e) => {
               setComplaintText(e.target.value);
               setSaveSuccess(false);
+              const el = e.target;
+              el.style.height = 'auto';
+              el.style.height = `${Math.max(el.scrollHeight, 260)}px`;
             }}
-            rows={15}
+            rows={10}
             aria-label="Editable complaint text"
           />
         ) : (
@@ -2230,12 +2462,19 @@ export function UnifiedScanResult({
             <h1 className="usr-complaint-pdf-title">Cyber crime complaint</h1>
             <div className="usr-complaint-pdf-meta">
               {proofId && <div><strong>Proof ID:</strong> {proofId}</div>}
-              <div><strong>Date:</strong> {scanDateFormatted}</div>
+              <div><strong>Date:</strong> {formatDateTimeIST(complaintCreatedAt || timeFormatted)}</div>
             </div>
             <div className="usr-complaint-pdf-sub">
               National Cyber Crime Reporting Portal (cybercrime.gov.in)
             </div>
           </div>
+
+          {reportedMessage ? (
+            <div className="usr-complaint-pdf-reported">
+              <div className="usr-complaint-pdf-reported-title">Message reported</div>
+              <p className="usr-complaint-pdf-reported-body">{reportedMessage}</p>
+            </div>
+          ) : null}
 
           <div className="usr-complaint-pdf-body">
             {complaintText}

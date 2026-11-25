@@ -1647,6 +1647,21 @@
     font-size: 11pt !important;
   }
 
+  html,
+  body,
+  #root,
+  .dash-layout,
+  .dash-main,
+  .usr-result-card,
+  .usr-full-print-view,
+  .usr-card,
+  .usr-complaint-print-card,
+  .usr-complaint-print-content {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   /* Universal hide for UI chrome, buttons, sidebars, navigation */
   .no-print,
   button,
@@ -1788,7 +1803,6 @@
   .usr-methodology-card,
   .usr-helpline-box,
   .usr-proof-card,
-  .usr-complaint-print-card,
   .usr-extracted-section {
     background: #FAFAFA !important;
     border: 1px solid #E5E7EB !important;
@@ -1796,6 +1810,18 @@
     box-shadow: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  .usr-complaint-print-card {
+    background: #FAFAFA !important;
+    border: 1px solid #E5E7EB !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .usr-headline-title {
@@ -2023,13 +2049,46 @@
     margin-top: 4px !important;
   }
 
+  .usr-complaint-pdf-reported {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-left: 4px solid #0284C7 !important;
+    border-radius: 4px !important;
+    padding: 12px 14px !important;
+    margin: 14px 0 18px 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .usr-complaint-pdf-reported-title {
+    font-size: 10.5pt !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    color: #0369A1 !important;
+    margin: 0 0 6px 0 !important;
+  }
+
+  .usr-complaint-pdf-reported-body {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.5 !important;
+    color: #1E293B !important;
+    margin: 0 !important;
+  }
+
   .usr-complaint-pdf-body {
     white-space: pre-wrap !important;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-    font-size: 10.5pt !important;
-    line-height: 1.6 !important;
+    word-break: break-word !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.65 !important;
     color: #0F172A !important;
     margin: 18px 0 !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 
   .usr-complaint-pdf-footer {
@@ -2272,15 +2331,18 @@
 .usr-complaint-textarea {
   width: 100%;
   box-sizing: border-box;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.65;
   padding: 14px;
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.85);
   color: #E2E8F0;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
+  height: auto;
+  max-height: none;
   outline: none;
   transition: border-color 0.15s ease;
 }
@@ -2305,9 +2367,9 @@
 }
 
 .usr-complaint-formatted-view {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.65;
   padding: 14px;
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.7);
@@ -2315,8 +2377,9 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 480px;
-  overflow-y: auto;
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 :root[data-theme="light"] .usr-complaint-formatted-view,
@@ -2466,18 +2529,28 @@
 }
 
 .usr-complaint-print-card {
-  page-break-inside: avoid;
+  page-break-inside: auto;
+  break-inside: auto;
+  height: auto;
+  max-height: none;
+  overflow: visible;
   margin-bottom: 24px;
 }
 
 .usr-complaint-print-content {
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10.5px;
-  line-height: 1.5;
+  word-break: break-word;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.6;
   color: #0F172A;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
   padding: 14px;
   border-radius: 6px;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  page-break-inside: auto;
+  break-inside: auto;
 }
