@@ -345,27 +345,52 @@ export function Extension() {
                   padding: '24px',
                   maxWidth: '540px',
                   margin: '0 auto',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
                 }}
               >
-                <Laptop size={32} color="var(--primary)" style={{ margin: '0 auto 12px' }} />
-                <p style={{ color: 'var(--text-dim)', fontSize: '15px', marginBottom: '16px', lineHeight: 1.45 }}>
-                  Browser extensions are not supported on mobile browsers. Use the Cyber Shield website and screenshot scanners directly on your phone.
-                </p>
-                <Link
-                  to="/tools"
-                  className="btn-primary"
+                <div>
+                  <Laptop size={32} color="var(--primary)" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ color: 'var(--text-dim)', fontSize: '15px', marginBottom: '16px', lineHeight: 1.45 }}>
+                    Browser extensions are not supported on mobile browsers. Use the Cyber Shield website and screenshot scanners directly on your phone.
+                  </p>
+                  <Link
+                    to="/tools"
+                    className="btn-primary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 24px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      minHeight: '44px'
+                    }}
+                  >
+                    Explore web tools
+                  </Link>
+                </div>
+
+                {/* Install App Hint for Mobile Users */}
+                <div
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 24px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px',
-                    fontWeight: 600
+                    padding: '16px',
+                    textAlign: 'left'
                   }}
                 >
-                  Explore web tools
-                </Link>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <Download size={18} color="var(--primary)" aria-hidden="true" />
+                    <strong style={{ fontSize: '14px', color: 'var(--text)' }}>Install app</strong>
+                  </div>
+                  <p style={{ color: 'var(--text-dim)', fontSize: '13.5px', lineHeight: 1.45, margin: 0 }}>
+                    On your phone, open this site in Chrome, tap Install, then use Share to send messages to Cyber Shield.
+                  </p>
+                </div>
               </div>
             ) : planLoading ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', minHeight: '260px', gap: '12px' }}>

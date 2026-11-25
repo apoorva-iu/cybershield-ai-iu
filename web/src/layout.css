@@ -4252,6 +4252,99 @@ button.mobile-resources-toggle:focus-visible {
   box-shadow: var(--shadow-base);
 }
 
+.dash-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dash-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.dash-btn-stop-share {
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+.dash-btn-stop-share:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: #ef4444 !important;
+}
+
+/* Public Shared Report Page & Footer */
+.shared-report-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+.shared-report-footer {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.shared-report-footer-inner {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.shared-report-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  color: #0ea5e9;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.shared-report-shield-icon {
+  color: #0ea5e9;
+}
+
+.shared-report-tagline {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.shared-report-cta {
+  margin-top: 8px;
+}
+
+.shared-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--primary, #0A66C2);
+  color: #ffffff !important;
+  text-decoration: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.shared-report-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
 /* Scans Table */
 .dash-table-wrap {
   width: 100%;
@@ -4423,8 +4516,8 @@ button.mobile-resources-toggle:focus-visible {
   border-radius: 6px;
 }
 
-/* Mobile Responsive Stacked Table Rows (< 720px, down to 360px) */
-@media (max-width: 720px) {
+/* Mobile Responsive Stacked Table Rows (<= 768px, down to 360px) */
+@media (max-width: 768px) {
   .dash-scans-table thead {
     display: none;
   }
@@ -4451,9 +4544,11 @@ button.mobile-resources-toggle:focus-visible {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 6px 0;
+    padding: 8px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     text-align: right;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .dash-scans-table td:last-child {
@@ -4593,6 +4688,19 @@ button.mobile-resources-toggle:focus-visible {
 }
 
 /* Shared Dashboard Buttons */
+.dash-btn-primary,
+.dash-btn-secondary,
+.dash-btn-outline,
+.dash-btn-danger,
+.dash-btn-free,
+.auth-input,
+.tool-input,
+button.btn,
+a.btn {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
 .dash-btn-primary {
   display: inline-flex;
   align-items: center;

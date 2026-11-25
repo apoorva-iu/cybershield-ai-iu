@@ -72,6 +72,14 @@ if (helmetCfg && helmetCfg.contentSecurityPolicy && helmetCfg.contentSecurityPol
   const currentScripts = Array.isArray(d['script-src']) ? d['script-src'] : ["'self'", "'unsafe-inline'"];
   rzpDomains.forEach(u => { if (!currentScripts.includes(u)) currentScripts.push(u); });
   d['script-src'] = currentScripts;
+
+  const currentWorkers = Array.isArray(d['worker-src']) ? d['worker-src'] : ["'self'"];
+  if (!currentWorkers.includes("'self'")) currentWorkers.push("'self'");
+  d['worker-src'] = currentWorkers;
+
+  const currentManifests = Array.isArray(d['manifest-src']) ? d['manifest-src'] : ["'self'"];
+  if (!currentManifests.includes("'self'")) currentManifests.push("'self'");
+  d['manifest-src'] = currentManifests;
 }
 app.use(helmet(helmetCfg));
 // Extension origins (chrome-extension://<id>) are permitted on allowed routes (POST /api/verify, POST /api/upi/check, POST /api/message/check).
@@ -534,6 +542,14 @@ const complaintLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => res.status(429).json({ error: 'Too many complaint requests. Please try again in an hour.' })
+});
+
+const sharePublicLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ error: 'Too many requests. Please wait a minute and try again.' })
 });
 
 const verifyLimiterMin = rateLimit({
@@ -1407,6 +1423,8 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
       report: row.report || {},
       complaintText: row.complaint_text || null,
       complaintCreatedAt: row.complaint_created_at || null,
+      shareToken: row.share_token || (row.report && row.report.share_token) || null,
+      shareEnabled: Boolean(row.share_enabled !== undefined ? row.share_enabled : (row.report && row.report.share_enabled)),
       ...(blockData || {})
     });
   } catch (err) {
@@ -1449,6 +1467,207 @@ app.delete('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
     return res.json({ ok: true, deleted: true, id: scanId });
   } catch (err) {
     console.error('[Scan delete] Database error deleting scan:', scanId, err?.message);
+    return res.status(503).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/scans/:id/share', requireAuth, userLimiter, async (req, res) => {
+  const maxScanIdLen = RT.security.maxLengths.scanId;
+  const scanId = String(req.params.id || '').trim();
+  if (!scanId || scanId.length > maxScanIdLen || !SCAN_ID_RE.test(scanId)) {
+    return res.status(400).json({ error: 'Invalid scan ID' });
+  }
+  const client = DB.getClient();
+  if (!client) return res.status(503).json({ error: 'Database unavailable' });
+
+  const scansTable = cfg.runtime.database.tables.scans;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
+  try {
+    let q = client.from(scansTable).select('id, user_id, report');
+    if (isUuid) {
+      q = q.or(`id.eq.${scanId},proof_id.eq.${scanId}`);
+    } else {
+      q = q.eq('proof_id', scanId);
+    }
+    const { data, error } = await q.limit(1);
+    if (error) return res.status(503).json({ error: 'Database error' });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.user_id !== req.user.id) {
+      return res.status(404).json({ error: 'Scan not found for this user' });
+    }
+
+    const shareToken = crypto.randomBytes(24).toString('hex');
+    const updatedReport = {
+      ...(row.report && typeof row.report === 'object' ? row.report : {}),
+      share_token: shareToken,
+      share_enabled: true
+    };
+
+    let { error: updateErr } = await client
+      .from(scansTable)
+      .update({
+        report: updatedReport,
+        share_token: shareToken,
+        share_enabled: true
+      })
+      .eq('id', row.id);
+
+    if (updateErr && (updateErr.code === '42703' || String(updateErr.message).includes('column'))) {
+      const res2 = await client.from(scansTable).update({ report: updatedReport }).eq('id', row.id);
+      updateErr = res2.error;
+    }
+
+    if (updateErr) {
+      return res.status(503).json({ error: 'Could not enable sharing' });
+    }
+
+    return res.json({
+      ok: true,
+      shareToken,
+      shareEnabled: true
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Could not enable sharing' });
+  }
+});
+
+app.delete('/api/scans/:id/share', requireAuth, userLimiter, async (req, res) => {
+  const maxScanIdLen = RT.security.maxLengths.scanId;
+  const scanId = String(req.params.id || '').trim();
+  if (!scanId || scanId.length > maxScanIdLen || !SCAN_ID_RE.test(scanId)) {
+    return res.status(400).json({ error: 'Invalid scan ID' });
+  }
+  const client = DB.getClient();
+  if (!client) return res.status(503).json({ error: 'Database unavailable' });
+
+  const scansTable = cfg.runtime.database.tables.scans;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
+  try {
+    let q = client.from(scansTable).select('id, user_id, report');
+    if (isUuid) {
+      q = q.or(`id.eq.${scanId},proof_id.eq.${scanId}`);
+    } else {
+      q = q.eq('proof_id', scanId);
+    }
+    const { data, error } = await q.limit(1);
+    if (error) return res.status(503).json({ error: 'Database error' });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.user_id !== req.user.id) {
+      return res.status(404).json({ error: 'Scan not found for this user' });
+    }
+
+    const updatedReport = {
+      ...(row.report && typeof row.report === 'object' ? row.report : {}),
+      share_enabled: false
+    };
+
+    let { error: updateErr } = await client
+      .from(scansTable)
+      .update({
+        report: updatedReport,
+        share_enabled: false
+      })
+      .eq('id', row.id);
+
+    if (updateErr && (updateErr.code === '42703' || String(updateErr.message).includes('column'))) {
+      const res2 = await client.from(scansTable).update({ report: updatedReport }).eq('id', row.id);
+      updateErr = res2.error;
+    }
+
+    if (updateErr) {
+      return res.status(503).json({ error: 'Could not disable sharing' });
+    }
+
+    return res.json({
+      ok: true,
+      shareEnabled: false
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Could not disable sharing' });
+  }
+});
+
+app.get('/api/share/:token', sharePublicLimiter, async (req, res) => {
+  const token = String(req.params.token || '').trim();
+  if (!token || token.length > 64 || !/^[a-f0-9]+$/i.test(token)) {
+    return res.status(404).json({ error: 'Report not found or sharing is disabled' });
+  }
+  const client = DB.getClient();
+  if (!client) return res.status(503).json({ error: 'Database unavailable' });
+
+  const scansTable = cfg.runtime.database.tables.scans;
+  try {
+    let row = null;
+    let { data, error } = await client
+      .from(scansTable)
+      .select('id, level, score, confidence, report, limited_evidence, proof_id, created_at, share_token, share_enabled')
+      .eq('share_token', token)
+      .eq('share_enabled', true)
+      .limit(1);
+
+    if (error && (error.code === '42703' || String(error.message).includes('column'))) {
+      const res2 = await client
+        .from(scansTable)
+        .select('id, level, score, confidence, report, limited_evidence, proof_id, created_at')
+        .filter('report->>share_token', 'eq', token)
+        .limit(1);
+      data = res2.data;
+      error = res2.error;
+    }
+
+    if (error) return res.status(503).json({ error: 'Database error' });
+    row = Array.isArray(data) ? data[0] : data;
+    if (!row) return res.status(404).json({ error: 'Report not found or sharing is disabled' });
+
+    const isEnabled = row.share_enabled !== undefined
+      ? Boolean(row.share_enabled)
+      : Boolean(row.report && row.report.share_enabled);
+
+    if (!isEnabled) {
+      return res.status(404).json({ error: 'Report not found or sharing is disabled' });
+    }
+
+    const rep = (row.report && typeof row.report === 'object') ? row.report : {};
+    const o = (rep.overall && typeof rep.overall === 'object') ? rep.overall : {};
+    const defaultHeadline = rep.headline || o.headline || rep.primaryConcern || o.primaryConcern || (row.level && C.LV ? C.LV[row.level] : null) || null;
+
+    const publicChecks = rep.checks || null;
+    const publicEvidence = rep.evidence || null;
+    const publicEvidenceSources = rep.evidenceSources || null;
+    const publicWhatToDo = rep.whatToDo || null;
+    const publicExtracted = rep.extractedItems || null;
+
+    return res.json({
+      verdict: defaultHeadline,
+      headline: defaultHeadline,
+      level: row.level || 'unknown',
+      score: row.score != null ? row.score : null,
+      confidence: row.confidence != null ? row.confidence : null,
+      checks: publicChecks,
+      evidence: publicEvidence,
+      evidenceSources: publicEvidenceSources,
+      whatToDo: publicWhatToDo,
+      extractedItems: publicExtracted,
+      limitedEvidence: !!row.limited_evidence,
+      proofId: row.proof_id || null,
+      createdAt: row.created_at || null,
+      tool: rep.tool || (rep.input && typeof rep.input === 'object' ? rep.input.kind : null) || 'job',
+      report: {
+        tool: rep.tool || 'job',
+        headline: defaultHeadline,
+        checks: publicChecks,
+        evidence: publicEvidence,
+        evidenceSources: publicEvidenceSources,
+        whatToDo: publicWhatToDo,
+        extractedItems: publicExtracted,
+        overall: {
+          level: row.level || 'unknown',
+          score: row.score != null ? row.score : null,
+          confidence: row.confidence != null ? row.confidence : null
+        }
+      }
+    });
+  } catch (err) {
     return res.status(503).json({ error: 'Database error' });
   }
 });

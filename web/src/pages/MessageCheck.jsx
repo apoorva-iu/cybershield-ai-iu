@@ -102,8 +102,18 @@ export function MessageCheck() {
   const fileInputRef = useRef(null);
   const resultColRef = useRef(null);
 
-  // Read prefill from query parameter in hash route
+  // Read prefill from query parameter in hash route or PWA share target
   useEffect(() => {
+    // 1. Check sessionStorage from PWA share target
+    const shared = sessionStorage.getItem('cs_shared_text');
+    if (shared && typeof shared === 'string' && shared.trim()) {
+      setInputText(shared.trim().slice(0, 20000));
+      setSource('pasted');
+      setPrefillNote('Shared with Cyber Shield. Review it, then press Check.');
+      return;
+    }
+
+    // 2. Check query parameter in hash route
     const params = new URLSearchParams(location.search);
     const prefillRaw = params.get('prefill');
     if (prefillRaw) {
@@ -126,6 +136,9 @@ export function MessageCheck() {
 
   // Reset all
   const handleReset = useCallback(() => {
+    try {
+      sessionStorage.removeItem('cs_shared_text');
+    } catch {}
     setInputText('');
     setPrefillNote('');
     setSource('pasted');
@@ -314,6 +327,9 @@ export function MessageCheck() {
     setCheckLoading(true);
     setCheckError(null);
     setCheckErrorCode(null);
+    try {
+      sessionStorage.removeItem('cs_shared_text');
+    } catch {}
 
     try {
       const payload = {

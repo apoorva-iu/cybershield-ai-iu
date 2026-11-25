@@ -817,7 +817,8 @@ export function UnifiedScanResult({
   toolKind = null,
   isHistory = false,
   onReset = null,
-  downloadReceipt: customDownloadReceipt = null
+  downloadReceipt: customDownloadReceipt = null,
+  readOnly = false
 }) {
   const [activeTab, setActiveTab] = useState('why');
   const [revealedCode, setRevealedCode] = useState(false);
@@ -836,7 +837,13 @@ export function UnifiedScanResult({
   const [ledgerStatus, setLedgerStatus] = useState(null);
   const [ledgerChecking, setLedgerChecking] = useState(false);
 
-  const { authReady, session } = useAuth?.() || {};
+  let authContext = {};
+  try {
+    authContext = useAuth?.() || {};
+  } catch {
+    authContext = {};
+  }
+  const { authReady = true, session = null } = authContext;
   const isAuthLoading = !authReady;
   const isSignedIn = Boolean(session?.user || session);
 
@@ -1751,6 +1758,7 @@ export function UnifiedScanResult({
      Sub-render: Complaint Section (High or Medium risk only)
      -------------------------------------------------------------------------- */
   const renderComplaintSection = () => {
+    if (readOnly) return null;
     if (!isHighOrMed) return null;
     if (isPrinting) return null;
 
@@ -2440,7 +2448,7 @@ export function UnifiedScanResult({
         {renderProofPanel(true)}
 
         {/* Complaint (only if raised) */}
-        {Boolean(complaintText && complaintText.trim()) && (
+        {!readOnly && Boolean(complaintText && complaintText.trim()) && (
           <div className="usr-print-section usr-print-complaint-section">
             <div className="usr-print-section-heading">Complaint</div>
             <div className="usr-card usr-complaint-print-card">
@@ -2456,7 +2464,7 @@ export function UnifiedScanResult({
       </div>
 
       {/* 4. COMPLAINT-ONLY PRINT VIEW (Printed when body has print-complaint-only) */}
-      {Boolean(complaintText && complaintText.trim()) && (
+      {!readOnly && Boolean(complaintText && complaintText.trim()) && (
         <div id="usr-complaint-only-print-view" className="usr-complaint-only-print-view" aria-hidden="true">
           <div className="usr-complaint-pdf-header">
             <h1 className="usr-complaint-pdf-title">Cyber crime complaint</h1>

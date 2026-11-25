@@ -145,7 +145,11 @@ export function Login({ mode }) {
       return stateFrom.trim();
     }
     const stored = consumeReturnTo();
-    return stored || '/dashboard';
+    if (stored) return stored;
+    if (sessionStorage.getItem('cs_shared_text')) {
+      return '/tools/message-scanner';
+    }
+    return '/dashboard';
   };
 
   // Redirect away from /login and /signup when already signed in

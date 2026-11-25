@@ -22,7 +22,9 @@ import {
   AlertTriangle,
   LogOut,
   Menu,
-  X
+  X,
+  Share2,
+  Loader2
 } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useAuth, getDisplayName, UserAvatar } from '../auth';
@@ -1012,6 +1014,7 @@ export function DashboardHistory() {
   const [page, setPage] = useState(1);
   const [filteredTotal, setFilteredTotal] = useState(0);
   const [levelFilter, setLevelFilter] = useState('');
+  const [toolFilter, setToolFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState(null);
 
@@ -1092,21 +1095,26 @@ export function DashboardHistory() {
     }
   };
 
-  const normalizedSearch = searchQuery.trim().toLowerCase();
-  const visibleItems = normalizedSearch
-    ? items.filter((item) => {
-        const cleanComp = (getCleanCompanyName(item.company, item.host) || '').toLowerCase();
-        const proof = String(item.proofId || '').toLowerCase();
-        const head = String(item.headline || '').toLowerCase();
-        const tool = String(item.toolKind || '').toLowerCase();
-        return (
-          cleanComp.includes(normalizedSearch) ||
-          proof.includes(normalizedSearch) ||
-          head.includes(normalizedSearch) ||
-          tool.includes(normalizedSearch)
-        );
-      })
-    : items;
+  const safeItems = Array.isArray(items) ? items : [];
+  const normalizedSearch = (typeof searchQuery === 'string' ? searchQuery : '').trim().toLowerCase();
+  const visibleItems = safeItems.filter((item) => {
+    if (!item) return false;
+    if (toolFilter) {
+      const itemTool = String(item?.toolKind || '').toUpperCase();
+      if (itemTool !== String(toolFilter).toUpperCase()) return false;
+    }
+    if (!normalizedSearch) return true;
+    const cleanComp = (getCleanCompanyName(item?.company, item?.host) || '').toLowerCase();
+    const rawComp = String(item?.company || '').toLowerCase();
+    const host = String(item?.host || '').toLowerCase();
+    const proof = String(item?.proofId || '').toLowerCase();
+    return (
+      proof.includes(normalizedSearch) ||
+      host.includes(normalizedSearch) ||
+      rawComp.includes(normalizedSearch) ||
+      cleanComp.includes(normalizedSearch)
+    );
+  });
 
   const historyToolKinds = useScanToolKinds(visibleItems);
 
@@ -1137,7 +1145,7 @@ export function DashboardHistory() {
             {/* Search Box with proper visually hidden sr-only label */}
             <div className="dash-search-wrap">
               <label htmlFor="dash-scan-search" className="sr-only">
-                Search by company, domain, or Proof ID
+                Search by Proof ID, host, or company
               </label>
               <Search size={16} className="dash-search-icon" aria-hidden="true" />
               <input
@@ -1145,32 +1153,61 @@ export function DashboardHistory() {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search company, host, Proof ID…"
+                placeholder="Proof ID, host, company…"
                 className="dash-search-input"
               />
             </div>
 
-            {/* Level Filter Chips */}
-            <div className="dash-filter-pills" role="group" aria-label="Filter scans by risk level">
-              {[
-                { value: '', label: 'All' },
-                { value: 'High', label: 'High' },
-                { value: 'Medium', label: 'Medium' },
-                { value: 'Low', label: 'Low' }
-              ].map((f) => {
-                const active = levelFilter === f.value;
-                return (
-                  <button
-                    key={f.label}
-                    type="button"
-                    className={`dash-filter-btn ${active ? 'active' : ''}`}
-                    aria-pressed={active}
-                    onClick={() => handleLevelChange(f.value)}
-                  >
-                    {f.label}
-                  </button>
-                );
-              })}
+            {/* Tool Filter Chips */}
+            <div className="dash-filter-group">
+              <span className="dash-filter-label">Tool:</span>
+              <div className="dash-filter-pills" role="group" aria-label="Filter scans by tool">
+                {[
+                  { value: '', label: 'All' },
+                  { value: 'JOB', label: 'Job' },
+                  { value: 'UPI', label: 'UPI' },
+                  { value: 'MESSAGE', label: 'Message' }
+                ].map((f) => {
+                  const active = toolFilter === f.value;
+                  return (
+                    <button
+                      key={f.label}
+                      type="button"
+                      className={`dash-filter-btn ${active ? 'active' : ''}`}
+                      aria-pressed={active}
+                      onClick={() => setToolFilter(f.value)}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Risk Filter Chips */}
+            <div className="dash-filter-group">
+              <span className="dash-filter-label">Risk:</span>
+              <div className="dash-filter-pills" role="group" aria-label="Filter scans by risk level">
+                {[
+                  { value: '', label: 'All' },
+                  { value: 'Low', label: 'Low' },
+                  { value: 'Medium', label: 'Medium' },
+                  { value: 'High', label: 'High' }
+                ].map((f) => {
+                  const active = levelFilter === f.value;
+                  return (
+                    <button
+                      key={f.label}
+                      type="button"
+                      className={`dash-filter-btn ${active ? 'active' : ''}`}
+                      aria-pressed={active}
+                      onClick={() => handleLevelChange(f.value)}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -1205,22 +1242,23 @@ export function DashboardHistory() {
           <div className="dash-empty-state">
             <EmptyScansIllustration />
             <h3 className="dash-heading-md">
-              {levelFilter || normalizedSearch
-                ? 'No scans match your current filter'
+              {levelFilter || toolFilter || normalizedSearch
+                ? 'No scans match'
                 : 'No saved scans yet'}
             </h3>
             <p className="dash-text-secondary" style={{ maxWidth: '420px' }}>
-              {levelFilter || normalizedSearch
-                ? 'Try clearing your search or selecting a different risk level.'
+              {levelFilter || toolFilter || normalizedSearch
+                ? 'Try clearing your search or selecting a different filter.'
                 : 'When you scan a job offer while signed in, the full report is saved here.'}
             </p>
             <div className="dash-empty-actions">
-              {(levelFilter || normalizedSearch) && (
+              {(levelFilter || toolFilter || normalizedSearch) && (
                 <button
                   type="button"
                   className="dash-btn-outline"
                   onClick={() => {
                     setSearchQuery('');
+                    setToolFilter('');
                     handleLevelChange('');
                   }}
                 >
@@ -1395,6 +1433,78 @@ export function DashboardScanDetail() {
   const [copiedProof, setCopiedProof] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const [shareEnabled, setShareEnabled] = useState(false);
+  const [shareToken, setShareToken] = useState(null);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  useEffect(() => {
+    if (scan) {
+      setShareEnabled(Boolean(scan.shareEnabled));
+      setShareToken(scan.shareToken || null);
+    }
+  }, [scan]);
+
+  const handleShare = async () => {
+    if (!scan?.id || sharingLoading) return;
+    setSharingLoading(true);
+    try {
+      const res = await apiFetch(`/api/scans/${encodeURIComponent(scan.id)}/share`, {
+        method: 'POST'
+      });
+      if (res?.ok) {
+        setShareEnabled(true);
+        if (res.shareToken) {
+          setShareToken(res.shareToken);
+          const shareUrl = `${window.location.origin}/#/shared/${res.shareToken}`;
+          try {
+            await navigator.clipboard?.writeText?.(shareUrl);
+            setCopiedShare(true);
+            setTimeout(() => setCopiedShare(false), 2500);
+            addToast('Share link copied to clipboard.');
+          } catch {
+            addToast('Report sharing enabled.');
+          }
+        }
+      }
+    } catch (err) {
+      addToast(err?.message || 'Could not enable sharing. Please try again.');
+    } finally {
+      setSharingLoading(false);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!shareToken) return;
+    const shareUrl = `${window.location.origin}/#/shared/${shareToken}`;
+    try {
+      await navigator.clipboard?.writeText?.(shareUrl);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+      addToast('Share link copied to clipboard.');
+    } catch {
+      addToast('Could not copy link to clipboard.');
+    }
+  };
+
+  const handleStopSharing = async () => {
+    if (!scan?.id || sharingLoading) return;
+    setSharingLoading(true);
+    try {
+      const res = await apiFetch(`/api/scans/${encodeURIComponent(scan.id)}/share`, {
+        method: 'DELETE'
+      });
+      if (res?.ok) {
+        setShareEnabled(false);
+        addToast('Report sharing stopped.');
+      }
+    } catch (err) {
+      addToast(err?.message || 'Could not stop sharing. Please try again.');
+    } finally {
+      setSharingLoading(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -1619,6 +1729,42 @@ export function DashboardScanDetail() {
         </Link>
 
         <div className="dash-detail-actions">
+          {!shareEnabled ? (
+            <button
+              type="button"
+              className="dash-btn-outline"
+              onClick={handleShare}
+              disabled={sharingLoading}
+              title="Share this report via public link"
+            >
+              {sharingLoading ? <Loader2 size={14} className="spin" /> : <Share2 size={14} />}
+              <span>Share</span>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="dash-btn-outline"
+                onClick={handleCopyShareLink}
+                disabled={sharingLoading}
+                title="Copy public report link"
+              >
+                {copiedShare ? <Check size={14} style={{ color: '#22c55e' }} /> : <Copy size={14} />}
+                <span>{copiedShare ? 'Link copied' : 'Copy link'}</span>
+              </button>
+              <button
+                type="button"
+                className="dash-btn-outline dash-btn-stop-share"
+                onClick={handleStopSharing}
+                disabled={sharingLoading}
+                title="Stop sharing this report publicly"
+              >
+                {sharingLoading ? <Loader2 size={14} className="spin" /> : <Share2 size={14} />}
+                <span>Stop sharing</span>
+              </button>
+            </>
+          )}
+
           <button
             type="button"
             className="dash-btn-outline"

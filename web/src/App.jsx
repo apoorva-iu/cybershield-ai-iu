@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth, setReturnTo } from './auth';
@@ -77,6 +77,9 @@ const UpiCheck = React.lazy(() =>
 );
 const MessageCheck = React.lazy(() =>
   import('./pages/MessageCheck').then((m) => ({ default: m.MessageCheck }))
+);
+const SharedReport = React.lazy(() =>
+  import('./pages/SharedReport').then((m) => ({ default: m.SharedReport }))
 );
 
 function RouteLoading() {
@@ -196,11 +199,58 @@ function ScrollToTop() {
   return null;
 }
 
+function ShareTargetHandler() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Check root window search (/?title=...&text=...&url=...) or react location search
+    const winSearch = typeof window !== 'undefined' ? window.location.search : '';
+    const searchStr = winSearch || location.search || '';
+    if (!searchStr || searchStr.length < 2) return;
+
+    try {
+      const p = new URLSearchParams(searchStr);
+      const title = (p.get('title') || '').trim();
+      const text = (p.get('text') || '').trim();
+      const url = (p.get('url') || '').trim();
+
+      if (title || text || url) {
+        const parts = [];
+        if (title && title !== text && title !== url) {
+          parts.push(title);
+        }
+        if (text) {
+          parts.push(text);
+        }
+        if (url && (!text || !text.includes(url))) {
+          parts.push(url);
+        }
+        const combined = parts.join('\n\n').trim();
+
+        if (combined) {
+          sessionStorage.setItem('cs_shared_text', combined);
+
+          if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+            const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+
+          navigate('/tools/message-scanner', { replace: true });
+        }
+      }
+    } catch {}
+  }, [location.search, navigate]);
+
+  return null;
+}
+
 export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <PlanProvider>
+          <ShareTargetHandler />
           <ScrollToTop />
           <Routes>
           <Route path="/" element={<Layout />}>
@@ -332,6 +382,14 @@ export function App() {
               element={
                 <Suspense fallback={<RouteLoading />}>
                   <Extension />
+                </Suspense>
+              }
+            />
+            <Route
+              path="shared/:token"
+              element={
+                <Suspense fallback={<RouteLoading />}>
+                  <SharedReport />
                 </Suspense>
               }
             />

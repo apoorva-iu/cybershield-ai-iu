@@ -461,6 +461,10 @@ html {
   scroll-margin-top: calc(var(--nav-height) + 24px);
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body, #root {
   background-color: var(--bg);
   color: var(--text);
@@ -472,6 +476,17 @@ html, body, #root {
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.layout,
+.main-content,
+.dash-shell,
+.dash-main-area,
+.dash-main-container,
+.container {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 h1, h2, h3, h4, h5, h6 {
