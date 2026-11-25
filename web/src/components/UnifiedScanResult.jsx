@@ -22,10 +22,38 @@ import {
   Mail,
   Link2,
   Loader2,
-  Clock
+  Clock,
+  Save,
+  FileText,
+  Edit3
 } from 'lucide-react';
+import { apiFetch, getAuthToken } from '../api';
+import { useAuth } from '../auth';
 import { dedupeSafetyAdvice, getDefaultWhatToDo } from '../lib/dedupeAdvice';
 import './unified-scan-result.css';
+
+/* --------------------------------------------------------------------------
+   Helpers for Formatting
+   -------------------------------------------------------------------------- */
+
+function renderHighlightedComplaint(text) {
+  if (!text) return null;
+  const parts = text.split(/(\[[^\]]+\])/g);
+  return (
+    <div className="usr-complaint-formatted-view">
+      {parts.map((part, idx) => {
+        if (/^\[[^\]]+\]$/.test(part)) {
+          return (
+            <mark key={idx} className="usr-complaint-blank-inline">
+              {part}
+            </mark>
+          );
+        }
+        return <span key={idx}>{part}</span>;
+      })}
+    </div>
+  );
+}
 
 /* --------------------------------------------------------------------------
    Helpers for Formatting & Labels
@@ -412,11 +440,13 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
 
   let rawFindings = [];
   if (Array.isArray(check.findings) && check.findings.length > 0) {
-    rawFindings = check.findings.map(f => (typeof f === 'string' ? { text: f } : f));
+    rawFindings = check.findings.map(f => (typeof f === 'string' ? { text: f } : (f || {})));
   } else if (check.summary) {
     rawFindings = [{ text: check.summary }];
   } else if (check.reason) {
     rawFindings = [{ text: check.reason }];
+  } else if (check.detail) {
+    rawFindings = [{ text: check.detail }];
   }
 
   // 1. Extract Scam Type if present in findings
@@ -435,7 +465,7 @@ function UnifiedCheckCard({ check, index, isPrinting = false }) {
     const item = {
       ...f,
       text: parsed.text,
-      quote: parsed.quote || f.quote || null,
+      quote: parsed.quote || f.quote || f.evidence || null,
       severity: f.severity || f.s || (badge.state === 'flag' ? 'warn' : 'info'),
       globalIdx: idx
     };
@@ -599,6 +629,30 @@ export function UnifiedScanResult({
   const [ledgerStatus, setLedgerStatus] = useState(null);
   const [ledgerChecking, setLedgerChecking] = useState(false);
 
+  const { authReady, session } = useAuth?.() || {};
+  const isAuthLoading = !authReady;
+  const isSignedIn = Boolean(session?.user || session);
+
+  const [complaintText, setComplaintText] = useState(result?.complaintText || result?.report?.complaintText || '');
+  const [complaintCreatedAt, setComplaintCreatedAt] = useState(result?.complaintCreatedAt || result?.report?.complaintCreatedAt || null);
+  const [isEditingComplaint, setIsEditingComplaint] = useState(false);
+  const [generatingComplaint, setGeneratingComplaint] = useState(false);
+  const [savingComplaint, setSavingComplaint] = useState(false);
+  const [complaintError, setComplaintError] = useState(null);
+  const [copiedComplaint, setCopiedComplaint] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (result?.complaintText) setComplaintText(result.complaintText);
+    if (result?.complaintCreatedAt) setComplaintCreatedAt(result.complaintCreatedAt);
+  }, [result?.complaintText, result?.complaintCreatedAt]);
+
+  const blanksList = useMemo(() => {
+    if (!complaintText) return [];
+    const matches = complaintText.match(/\[[^\]]+\]/g) || [];
+    return [...new Set(matches)];
+  }, [complaintText]);
+
   const scorePopoverRef = useRef(null);
 
   // Sync print events
@@ -671,6 +725,70 @@ export function UnifiedScanResult({
     rawLevel === 'safe' ? 'low' :
     (rawLevel === 'unknown' && resolvedTool === 'job') ? 'unknown' :
     rawLevel;
+
+  const isHighOrMed = level === 'high' || level === 'medium';
+  const scanId = res.id || res.proofId || res.receipt?.proofId || res.receipt?.receiptId || report.proofId || report.id;
+
+  const handleRaiseComplaint = async () => {
+    if (!scanId) {
+      setComplaintError('Scan record identifier not available');
+      return;
+    }
+    setGeneratingComplaint(true);
+    setComplaintError(null);
+    try {
+      const token = session?.access_token || getAuthToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const data = await apiFetch(`/api/scans/${encodeURIComponent(scanId)}/complaint`, {
+        method: 'POST',
+        headers
+      });
+      if (data && data.complaintText) {
+        setComplaintText(data.complaintText);
+        setComplaintCreatedAt(data.complaintCreatedAt || new Date().toISOString());
+        setIsEditingComplaint(true);
+      } else {
+        setComplaintError('Could not prepare the complaint right now. Please try again.');
+      }
+    } catch (err) {
+      setComplaintError(err?.message || 'Could not prepare the complaint right now. Please try again.');
+    } finally {
+      setGeneratingComplaint(false);
+    }
+  };
+
+  const handleSaveComplaint = async () => {
+    if (!scanId || !complaintText) return;
+    setSavingComplaint(true);
+    setComplaintError(null);
+    try {
+      const token = session?.access_token || getAuthToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await apiFetch(`/api/scans/${encodeURIComponent(scanId)}/complaint`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ complaintText })
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+      setIsEditingComplaint(false);
+    } catch (err) {
+      setComplaintError(err?.message || 'Could not save complaint');
+    } finally {
+      setSavingComplaint(false);
+    }
+  };
+
+  const handleCopyComplaint = async () => {
+    if (!complaintText) return;
+    try {
+      await navigator.clipboard?.writeText?.(complaintText);
+      setCopiedComplaint(true);
+      setTimeout(() => setCopiedComplaint(false), 2000);
+    } catch {
+      // Ignore clipboard error
+    }
+  };
 
   const score = typeof res.score === 'number' ? res.score : (typeof overall.score === 'number' ? overall.score : null);
 
@@ -828,6 +946,22 @@ export function UnifiedScanResult({
   const blockTimestamp = res.blockTimestamp || null;
   const isSaved = res.saved === true || isHistory;
   const timeFormatted = blockTimestamp || res.createdAt || res.timestamp || report.generatedAt || new Date().toISOString();
+  const scanDateFormatted = (() => {
+    try {
+      const d = new Date(timeFormatted);
+      if (isNaN(d.getTime())) return String(timeFormatted);
+      return d.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return String(timeFormatted);
+    }
+  })();
 
   // "Check now" — calls /api/proof/verify with proofId + blockHash
   const handleCheckLedger = useCallback(async () => {
@@ -942,9 +1076,38 @@ export function UnifiedScanResult({
     }
   };
 
-  const handlePrintPdf = () => {
+  const handlePrintFullReport = () => {
+    document.body.classList.remove('print-complaint-only');
+    const oldTitle = document.title;
+    if (proofId) {
+      document.title = `CyberShield-Report-${proofId}`;
+    }
+    const cleanup = () => {
+      document.title = oldTitle;
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     window.print();
+    setTimeout(cleanup, 2000);
   };
+
+  const handleDownloadComplaintPdf = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!complaintText) return;
+    document.body.classList.add('print-complaint-only');
+    const oldTitle = document.title;
+    document.title = `Cyber-crime-complaint${proofId ? `-${proofId}` : ''}`;
+    const cleanup = () => {
+      document.body.classList.remove('print-complaint-only');
+      document.title = oldTitle;
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    setTimeout(cleanup, 2000);
+  };
+
+  const handlePrintPdf = handlePrintFullReport;
 
   const levelPillClass =
     level === 'high'
@@ -965,7 +1128,7 @@ export function UnifiedScanResult({
   /* --------------------------------------------------------------------------
      Sub-render: Summary Block
      -------------------------------------------------------------------------- */
-  const renderSummaryBlock = () => (
+  const renderSummaryBlock = (forPrint = false) => (
     <div className="usr-summary-top">
       <div className="usr-summary-header">
         <div className="usr-summary-chips">
@@ -983,7 +1146,7 @@ export function UnifiedScanResult({
 
           <span className="usr-chip usr-chip-tool">{toolLabel}</span>
 
-          {sourcesRanCount > 0 && (
+          {sourcesRanCount > 0 && !forPrint && (
             <div className="usr-popover-anchor">
               <button
                 type="button"
@@ -1017,19 +1180,24 @@ export function UnifiedScanResult({
               )}
             </div>
           )}
+          {sourcesRanCount > 0 && forPrint && (
+            <span className="usr-chip usr-chip-sources">
+              {sourcesRanCount} source{sourcesRanCount !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         {/* Risk Gauge */}
         <div className="usr-gauge-slot">
-          <div className="usr-gauge-popover-anchor" ref={scorePopoverRef}>
+          <div className="usr-gauge-popover-anchor" ref={forPrint ? undefined : scorePopoverRef}>
             <UnifiedGauge
               level={level}
               score={score}
-              isPrinting={isPrinting}
-              onToggleInfo={() => setShowScorePopover((prev) => !prev)}
-              showInfo={showScorePopover}
+              isPrinting={forPrint}
+              onToggleInfo={forPrint ? undefined : () => setShowScorePopover((prev) => !prev)}
+              showInfo={forPrint ? false : showScorePopover}
             />
-            {showScorePopover && (
+            {!forPrint && showScorePopover && (
               <div className="usr-popover-bubble usr-score-popover-bubble" role="tooltip">
                 <div className="usr-popover-header">
                   <div className="usr-popover-title">What do these mean?</div>
@@ -1095,7 +1263,7 @@ export function UnifiedScanResult({
         </div>
       )}
 
-      {level === 'unable' && !isPrinting && onReset && (
+      {level === 'unable' && !forPrint && onReset && (
         <div className="usr-unable-action-row no-print">
           <button type="button" className="usr-btn-retry" onClick={onReset}>
             Try again with more details
@@ -1110,8 +1278,12 @@ export function UnifiedScanResult({
      -------------------------------------------------------------------------- */
   const cleanCompany = (inp.company && !isPageHostOrUrl(inp.company)) ? String(inp.company).trim() : null;
 
-  const renderWhyPanel = () => (
-    <div className="usr-tab-panel">
+  const renderWhyPanel = (forPrint = false) => {
+    const isExpanded = forPrint || isBreakdownExpanded;
+    const itemsToShow = forPrint || visibleBreakdown;
+
+    return (
+      <div className="usr-tab-panel">
       {/* Job Offer Details (if job scan) */}
       {(cleanCompany || inp.url || inp.recruiterEmail) && (
         <div className="usr-job-meta-box bg-slate-50/70 border border-slate-200/80 rounded-xl p-4">
@@ -1248,19 +1420,26 @@ export function UnifiedScanResult({
 
         {sortedBreakdown.length > 0 && (
           <div className="usr-breakdown-disclosure">
-            <button
-              type="button"
-              className="usr-breakdown-toggle-btn no-print"
-              onClick={() => setBreakdownOpen(!breakdownOpen)}
-              aria-expanded={isBreakdownExpanded}
-            >
-              <span className="usr-breakdown-toggle-title">Score breakdown &amp; weights</span>
-              <ChevronDown size={16} className={`usr-chevron ${isBreakdownExpanded ? 'is-rotated' : ''}`} />
-            </button>
+            {!forPrint && (
+              <button
+                type="button"
+                className="usr-breakdown-toggle-btn no-print"
+                onClick={() => setBreakdownOpen(!breakdownOpen)}
+                aria-expanded={isExpanded}
+              >
+                <span className="usr-breakdown-toggle-title">Score breakdown &amp; weights</span>
+                <ChevronDown size={16} className={`usr-chevron ${isExpanded ? 'is-rotated' : ''}`} />
+              </button>
+            )}
+            {forPrint && (
+              <div className="usr-card-subhead" style={{ marginTop: '12px', marginBottom: '8px' }}>
+                Score breakdown &amp; weights
+              </div>
+            )}
 
-            {isBreakdownExpanded && (
+            {isExpanded && (
               <div className="usr-breakdown-content">
-                {visibleBreakdown.map((sb, i) => {
+                {(forPrint ? sortedBreakdown : visibleBreakdown).map((sb, i) => {
                   const pts = Number(sb.points) || 0;
                   const ptsBadge = pts > 0 ? `+${pts}` : `${pts}`;
                   return (
@@ -1273,7 +1452,7 @@ export function UnifiedScanResult({
                   );
                 })}
 
-                {!isPrinting && !showAllBreakdown && sortedBreakdown.length > 5 && (
+                {!forPrint && !showAllBreakdown && sortedBreakdown.length > 5 && (
                   <button
                     type="button"
                     className="usr-btn-show-all no-print"
@@ -1304,11 +1483,12 @@ export function UnifiedScanResult({
       </div>
     </div>
   );
+};
 
   /* --------------------------------------------------------------------------
      Sub-render: Checks Panel
      -------------------------------------------------------------------------- */
-  const renderChecksPanel = () => (
+  const renderChecksPanel = (forPrint = false) => (
     <div className="usr-tab-panel">
       {sortedApplicableChecks.length > 0 && (
         <div className="usr-checks-grid flex flex-col gap-3">
@@ -1317,7 +1497,7 @@ export function UnifiedScanResult({
               key={c.key || c.title || idx}
               check={c}
               index={idx}
-              isPrinting={isPrinting}
+              isPrinting={forPrint}
             />
           ))}
         </div>
@@ -1340,9 +1520,207 @@ export function UnifiedScanResult({
   );
 
   /* --------------------------------------------------------------------------
+     Sub-render: Complaint Section (High or Medium risk only)
+     -------------------------------------------------------------------------- */
+  const renderComplaintSection = () => {
+    if (!isHighOrMed) return null;
+    if (isPrinting) return null;
+
+    if (!complaintText && !generatingComplaint) {
+      if (isAuthLoading) {
+        return (
+          <div className="usr-complaint-calm-box no-print">
+            <p className="usr-complaint-calm-text">
+              Want to report this? We can prepare your complaint from this check
+            </p>
+            <button
+              type="button"
+              className="usr-btn-complaint-calm"
+              disabled
+              style={{ opacity: 0.6, cursor: 'not-allowed' }}
+              aria-disabled="true"
+            >
+              Raise a complaint
+            </button>
+          </div>
+        );
+      }
+
+      if (!isSignedIn) {
+        return (
+          <div className="usr-complaint-calm-box no-print">
+            <p className="usr-complaint-calm-text">
+              Want to report this? We can prepare your complaint from this check
+            </p>
+            <Link to="/login" className="usr-btn-complaint-calm">
+              Sign in to raise a complaint
+            </Link>
+          </div>
+        );
+      }
+
+      if (res.saved === false) {
+        return (
+          <div className="usr-complaint-calm-box no-print">
+            <p className="usr-complaint-calm-text">
+              This check was not saved to your account, so a complaint cannot be prepared. Run the check again while signed in.
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="usr-complaint-calm-box no-print">
+          <p className="usr-complaint-calm-text">
+            Want to report this? We can prepare your complaint from this check
+          </p>
+          <button
+            type="button"
+            className="usr-btn-complaint-calm"
+            onClick={handleRaiseComplaint}
+          >
+            Raise a complaint
+          </button>
+          {complaintError && (
+            <div className="usr-complaint-error" style={{ width: '100%', marginTop: '8px' }}>
+              {complaintError}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (generatingComplaint) {
+      return (
+        <div className="usr-complaint-box usr-complaint-loading no-print">
+          <div className="usr-complaint-loading-row">
+            <Loader2 size={18} className="spin" style={{ color: '#38BDF8' }} />
+            <span>Preparing your complaint from this check...</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="usr-complaint-box">
+        <div className="usr-complaint-top-row">
+          <div className="usr-complaint-heading">
+            <FileText size={16} strokeWidth={2} />
+            <span>Cyber Crime Complaint</span>
+          </div>
+          <div className="usr-complaint-top-actions no-print">
+            {!isEditingComplaint ? (
+              <button
+                type="button"
+                className="usr-btn-complaint-edit"
+                onClick={() => setIsEditingComplaint(true)}
+              >
+                <Edit3 size={13} />
+                <span>Edit</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="usr-btn-complaint-view"
+                onClick={() => setIsEditingComplaint(false)}
+              >
+                <span>View formatted</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <p className="usr-complaint-notice">
+          Check every detail before you submit.
+        </p>
+
+        {isEditingComplaint && blanksList.length > 0 && (
+          <div className="usr-complaint-blanks-banner no-print">
+            <span className="usr-complaint-blanks-label">Remaining details to fill:</span>
+            <div className="usr-complaint-blanks-chips">
+              {blanksList.map((blank, idx) => (
+                <span key={idx} className="usr-complaint-blank-chip">
+                  {blank}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isEditingComplaint ? (
+          <textarea
+            className="usr-complaint-textarea"
+            value={complaintText}
+            onChange={(e) => {
+              setComplaintText(e.target.value);
+              setSaveSuccess(false);
+            }}
+            rows={15}
+            aria-label="Editable complaint text"
+          />
+        ) : (
+          renderHighlightedComplaint(complaintText)
+        )}
+
+        <div className="usr-complaint-actions-row no-print">
+          {isEditingComplaint && (
+            <button
+              type="button"
+              className="usr-btn-complaint-save"
+              onClick={handleSaveComplaint}
+              disabled={savingComplaint}
+            >
+              {savingComplaint ? <Loader2 size={13} className="spin" /> : <Save size={13} />}
+              <span>{saveSuccess ? 'Saved' : 'Save'}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="usr-btn-complaint-btn"
+            onClick={handleCopyComplaint}
+          >
+            {copiedComplaint ? <Check size={13} /> : <Copy size={13} />}
+            <span>{copiedComplaint ? 'Copied' : 'Copy'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="usr-btn-complaint-btn"
+            onClick={handleDownloadComplaintPdf}
+          >
+            <Download size={13} />
+            <span>Download as PDF</span>
+          </button>
+
+          <a
+            href="https://cybercrime.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="usr-btn-complaint-portal"
+          >
+            <span>Open cybercrime.gov.in</span>
+            <ExternalLink size={13} />
+          </a>
+        </div>
+
+        <p className="usr-complaint-portal-note no-print">
+          Submit on the official portal. You will need to sign in there, verify with an OTP and complete the captcha.
+        </p>
+
+        {complaintError && (
+          <div className="usr-complaint-error">
+            {complaintError}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  /* --------------------------------------------------------------------------
      Sub-render: What to do Panel
      -------------------------------------------------------------------------- */
-  const renderActionsPanel = () => (
+  const renderActionsPanel = (forPrint = false) => (
     <div className="usr-tab-panel">
       <div className="usr-card usr-actions-card">
         <div className="usr-card-subhead">Recommended Actions</div>
@@ -1375,6 +1753,9 @@ export function UnifiedScanResult({
             );
           })}
         </ul>
+
+        {/* Raise a complaint card / editor (on-screen only) */}
+        {!forPrint && renderComplaintSection()}
 
         {/* 1930 Helpline Box */}
         <div className="usr-helpline-box">
@@ -1480,20 +1861,23 @@ export function UnifiedScanResult({
               </div>
             </div>
 
-            {/* Ledger status */}
-            {!forPrint && (
-              <div className="usr-proof-cell">
-                <label>Ledger status</label>
-                <div className="usr-proof-val usr-proof-status-row">
-                  {proofId ? (
-                    ledgerStatus ? (
-                      <span className={`usr-ledger-badge ${ledgerStatus.ok ? 'usr-ledger-ok' : 'usr-ledger-fail'}`}>
-                        {ledgerStatus.ok ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
-                        <span>{ledgerStatus.label}</span>
+            {/* Anchor status */}
+            <div className="usr-proof-cell">
+              <label>Anchor status</label>
+              <div className="usr-proof-val usr-proof-status-row">
+                {proofId ? (
+                  ledgerStatus ? (
+                    <span className={`usr-ledger-badge ${ledgerStatus.ok ? 'usr-ledger-ok' : 'usr-ledger-fail'}`}>
+                      {ledgerStatus.ok ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
+                      <span>{ledgerStatus.label}</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span className="usr-ledger-badge usr-ledger-ok">
+                        <ShieldCheck size={13} />
+                        <span>Ledger anchored</span>
                       </span>
-                    ) : (
-                      <>
-                        <span className="usr-proof-na">Not checked yet</span>
+                      {!forPrint && (
                         <button
                           type="button"
                           className="usr-btn-check-ledger no-print"
@@ -1506,17 +1890,17 @@ export function UnifiedScanResult({
                             : <Clock size={12} />}
                           <span>{ledgerChecking ? 'Checking…' : 'Check now'}</span>
                         </button>
-                      </>
-                    )
-                  ) : (
-                    <span className="usr-proof-na">Not available for this report</span>
-                  )}
-                </div>
-                {ledgerStatus && !ledgerStatus.ok && ledgerStatus.detail && (
-                  <div className="usr-proof-status-detail">{ledgerStatus.detail}</div>
+                      )}
+                    </>
+                  )
+                ) : (
+                  <span className="usr-proof-na">Not available for this report</span>
                 )}
               </div>
-            )}
+              {ledgerStatus && !ledgerStatus.ok && ledgerStatus.detail && (
+                <div className="usr-proof-status-detail">{ledgerStatus.detail}</div>
+              )}
+            </div>
 
             {/* Report hash (SHA-256) */}
             <div className="usr-proof-cell usr-proof-cell-full">
@@ -1679,89 +2063,190 @@ export function UnifiedScanResult({
   };
 
   /* --------------------------------------------------------------------------
-     Print Mode Render (Continuous document matching on-screen layout)
-     -------------------------------------------------------------------------- */
-  if (isPrinting) {
-    return (
-      <div className="usr-result-card usr-printing" role="region" aria-label="Scan Result">
-        {renderSummaryBlock()}
-
-        <div className="usr-print-section-heading">Why</div>
-        {renderWhyPanel()}
-
-        <div className="usr-print-section-heading">Checks ({applicableChecks.length})</div>
-        {renderChecksPanel()}
-
-        <div className="usr-print-section-heading">What to Do Next</div>
-        {renderActionsPanel()}
-
-        <div className="usr-print-section-heading">Verification Proof &amp; Evidence</div>
-        {renderProofPanel(true)}
-
-        <div className="usr-legal-footer">Screening aid, not a legal finding.</div>
-      </div>
-    );
-  }
-
-  /* --------------------------------------------------------------------------
-     Screen Render (Tabbed Layout)
+     Unified Result Render (Screen Tabbed View + Full Report PDF + Complaint PDF)
      -------------------------------------------------------------------------- */
   return (
     <div className="usr-result-card" role="region" aria-label="Scan Result">
-      {/* 1. TOP SUMMARY CARD */}
-      {renderSummaryBlock()}
-
-      {/* 2. TABS */}
-      <div className="usr-tabs-wrapper">
-        <div className="usr-tab-bar" role="tablist">
+      {/* 1. TOP ACTIONS BAR (Live result & full report view) */}
+      {!isHistory && (
+        <div className="usr-top-actions-bar no-print">
           <button
             type="button"
-            role="tab"
-            aria-selected={activeTab === 'why'}
-            className={`usr-tab-btn ${activeTab === 'why' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('why')}
+            className="usr-btn-action usr-btn-top-pdf"
+            onClick={handlePrintFullReport}
+            title="Download full report as PDF"
           >
-            Why
+            <Printer size={14} strokeWidth={1.75} />
+            <span>Download PDF</span>
           </button>
           <button
             type="button"
-            role="tab"
-            aria-selected={activeTab === 'checks'}
-            className={`usr-tab-btn ${activeTab === 'checks' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('checks')}
+            className="usr-btn-action"
+            onClick={handleCopySummary}
+            title="Copy summary to clipboard"
           >
-            Checks ({applicableChecks.length})
+            {copiedSummary ? <Check size={14} /> : <Copy size={14} />}
+            <span>{copiedSummary ? 'Summary copied' : 'Copy summary'}</span>
           </button>
           <button
             type="button"
-            role="tab"
-            aria-selected={activeTab === 'actions'}
-            className={`usr-tab-btn ${activeTab === 'actions' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('actions')}
+            className="usr-btn-action"
+            onClick={handleDownloadReceipt}
+            disabled={!receipt && !proofId}
+            title="Download signed verification receipt (.json)"
           >
-            What to do
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'proof'}
-            className={`usr-tab-btn ${activeTab === 'proof' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('proof')}
-          >
-            Proof
+            <Download size={14} strokeWidth={1.75} />
+            <span>Download verification file</span>
           </button>
         </div>
+      )}
 
-        <div className="usr-tab-content">
-          {activeTab === 'why' && renderWhyPanel()}
-          {activeTab === 'checks' && renderChecksPanel()}
-          {activeTab === 'actions' && renderActionsPanel()}
-          {activeTab === 'proof' && renderProofPanel(false)}
+      {/* 2. ON-SCREEN TABBED VIEW (Hidden during print) */}
+      <div className="usr-screen-view no-print">
+        {/* Top summary card */}
+        {renderSummaryBlock(false)}
+
+        {/* Tab navigation & panels */}
+        <div className="usr-tabs-wrapper">
+          <div className="usr-tab-bar" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'why'}
+              className={`usr-tab-btn ${activeTab === 'why' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('why')}
+            >
+              Why
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'checks'}
+              className={`usr-tab-btn ${activeTab === 'checks' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('checks')}
+            >
+              Checks ({applicableChecks.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'actions'}
+              className={`usr-tab-btn ${activeTab === 'actions' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('actions')}
+            >
+              What to do
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'proof'}
+              className={`usr-tab-btn ${activeTab === 'proof' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('proof')}
+            >
+              Proof
+            </button>
+          </div>
+
+          <div className="usr-tab-content">
+            {activeTab === 'why' && renderWhyPanel(false)}
+            {activeTab === 'checks' && renderChecksPanel(false)}
+            {activeTab === 'actions' && renderActionsPanel(false)}
+            {activeTab === 'proof' && renderProofPanel(false)}
+          </div>
         </div>
+
+        {/* Footer disclaimer */}
+        <div className="usr-legal-footer">Screening aid, not a legal finding.</div>
       </div>
 
-      {/* Footer disclaimer */}
-      <div className="usr-legal-footer">Screening aid, not a legal finding.</div>
+      {/* 3. FULL REPORT PRINT VIEW (Printed when body does not have print-complaint-only) */}
+      <div className="usr-full-print-view">
+        <div className="usr-print-header">
+          <div className="usr-print-header-top">
+            <div>
+              <div className="usr-print-brand">CYBERSHIELD VERIFICATION REPORT</div>
+              <div className="usr-print-tool-name">{toolLabel}</div>
+            </div>
+            <div className="usr-print-meta-right">
+              <div><strong>Scanned on:</strong> {scanDateFormatted}</div>
+              <div><strong>Proof ID:</strong> {proofId || 'Not available for this report'}</div>
+            </div>
+          </div>
+          <div className="usr-print-header-banner">
+            <span className={`usr-print-badge ${levelPillClass}`}>
+              {level.toUpperCase()} RISK
+            </span>
+            <span className="usr-print-score">
+              Score: <strong>{score != null ? `${score} / 100` : '—'}</strong>
+            </span>
+            {scamTypeFormatted && (
+              <span className="usr-print-chip">{scamTypeFormatted}</span>
+            )}
+            {confidenceBandStr && (
+              <span className="usr-print-chip">Confidence: {confidenceBandStr}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Verdict & summary */}
+        {renderSummaryBlock(true)}
+
+        {/* Why */}
+        <div className="usr-print-section-heading">Why</div>
+        {renderWhyPanel(true)}
+
+        {/* Checks */}
+        <div className="usr-print-section-heading">Checks ({applicableChecks.length})</div>
+        {renderChecksPanel(true)}
+
+        {/* What to do */}
+        <div className="usr-print-section-heading">What to do</div>
+        {renderActionsPanel(true)}
+
+        {/* Proof */}
+        <div className="usr-print-section-heading">Proof</div>
+        {renderProofPanel(true)}
+
+        {/* Complaint (only if raised) */}
+        {Boolean(complaintText && complaintText.trim()) && (
+          <div className="usr-print-section usr-print-complaint-section">
+            <div className="usr-print-section-heading">Complaint</div>
+            <div className="usr-card usr-complaint-print-card">
+              <div className="usr-complaint-print-content">
+                {complaintText}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Legal footer */}
+        <div className="usr-legal-footer">Screening aid, not a legal finding.</div>
+      </div>
+
+      {/* 4. COMPLAINT-ONLY PRINT VIEW (Printed when body has print-complaint-only) */}
+      {Boolean(complaintText && complaintText.trim()) && (
+        <div id="usr-complaint-only-print-view" className="usr-complaint-only-print-view" aria-hidden="true">
+          <div className="usr-complaint-pdf-header">
+            <h1 className="usr-complaint-pdf-title">Cyber crime complaint</h1>
+            <div className="usr-complaint-pdf-meta">
+              {proofId && <div><strong>Proof ID:</strong> {proofId}</div>}
+              <div><strong>Date:</strong> {scanDateFormatted}</div>
+            </div>
+            <div className="usr-complaint-pdf-sub">
+              National Cyber Crime Reporting Portal (cybercrime.gov.in)
+            </div>
+          </div>
+
+          <div className="usr-complaint-pdf-body">
+            {complaintText}
+          </div>
+
+          <div className="usr-complaint-pdf-footer">
+            <div>National Cyber Crime Helpline: Dial 1930</div>
+            <div>Official Portal: cybercrime.gov.in</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -917,6 +917,9 @@ export function DashboardOverview() {
                             {cleanCompany && (
                               <strong className="dash-row-company">{cleanCompany}</strong>
                             )}
+                            {item.complaintRaised && (
+                              <span className="dash-complaint-chip">Complaint raised</span>
+                            )}
                           </div>
                           <span className="dash-row-risk-label">{riskLabel}</span>
                         </Link>
@@ -1267,6 +1270,9 @@ export function DashboardHistory() {
                               {cleanCompany && (
                                 <strong className="dash-row-company">{cleanCompany}</strong>
                               )}
+                              {item.complaintRaised && (
+                                <span className="dash-complaint-chip">Complaint raised</span>
+                              )}
                             </div>
                             <span className="dash-row-risk-label">{riskLabel}</span>
                           </Link>
@@ -1446,6 +1452,7 @@ export function DashboardScanDetail() {
     }
 
     if (autoPrint) {
+      document.body.classList.remove('print-complaint-only');
       const timer = setTimeout(() => {
         window.print();
       }, 400);
@@ -1625,6 +1632,7 @@ export function DashboardScanDetail() {
             type="button"
             className="dash-btn-primary"
             onClick={() => {
+              document.body.classList.remove('print-complaint-only');
               const proofId = scan.proofId || id;
               if (proofId) document.title = `CyberShield-Report-${proofId}`;
               window.print();
@@ -1662,6 +1670,12 @@ export function DashboardScanDetail() {
             {scan.proofId || <span style={{ color: 'var(--text-dim, #94A3B8)', fontStyle: 'italic', fontWeight: 'normal' }}>Not available for this report</span>}
           </span>
         </div>
+        {Boolean(scan.complaintText) && (
+          <div className="dash-offer-meta-item">
+            <span className="dash-offer-meta-label">Complaint</span>
+            <span className="dash-complaint-chip">Complaint raised</span>
+          </div>
+        )}
       </div>
 
       {/* Shared Unified Scan Result Component (Why, Checks, What to do, Proof) */}

@@ -14,6 +14,7 @@ const DB = require('./db');
 const { analyzeDescription, analyzeDescriptionWithStatus } = require('./llm');
 const { createProof } = require('./detectors/proof');
 const { generateSpecificAnalysisText, dedupeAdviceList } = require('./detectors/analysis-text');
+const { generateComplaintText } = require('./detectors/complaint');
 const { quotaMiddleware, usageRoute, quotaRoute, deleteUserQuotaData, getUserPlan, getUserPlanStatus } = require('./detectors/quota');
 const {
   hasExtensionKeyPrefix,
@@ -517,6 +518,16 @@ const profileUpdateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => res.status(429).json({ error: 'Too many profile updates. Please wait a minute and try again.' })
+});
+
+const complaintLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => (req.user && req.user.id) ? 'complaint:' + req.user.id : (req.ip || 'anon'),
+  validate: false,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ error: 'Too many complaint requests. Please try again in an hour.' })
 });
 
 const verifyLimiterMin = rateLimit({
@@ -1262,7 +1273,7 @@ app.get('/api/scans', requireAuth, userLimiter, async (req, res) => {
     const to = from + limit - 1;
     let q = client
       .from(scansTable)
-      .select('id, created_at, level, score, confidence, proof_id, report', { count: 'exact' })
+      .select('id, created_at, level, score, confidence, proof_id, report, complaint_text', { count: 'exact' })
       .eq('user_id', req.user.id);
     if (levelFilter) {
       q = q.eq('level', levelFilter);
@@ -1303,7 +1314,8 @@ app.get('/api/scans', requireAuth, userLimiter, async (req, res) => {
         headline: (Array.isArray(C.LV[r.level]) ? C.LV[r.level][0] : C.LV[r.level]) || null,
         company,
         host,
-        toolKind
+        toolKind,
+        complaintRaised: Boolean(r.complaint_text && typeof r.complaint_text === 'string' && r.complaint_text.trim())
       };
     });
 
@@ -1335,7 +1347,7 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
   try {
     let q = client
       .from(scansTable)
-      .select('id, created_at, user_id, proof_id, level, score, confidence, report, limited_evidence');
+      .select('id, created_at, user_id, proof_id, level, score, confidence, report, limited_evidence, complaint_text, complaint_created_at');
     if (isUuid) {
       q = q.or(`id.eq.${scanId},proof_id.eq.${scanId}`);
     } else {
@@ -1405,6 +1417,8 @@ app.get('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
       confidenceFactors: rep.confidenceFactors || o.confidenceFactors || null,
       scoreBreakdown: rep.scoreBreakdown || o.scoreBreakdown || null,
       report: row.report || {},
+      complaintText: row.complaint_text || null,
+      complaintCreatedAt: row.complaint_created_at || null,
       ...(blockData || {})
     });
   } catch (err) {
@@ -1448,6 +1462,126 @@ app.delete('/api/scans/:id', requireAuth, userLimiter, async (req, res) => {
   } catch (err) {
     console.error('[Scan delete] Database error deleting scan:', scanId, err?.message);
     return res.status(503).json({ error: 'Database error' });
+  }
+});
+
+app.post('/api/scans/:id/complaint', requireAuth, complaintLimiter, async (req, res) => {
+  const maxScanIdLen = RT.security.maxLengths.scanId;
+  const scanId = String(req.params.id || '').trim();
+  if (!scanId || scanId.length > maxScanIdLen || !SCAN_ID_RE.test(scanId)) {
+    console.warn('[Complaint] Invalid scan ID:', scanId);
+    return res.status(400).json({ error: 'Invalid scan ID' });
+  }
+  const client = DB.getClient();
+  if (!client) {
+    console.error('[Complaint] Database unavailable');
+    return res.status(503).json({ error: 'Database error' });
+  }
+  const scansTable = cfg.runtime.database.tables.scans;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
+  try {
+    let q = client
+      .from(scansTable)
+      .select('id, user_id, proof_id, level, score, confidence, report, created_at, complaint_text, complaint_created_at');
+    if (isUuid) {
+      q = q.or(`id.eq.${scanId},proof_id.eq.${scanId}`);
+    } else {
+      q = q.eq('proof_id', scanId);
+    }
+    const { data, error } = await q.limit(1);
+    if (error) {
+      console.error('[Complaint] Database error loading scan:', scanId, error?.message);
+      return res.status(503).json({ error: 'Database error' });
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.user_id !== req.user.id) {
+      console.warn('[Complaint] Scan not found for this user:', scanId);
+      return res.status(404).json({ error: 'Scan not found for this user' });
+    }
+
+    console.log('[Complaint] Generating complaint for scan:', row.id?.slice(0, 8), 'user:', req.user.id?.slice(0, 8));
+    const genResult = await generateComplaintText(row);
+    if (!genResult || !genResult.ok || !genResult.complaintText) {
+      return res.status(502).json({ error: genResult?.error || 'Could not prepare the complaint right now. Please try again.' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const { error: updateErr } = await client
+      .from(scansTable)
+      .update({
+        complaint_text: genResult.complaintText,
+        complaint_created_at: nowIso
+      })
+      .eq('id', row.id);
+
+    if (updateErr) {
+      console.error('[Complaint] Database error saving complaint:', scanId, updateErr?.message);
+      return res.status(503).json({ error: 'Could not save complaint' });
+    }
+
+    return res.json({
+      ok: true,
+      complaintText: genResult.complaintText,
+      complaintCreatedAt: nowIso
+    });
+  } catch (err) {
+    console.error('[Complaint] Unexpected error:', err?.message);
+    return res.status(500).json({ error: 'Could not prepare the complaint right now. Please try again.' });
+  }
+});
+
+app.put('/api/scans/:id/complaint', requireAuth, userLimiter, async (req, res) => {
+  const maxScanIdLen = RT.security.maxLengths.scanId;
+  const scanId = String(req.params.id || '').trim();
+  if (!scanId || scanId.length > maxScanIdLen || !SCAN_ID_RE.test(scanId)) {
+    return res.status(400).json({ error: 'Invalid scan ID' });
+  }
+  const complaintText = typeof req.body?.complaintText === 'string' ? req.body.complaintText.trim() : '';
+  if (!complaintText) {
+    return res.status(400).json({ error: 'Complaint text cannot be empty' });
+  }
+  if (complaintText.length > 20000) {
+    return res.status(400).json({ error: 'Complaint text is too long (maximum 20,000 characters)' });
+  }
+  const client = DB.getClient();
+  if (!client) {
+    return res.status(503).json({ error: 'Database error' });
+  }
+  const scansTable = cfg.runtime.database.tables.scans;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId);
+  try {
+    let q = client.from(scansTable).select('id, user_id, complaint_created_at');
+    if (isUuid) {
+      q = q.or(`id.eq.${scanId},proof_id.eq.${scanId}`);
+    } else {
+      q = q.eq('proof_id', scanId);
+    }
+    const { data, error } = await q.limit(1);
+    if (error) return res.status(503).json({ error: 'Database error' });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || row.user_id !== req.user.id) {
+      return res.status(404).json({ error: 'Scan not found for this user' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const updates = { complaint_text: complaintText };
+    if (!row.complaint_created_at) {
+      updates.complaint_created_at = nowIso;
+    }
+
+    const { error: updateErr } = await client
+      .from(scansTable)
+      .update(updates)
+      .eq('id', row.id);
+
+    if (updateErr) {
+      return res.status(503).json({ error: 'Could not save updated complaint' });
+    }
+
+    console.log('[Complaint] Updated complaint for scan:', row.id?.slice(0, 8), 'user:', req.user.id?.slice(0, 8));
+    return res.json({ ok: true, complaintText });
+  } catch (err) {
+    return res.status(500).json({ error: 'Could not save complaint' });
   }
 });
 
