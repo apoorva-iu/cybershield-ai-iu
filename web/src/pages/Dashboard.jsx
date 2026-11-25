@@ -1137,76 +1137,83 @@ export function DashboardHistory() {
 
       <section className="dash-card" aria-labelledby="history-table-heading">
         <div className="dash-table-toolbar">
-          <h2 id="history-table-heading" className="dash-heading-md">
-            Saved scans
-          </h2>
+          <div className="dash-toolbar-header-row">
+            <h2 id="history-table-heading" className="dash-heading-md">
+              Saved scans
+            </h2>
+          </div>
 
-          <div className="dash-controls-row">
-            {/* Search Box with proper visually hidden sr-only label */}
-            <div className="dash-search-wrap">
-              <label htmlFor="dash-scan-search" className="sr-only">
-                Search by Proof ID, host, or company
-              </label>
-              <Search size={16} className="dash-search-icon" aria-hidden="true" />
-              <input
-                id="dash-scan-search"
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Proof ID, host, company…"
-                className="dash-search-input"
-              />
-            </div>
-
-            {/* Tool Filter Chips */}
-            <div className="dash-filter-group">
-              <span className="dash-filter-label">Tool:</span>
-              <div className="dash-filter-pills" role="group" aria-label="Filter scans by tool">
-                {[
-                  { value: '', label: 'All' },
-                  { value: 'JOB', label: 'Job' },
-                  { value: 'UPI', label: 'UPI' },
-                  { value: 'MESSAGE', label: 'Message' }
-                ].map((f) => {
-                  const active = toolFilter === f.value;
-                  return (
-                    <button
-                      key={f.label}
-                      type="button"
-                      className={`dash-filter-btn ${active ? 'active' : ''}`}
-                      aria-pressed={active}
-                      onClick={() => setToolFilter(f.value)}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
+          <div className="dash-history-controls">
+            {/* Search Box on its own line above them */}
+            <div className="dash-history-search-row">
+              <div className="dash-search-wrap">
+                <label htmlFor="dash-scan-search" className="sr-only">
+                  Search by Proof ID, host, or company
+                </label>
+                <Search size={16} className="dash-search-icon" aria-hidden="true" />
+                <input
+                  id="dash-scan-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Proof ID, host, company…"
+                  className="dash-search-input"
+                />
               </div>
             </div>
 
-            {/* Risk Filter Chips */}
-            <div className="dash-filter-group">
-              <span className="dash-filter-label">Risk:</span>
-              <div className="dash-filter-pills" role="group" aria-label="Filter scans by risk level">
-                {[
-                  { value: '', label: 'All' },
-                  { value: 'Low', label: 'Low' },
-                  { value: 'Medium', label: 'Medium' },
-                  { value: 'High', label: 'High' }
-                ].map((f) => {
-                  const active = levelFilter === f.value;
-                  return (
-                    <button
-                      key={f.label}
-                      type="button"
-                      className={`dash-filter-btn ${active ? 'active' : ''}`}
-                      aria-pressed={active}
-                      onClick={() => handleLevelChange(f.value)}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
+            {/* Tool and Risk filter groups */}
+            <div className="dash-history-filters-grid">
+              {/* Tool Filter Chips */}
+              <div className="dash-filter-group">
+                <span className="dash-filter-label" id="tool-filter-label">Tool:</span>
+                <div className="dash-filter-pills" role="group" aria-labelledby="tool-filter-label">
+                  {[
+                    { value: '', label: 'All' },
+                    { value: 'JOB', label: 'Job' },
+                    { value: 'UPI', label: 'UPI' },
+                    { value: 'MESSAGE', label: 'Message' }
+                  ].map((f) => {
+                    const active = toolFilter === f.value;
+                    return (
+                      <button
+                        key={f.label}
+                        type="button"
+                        className={`dash-filter-btn ${active ? 'active' : ''}`}
+                        aria-pressed={active}
+                        onClick={() => setToolFilter(f.value)}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Risk Filter Chips */}
+              <div className="dash-filter-group">
+                <span className="dash-filter-label" id="risk-filter-label">Risk:</span>
+                <div className="dash-filter-pills" role="group" aria-labelledby="risk-filter-label">
+                  {[
+                    { value: '', label: 'All' },
+                    { value: 'Low', label: 'Low' },
+                    { value: 'Medium', label: 'Medium' },
+                    { value: 'High', label: 'High' }
+                  ].map((f) => {
+                    const active = levelFilter === f.value;
+                    return (
+                      <button
+                        key={f.label}
+                        type="button"
+                        className={`dash-filter-btn ${active ? 'active' : ''}`}
+                        aria-pressed={active}
+                        onClick={() => handleLevelChange(f.value)}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
